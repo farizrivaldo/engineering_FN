@@ -1,5 +1,6 @@
-.App {
+/* .App {
   text-align: center;
+  background-color: aqua;
 }
 @media print {
   .no-print {
@@ -41,3 +42,7 @@
     transform: rotate(360deg);
   }
 }
+
+.blackBackground {
+  background-color: rgb(194, 53, 53);
+} */

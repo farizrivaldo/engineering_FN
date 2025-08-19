@@ -1,16 +1,28 @@
 import React, { useEffect, useState, Component } from "react";
 import { useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import PersonIcon from '@mui/icons-material/Person';
+import { IoIosMail } from "react-icons/io";
+import { IoIosCall } from "react-icons/io";
+import { FiEdit } from "react-icons/fi";
+import { FiUpload } from "react-icons/fi";
+import Breadcrumb from "../components/Breadcrumbs/Breadcrumb";
+import Header from "../components/header";
 
 function EditProfile() {
   const userGlobal = useSelector((state) => state.user.user);
   const [idData, setidData] = useState();
   const [file, setFile] = useState(null);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    setidData(userGlobal.id);
-    console.log(idData);
-  }, []);
+    if (userGlobal) {
+      console.log("User ID:", userGlobal.id);
+    }
+  }, [userGlobal]);
 
   const onFileChange = (event) => {
     setFile(event.target.files[0]);
@@ -19,97 +31,243 @@ function EditProfile() {
   };
 
   const uploadImage = async () => {
-    console.log(userGlobal.id);
     if (file) {
-      const obj = {
-        id: userGlobal.id,
-      };
+      const obj = { id: userGlobal.id };
       let formData = new FormData();
       formData.append("file", file);
       formData.append("data", JSON.stringify(obj));
-      //console.log(formData);
-      const response = await axios.post(
-        "http://10.126.15.137:8002/upload",
-        formData
-      );
-      //console.log(response);
+
+      try {
+        const response = await axios.post("http://10.126.15.197:8002/upload", formData);
+        console.log("Upload Success:", response);
+        alert("Image uploaded successfully!");
+      } catch (error) {
+        console.error("Upload Error:", error);
+        alert("Image upload failed.");
+      }
     } else {
-      alert("Select image first");
+      alert("Select an image first");
     }
   };
-  var imageData = ``;
 
-  if (userGlobal.imagePath) {
-    imageData = `http://10.126.15.137:8002${userGlobal.imagePath}`;
-  } else {
-    imageData =
-      "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png";
-  }
+  const imageData = userGlobal.imagePath
+    ? `http://10.126.15.197:8002${userGlobal.imagePath}`
+    : "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png";
 
   return (
-    <div className="flex min-h-full items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <img
-            id="imagepreview"
-            className="mx-auto h-16 w-16 rounded-full ring-2 ring-red"
-            src={imageData}
-          />
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Edit Profile {userGlobal.name}
-          </h2>
-        </div>
-        <div className="-space-y-px rounded-md shadow-sm">
-          <div class="flex items-center justify-center w-full">
-            <label
-              for="dropzone-file"
-              class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
-            >
-              <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                <svg
-                  aria-hidden="true"
-                  class="w-10 h-10 mb-3 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  ></path>
-                </svg>
-                <p class="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                  <span class="font-semibold">
-                    Click to upload your Profil Picture
-                  </span>{" "}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  SVG, PNG, JPG or GIF (MAX. 800x400px)
-                </p>
+    <div>
+      <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
+      <div className="mx-auto max-w-270">
+        <Breadcrumb pageName="Settings" />
+
+        <div className="grid grid-cols-5 gap-8">
+          <div className="col-span-5 xl:col-span-3">
+            <div className="rounded-sm border border-border bg-card shadow-default">
+              <div className="border-b border-border2 py-4 px-7">
+                <h3 className="font-medium text-text">
+                  Personal Information
+                </h3>
               </div>
-              <input
-                id="file"
-                type="file"
-                //class="hidden"
-                onChange={(event) => onFileChange(event)}
-              />
-            </label>
+              <div className="p-7">
+                <form action="#">
+                  <div className="mb-5.5 flex flex-col gap-5.5 sm:flex-row">
+                    <div className="w-full sm:w-1/2">
+                      <label
+                        className="mb-2 block text-sm font-medium text-text"
+                        htmlFor="fullName"
+                      >
+                        Full Name
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                          <PersonIcon sx={{ fontsize: 25 }} alt="Orang"/>
+                        </span>
+                        <input
+                          className="w-full rounded border border-border bg-background py-3 pl-12 pr-4.5 text-text focus:ring-blue-500 focus-visible:outline-none cursor-pointer"
+                          type="text"
+                          name="fullName"
+                          id="fullName"
+                          placeholder="Your Name...."
+                          defaultValue={userGlobal.name}
+                        />
+                      </div>
+                    </div>
+
+                    {/* <div className="w-full sm:w-1/2">
+                      <label
+                        className="mb-3 block text-sm font-medium text-text"
+                        htmlFor="phoneNumber"
+                      >
+                        Phone Number
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                          <IoIosCall sx={{ fontsize: 25 }} alt="Orang"/>
+                        </span>
+                        <input
+                          className="w-full rounded border border-border bg-background py-3 pl-11.5 pr-4.5 text-text focus:ring-blue-500 focus-visible:outline-none cursor-pointer"
+                          type="text"
+                          name="phoneNumber"
+                          id="phoneNumber"
+                          placeholder="+990 3343 7865"
+                          defaultValue="+990 3343 7865"
+                        />
+                      </div>
+                    </div> */}
+                  </div>
+
+                  <div className="mb-5.5">
+                    <label
+                      className="mb-2 mt-3 block text-sm font-medium text-text"
+                      htmlFor="emailAddress"
+                    >
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <IoIosMail sx={{ fontsize: 25 }} alt="mail"/>
+                      </span>
+                      <input
+                        className="w-full rounded border border-border bg-background py-3 pl-12 pr-4.5 text-text focus:ring-blue-500 focus-visible:outline-none cursor-pointer"
+                        type="email"
+                        name="emailAddress"
+                        id="emailAddress"
+                        placeholder="Your Email...."
+                        defaultValue={userGlobal.email}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-5.5">
+                    <label
+                      className="mb-2 mt-3 block text-sm font-medium text-text"
+                      htmlFor="Username"
+                    >
+                      Username
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <PersonIcon sx={{ fontsize: 25 }} alt="mail"/>
+                      </span>
+                      <input
+                        className="w-full rounded border border-border bg-background py-3 pl-12 pr-4.5 text-text focus:ring-blue-500 focus-visible:outline-none cursor-pointer"
+                        type="text"
+                        name="Username"
+                        id="Username"
+                        placeholder="Your Username....."
+                        defaultValue={userGlobal.name}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-5.5">
+                    <label
+                      className="mb-2 mt-3 block text-sm font-medium text-text"
+                      htmlFor="Username"
+                    >
+                      BIO
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-4">
+                        <FiEdit sx={{ fontsize: 25 }} alt="edit" />
+                      </span>
+
+                      <textarea
+                        className="w-full rounded border border-border bg-background py-3 pl-12 pr-4.5 text-text focus:ring-blue-500 focus-visible:outline-none cursor-pointer"
+                        name="bio"
+                        id="bio"
+                        rows={6}
+                        placeholder="Write your bio here"
+                        defaultValue="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque posuere fermentum urna, eu condimentum mauris tempus ut. Donec fermentum blandit aliquet."
+                      ></textarea>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    <button
+                      type="button"
+                      className="text-sm font-semibold leading-6 text-text"
+                      onClick={() => navigate(0)}>
+                    Cancel</button>
+                    <button
+                      // onClick={() => updateHandeler()}
+                      className="rounded-md bg-cta hover:bg-ctactive py-2 px-3 text-sm font-semibold text-white shadow-sm">
+                    Save</button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
-          <br />
-          <div>
-            <button
-              onClick={() => uploadImage()}
-              type="button"
-              className="group relative flex w-full justify-center rounded-md bg-blue-500 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3"></span>
-              Upload
-            </button>
+          {/* -------------------------------------------------------------------------------------------------------------------------------- */}
+          <div className="col-span-5 xl:col-span-2">
+            <div className="rounded-sm border border-border bg-card shadow-default">
+              <div className="border-b border-border2 py-4 px-7">
+                <h3 className="font-medium text-text">
+                  Your Photo
+                </h3>
+              </div>
+              <div className="p-7">
+                <form action="#">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div>
+                      <img className="h-16 w-16 rounded-full ring-2 ring-red" src={imageData} id="imagepreview" alt="User" />
+                    </div>
+                    <div>
+                      <span className="mb-1.5 text-text text-xl font-medium">
+                        Edit your photo
+                      </span>
+                      <span className="flex gap-2.5 mt-1">
+                        <button className="text-sm hover:text-blue-600">
+                          Delete
+                        </button>
+                        <button className="text-sm hover:text-blue-600">
+                          Update
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    id="FileUpload"
+                    className="relative mb-5.5 block w-full cursor-pointer appearance-none rounded border border-dashed border-blue-800 bg-background py-4 px-4 sm:py-7.5"
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 z-50 m-0 h-full w-full cursor-pointer p-0 opacity-0 outline-none"
+                      onChange={onFileChange}
+                    />
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background">
+                        <FiUpload sx={{ fontsize: 25 }} alt="upload" />
+                      </span>
+                      <p className="text-text">
+                        <span className="text-blue-600">Click to upload</span> or
+                        drag and drop
+                      </p>
+                      <p className="mt-1.5 text-text">SVG, PNG, JPG or GIF</p>
+                      {/* <p className="text-text">(max, 800 X 800px)</p> */}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-4 mt-2">
+                    <button
+                        type="button"
+                        className="text-sm font-semibold leading-6 text-text"
+                        onClick={() => navigate(0)}>
+                      Cancel</button>
+                      <button
+                        type="button"
+                        onClick={uploadImage}
+                        className="rounded-md bg-cta hover:bg-ctactive py-2 px-3 text-sm font-semibold text-white shadow-sm">
+                      Save</button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

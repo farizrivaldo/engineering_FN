@@ -1,72 +1,20 @@
 const fetch = require("isomorphic-fetch");
+const { request } = require("express");
 const express = require("express");
 const cors = require("cors");
-const { body, validationResult } = require("express-validator");
-const upload = require("./middleware/multer");
-const { db, db2, db3, db4, post } = require("./database");
-const { databaseRouter } = require("./routers");
-const { exec } = require("child_process");
-const fs = require("fs");
-const axios = require("axios");
-const http = require("http");
-const WebSocket = require("ws");
-
 const port = 8002;
 const app = express();
+const { databaseRouter } = require("./routers");
+const { body, validationResult } = require("express-validator");
+const { log } = require("console");
+const { db, query } = require("./database");
+const upload = require("./middleware/multer");
+const mqtt = require("mqtt");
+const WebSocket = require("ws");
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
-
-const OLLAMA_URL = "http://10.126.15.141:11434/api/generate";
-
-// Antrian untuk permintaan
-let requestQueue = [];
-let isProcessing = false;
-
-// Fungsi untuk memproses antrian
-const processQueue = async () => {
-  if (isProcessing || requestQueue.length === 0) return;
-
-  isProcessing = true;
-  const { req, res } = requestQueue.shift();
-
-  try {
-    const response = await axios.post(OLLAMA_URL, {
-      model: req.body.machine,
-      prompt: req.body.prompt,
-    });
-
-    res.json(response.data);
-    console.log(response.data);
-  } catch (error) {
-    console.error("Error fetching Ollama:", error.message);
-    res.status(500).json({ error: "Failed to get response from Ollama" });
-  } finally {
-    isProcessing = false;
-    processQueue(); // Proses permintaan berikutnya dalam antrian
-  }
-};
-
-app.post("/ask-ollama", (req, res) => {
-  requestQueue.push({ req, res });
-  processQueue();
-});
-
-// Logging middleware to log request body
-app.use((req, res, next) => {
-  console.log(`Request Body: ${JSON.stringify(req.body)}`);
-  next();
-});
-
-// Error handling middleware for JSON parsing errors
-app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
-    console.error("Bad JSON:", err.message);
-    return res.status(400).send({ error: "Invalid JSON payload" });
-  }
-  next();
-});
 
 app.post(
   "/validation",
@@ -87,7 +35,6 @@ app.get("/plc", async (req, res) => {
     const data = await response.text();
     res.send(data);
   } catch (error) {
-    console.error(error);
     res.status(500).send("Internal Server Error");
   }
 });
@@ -95,153 +42,185 @@ app.get("/plc", async (req, res) => {
 app.post("/upload", upload.single("file"), async (req, res) => {
   const { file } = req;
   const filepath = file ? "/" + file.filename : null;
-  let data;
-  try {
-    data = JSON.parse(req.body.data);
-  } catch (err) {
-    console.error(err);
-    return res.status(400).send({ error: "Invalid JSON payload" });
-  }
+  let data = JSON.parse(req.body.data);
 
   res.status(200).send({ filepath });
 
-  let fetchQuery = `UPDATE parammachine_saka.users SET imagePath = ${db.escape(
+  let fetchQuerry = `UPDATE parammachine_saka.users SET imagePath = ${db.escape(
     filepath
   )} WHERE id_users = ${db.escape(data.id)}`;
 
-  db.query(fetchQuery, (err, result) => {
+  db.query(fetchQuerry, (err, result) => {
     if (err) {
-      console.error(err);
-      res.status(500).send({
-        isSuccess: false,
-        message: "Error updating database",
-      });
+      // return response.status(200).send({
+      //   isSucess: true,
+      //   message: "File not suport,(don't use spacing in name of file) ",
+      // });
     } else {
-      res.status(200).send({ isSuccess: true, message: "Success update data" });
+      //return response.status(200).send({ isSucess: true, message: "Succes update data" });
     }
   });
 });
 
-app.post("/generate", (req, res) => {
-  const { model, prompt } = req.body;
-  const command = `curl.exe -X POST http://10.126.15.141:11434/api/generate -H "Content-Type: application/json" -d "{\\"model\\":\\"${model}\\", \\"prompt\\":\\"${prompt}\\"}"`;
+//========================MQTT===============================================================================
+//========================MQTT===============================================================================
+// Konfigurasi broker MQT // Pastikan Anda telah menginstal package 'mqtt' dengan `npm install mqtt`
+const mqttBroker = "mqtt://10.126.15.7"; // Alamat broker Anda
+const mqttTopic1 = "kwhmeter"; // Topik yang ingin di-subscribe
+const mqttTopic2 = "dbwater"; // Topik yang ingin di-subscribe
+const mqttTopic3 = "totalgas"; // Topik yang ingin di-subscribe
+const mqttTopic4 = "masterbox"; // Topik yang ingin di-subscribe
 
-  exec(command, (error, stdout, stderr) => {
-    if (error) {
-      console.error(error);
-      res.status(500).send(`Error: ${error.message}`);
-      return;
+// Hubungkan ke broker MQTT
+const mqttClient = mqtt.connect(mqttBroker);
+
+mqttClient.on("connect", () => {
+  console.log("Terhubung ke broker MQTT");
+  // Subscribe ke topik
+  mqttClient.subscribe(mqttTopic1, (err) => {
+    if (!err) {
+      console.log(`Berhasil subscribe ke topik: ${mqttTopic1}`);
+    } else {
+      console.error("Gagal subscribe ke topik:", err);
     }
-    if (stderr) {
-      console.error(stderr);
-      res.status(500).send(`Stderr: ${stderr}`);
-      return;
+  });
+
+  mqttClient.subscribe(mqttTopic2, (err) => {
+    if (!err) {
+      console.log(`Berhasil subscribe ke topik: ${mqttTopic2}`);
+    } else {
+      console.error("Gagal subscribe ke topik:", err);
     }
+  });
+
+  mqttClient.subscribe(mqttTopic3, (err) => {
+    if (!err) {
+      console.log(`Berhasil subscribe ke topik: ${mqttTopic3}`);
+    } else {
+      console.error("Gagal subscribe ke topik:", err);
+    }
+  });
+
+  mqttClient.subscribe(mqttTopic4, (err) => {
+    if (!err) {
+      console.log(`Berhasil subscribe ke topik: ${mqttTopic4}`);
+    } else {
+      console.error("Gagal subscribe ke topik:", err);
+    }
+  });
+});
+
+// Tangani error jika ada
+mqttClient.on("error", (err) => {
+  console.error("Error MQTT:", err);
+});
+
+// Event ketika menerima pesan dari topik
+mqttClient.on("message", (topic, message) => {
+  // console.log(`Pesan diterima dari topik "${topic}": ${message.toString()}`);
+});
+
+// Buat server WebSocket
+const wss = new WebSocket.Server({ host: "10.126.15.197", port: 8081 });
+
+wss.on("connection", (ws) => {
+  console.log("Klien WebSocket terhubung");
+
+  // Kirim pesan selamat datang
+  ws.send("Terhubung ke WebSocket server!");
+
+  // // Kirim pesan MQTT yang diterima ke klien WebSocket
+  // mqttClient.on("message", (topic, message) => {
+  //   if (topic === mqttTopic1) {
+  //     console.log(`Pesan dari MQTT: ${message.toString()}`);
+  //     ws.send(`Pesan dari MQTT [${topic}]: ${message.toString()}`);
+  //   }
+  // });
+
+  // mqttClient.on("message", (topic, message) => {
+  //   if (topic === mqttTopic2) {
+  //     //console.log(`Pesan dari MQTT: ${message.toString()}`);
+  //     ws.send(`Pesan dari MQTT [${topic}]: ${message.toString()}`);
+  //   }
+  // });
+
+  // mqttClient.on("message", (topic, message) => {
+  //   if (topic === mqttTopic3) {
+  //     // console.log(`Pesan dari MQTT: ${message.toString()}`);
+  //     ws.send(`Pesan dari MQTT [${topic}]: ${message.toString()}`);
+  //   }
+  // });
+
+  // mqttClient.on("message", (topic, message) => {
+  //   if (topic === mqttTopic4) {
+  //     // console.log(`Pesan dari MQTT: ${message.toString()}`);
+  //     ws.send(`Pesan dari MQTT [${topic}]: ${message.toString()}`);
+  //   }
+  // });
+
+  const previousValues = {
+    [mqttTopic1]: null,
+    [mqttTopic2]: null,
+    [mqttTopic3]: null,
+    [mqttTopic4]: null,
+  };
+
+  mqttClient.on("message", (topic, message) => {
     try {
-      const jsonResponse = JSON.parse(stdout);
-      res.status(200).json(jsonResponse);
-    } catch (parseError) {
-      console.error(parseError);
-      res.status(500).send(`Failed to parse response: ${parseError.message}`);
+      // Bersihkan pesan dari karakter tak diinginkan
+      const cleanedMessage = message
+        .toString()
+        .replace(/\\x0B|\+/g, "")
+        .replace(/\s|\+/g, "")
+        .replace(/\t/g, "")
+        .replace(/\f/g, "");
+
+      // Parse pesan menjadi JSON
+      const parsedMessage = JSON.parse(cleanedMessage);
+
+      if (parsedMessage && parsedMessage.d) {
+        // Ambil nilai sebelumnya jika ada
+        const previousData = previousValues[topic] || {};
+
+        // Proses data di dalam properti `d`
+        for (const [key, value] of Object.entries(parsedMessage.d)) {
+          const newValue = value[0];
+
+          // Gunakan nilai sebelumnya jika `newValue` adalah 0
+          if (newValue === 0 && previousData[key] !== undefined) {
+            parsedMessage.d[key] = [previousData[key]];
+          } else {
+            // Simpan nilai baru ke `previousValues`
+            previousData[key] = newValue;
+          }
+        }
+
+        // Perbarui nilai sebelumnya untuk topik ini
+        previousValues[topic] = previousData;
+
+        // Kirim data ke WebSocket
+        ws.send(`Pesan dari MQTT [${topic}]: ${JSON.stringify(parsedMessage)}`);
+      }
+    } catch (error) {
+      console.error(`Error processing MQTT message for topic ${topic}:`, error);
     }
+  });
+
+  // Tangkap pesan dari klien WebSocket
+  ws.on("message", (msg) => {
+    //console.log(`Pesan dari klien WebSocket: ${msg}`);
+  });
+
+  // Tangkap koneksi yang ditutup
+  ws.on("close", () => {
+    console.log("Klien WebSocket terputus");
   });
 });
 
-let connectionStatus = {
-  db1: "Unknown",
-  db2: "Unknown",
-  db3: "Unknown",
-  db4: "Unknown",
-  postgresql: "Unknown",
-};
-
-// Function to ping connections every 5 seconds
-function pingConnections() {
-  setInterval(() => {
-    [db, db2, db3, db4].forEach((conn, index) => {
-      conn.ping((err) => {
-        const status = err ? `Error : ${err.message}` : "YOMAN";
-        connectionStatus[`db${index + 1}`] = status;
-      });
-    });
-    post.query("SELECT 1", (err) => {
-      const status = err ? `Error: ${err.message}` : "YOMAN";
-      connectionStatus.postgresql = status;
-    });
-  }, 5000);
-}
-
-// Start pinging connections
-pingConnections();
-
-// API endpoint to get connection status
-app.use("/api/connection", (req, res) => {
-  res.json(connectionStatus);
-});
+console.log("Server WebSocket berjalan di ws://localhost:8080");
 
 app.use("/part", databaseRouter);
 
-// WebSocket implementation
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-app.post("/ask", (req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  res.send(JSON.stringify({ message: "WebSocket connection established" }));
-
-  const ws = new WebSocket(`ws://localhost:${port}`);
-
-  ws.on("open", () => {
-    ws.send(JSON.stringify(req.body));
-  });
-
-  ws.on("message", (data) => {
-    console.log("Received:", data);
-  });
-});
-
-wss.on("connection", (ws) => {
-  ws.on("message", async (message) => {
-    const { machine, prompt } = JSON.parse(message);
-
-    try {
-      const response = await axios.post(
-        OLLAMA_URL,
-        {
-          model: machine,
-          prompt: prompt,
-          stream: true,
-        },
-        { responseType: "stream" }
-      );
-
-      response.data.on("data", (chunk) => {
-        try {
-          const jsonChunks = chunk.toString().trim().split("\n");
-          jsonChunks.forEach((jsonChunk) => {
-            const parsed = JSON.parse(jsonChunk);
-            if (parsed.response) {
-              console.log(parsed.response); // Log hasil ke console
-              ws.send(parsed.response);
-            }
-          });
-        } catch (err) {
-          console.error("Error parsing stream chunk:", err);
-          ws.send(JSON.stringify({ error: "Error parsing stream chunk" }));
-        }
-      });
-
-      response.data.on("end", () => {
-        ws.close();
-      });
-    } catch (error) {
-      console.error("Error fetching Ollama:", error.message);
-      ws.send(JSON.stringify({ error: "Failed to get response from Ollama" }));
-      ws.close();
-    }
-  });
-});
-
-server.listen(port, () => {
-  console.log("SERVER RUNNING IN PORT " + port);
+app.listen(port, () => {
+  console.log("SERVER RUNNING IN PORT" + port);
 });

@@ -1,47 +1,56 @@
-import React from "react";
-import {
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Card,
-  CardBody,
-} from "@chakra-ui/react";
 import BuildingBAS from "./buildingBAS";
 import BuildingEMS from "./buildingEMS";
 import BuildingRnD from "./buildingRnD";
 import BuildingWH1 from "./buildingWH1";
+import { useSelector } from "react-redux";
+import { useSearchParams } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
 
 function Building() {
+  const userGlobal = useSelector((state) => state.user.user);
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab");
+
+  const getTabIndex = useCallback(() => {
+    switch (initialTab) {
+      case "WH1":
+        return userGlobal.level > 2 ? "WH1" : "EMS";
+      case "RD":
+        return userGlobal.level > 2 ? "RnD" : "EMS";
+      case "BAS":
+        return "BAS";
+      case "EMS":
+      default:
+        return "EMS";
+    }
+  },  [initialTab, userGlobal.level]);
+
+  const [activeTab, setActiveTab] = useState(getTabIndex());
+
+  useEffect(() => {
+    setActiveTab(getTabIndex());
+  }, [getTabIndex]);
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "EMS":
+        return <BuildingEMS />
+      case "BAS":
+        return <BuildingBAS />
+      case "RnD":
+        return <BuildingRnD />
+      case "WH1":
+        return <BuildingWH1 />
+      default:
+        return <BuildingEMS />
+    }
+  };
+
   return (
     <div>
-      <Card>
-        <CardBody>
-          <Tabs isFitted size={"lg"} variant="enclosed" class=" p-3  ">
-            <TabList>
-              <Tab>Enviroment Monitoring Process</Tab>
-              <Tab>Building Management System</Tab>
-              <Tab>RnD Laboratorium Montoring</Tab>
-              <Tab>Warehouse 1 Montoring</Tab>
-            </TabList>
-            <TabPanels>
-              <TabPanel>
-                <BuildingEMS />
-              </TabPanel>
-              <TabPanel>
-                <BuildingBAS />
-              </TabPanel>
-              <TabPanel>
-                <BuildingRnD />
-              </TabPanel>
-              <TabPanel>
-                <BuildingWH1 />
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-        </CardBody>
-      </Card>
+      <>
+        {renderTabContent()}
+      </>
     </div>
   );
 }

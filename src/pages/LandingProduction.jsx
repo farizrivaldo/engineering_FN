@@ -1,36 +1,11 @@
 import React, { useEffect, Component, useState } from "react";
 import axios from "axios";
 import CanvasJSReact from "../canvasjs.react";
-import {
-  CircularProgress,
-  CircularProgressLabel,
-  Progress,
-  Table,
-  Thead,
-  Tbody,
-  Tfoot,
-  Tr,
-  Th,
-  Td,
-  TableCaption,
-  TableContainer,
-  Button,
-  ButtonGroup,
-  Stack,
-  Input,
-  Select,
-  CardBody,
-  CardFooter,
-  Heading,
-  StackDivider,
-  Box,
-  Text,
-  Card,
-  CardHeader,
-} from "@chakra-ui/react";
+import {CircularProgress, CircularProgressLabel, Select} from "@chakra-ui/react";
 import { getDateProd } from "../features/part/prodSlice";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
+import { useColorMode, useColorModeValue } from "@chakra-ui/react";
 
 var CanvasJS = CanvasJSReact.CanvasJS;
 var CanvasJSChart = CanvasJSReact.CanvasJSChart;
@@ -43,23 +18,71 @@ function LandingProduction() {
 
   const [opeVar, setOpeVar] = useState([{ Ava: 0, Per: 0, Qua: 0, oee: 0 }]);
   const [dateGlobal, setDate] = useState();
-  const [datawidth, setWidth] = useState();
-  const [dataheight, setHeight] = useState();
+  const [datawidth, setWidth] = useState(window.innerWidth);
+  const [dataheight, setHeight] = useState(500);
+
+  // Responsive sizing with mobile-first approach
+  const [dimensions, setDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
+
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.getAttribute("data-theme") === "dark"
+  );
+
+  const borderColor = useColorModeValue("rgba(var(--color-border))", "rgba(var(--color-border))");
+  const hoverBorderColor = useColorModeValue("rgba(var(--color-border2))", "rgba(var(--color-border2))");
+  const tulisanColor = useColorModeValue("rgba(var(--color-text))", "rgba(var(--color-text))");
+
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      setIsDarkMode(currentTheme === 'dark');
+    };
+    // Observe attribute changes
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // useEffect(() => {
+  //   const handleResize = () => {
+  //     setWidth(document.body.clientWidth);
+  //     setHeight(document.body.clientHeight > 600 ? 500 : 800); // Adjust height based on conditions
+  //   };
+
+  //   window.addEventListener("resize", handleResize);
+
+  //   return () => {
+  //     window.removeEventListener("resize", handleResize);
+  //   };
+  // }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     setDate(dateValue);
     fetchOPE(dateValue);
-    var bodyWidth = document.body.clientWidth;
-    var bodyHeight = document.body.clientHeight;
-    setWidth(bodyWidth);
-    setHeight(bodyHeight);
   }, [dateValue]);
 
   let opeCalculation =
     (opeVar[0].Ava / 100) * (opeVar[0].Per / 100) * (opeVar[0].Qua / 100) * 100;
 
   const fetchOPE = async (date) => {
-    let response = await axios.get("http://10.126.15.137:8002/part/ope", {
+    let response = await axios.get("http://10.126.15.197:8002/part/ope", {
       params: {
         date: date,
       },
@@ -67,9 +90,23 @@ function LandingProduction() {
     setOpeVar(response.data);
   };
 
+  const getChartDimensions = () => {
+    // Mobile-first responsive dimensions
+    const width = dimensions.width;
+    if (width < 640) { // sm breakpoint
+      return { width: width - 40, height: 400 };
+    } else if (width < 768) { // md breakpoint
+      return { width: width - 80, height: 450 };
+    } else if (width < 1024) { // lg breakpoint
+      return { width: width - 120, height: 500 };
+    } else { // xl and above
+      return { width: Math.min(1360, width - 160), height: 500 };
+    }
+  };
+
   var visitorsChartDrilldownHandler = (e) => {
     let chartClick = e.dataPoint.name;
-    if (chartClick == "Avability") {
+    if (chartClick == "Availability") {
       navigate("/avabilityope");
     }
   };
@@ -89,11 +126,10 @@ function LandingProduction() {
   };
 
   const options = {
-    theme: "light2",
-    animationEnabled: true,
-    width: datawidth,
-    height: dataheight,
-
+    zoomEnabled: true,
+    theme: isDarkMode ? "dark2" : "light2",
+    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+    ...getChartDimensions(),
     title: {},
     subtitles: [
       {
@@ -101,8 +137,9 @@ function LandingProduction() {
 
         text: `${opeCalculation.toFixed(2)}% OEE`,
         verticalAlign: "center",
-
-        fontSize: 48,
+        fontColor: isDarkMode ? "white" : "black",
+        fontSize: dimensions.width < 640 ? 24 : 36,
+        fontStyle: "oblique",
         dockInsidePlotArea: true,
       },
     ],
@@ -110,14 +147,14 @@ function LandingProduction() {
     data: [
       {
         click: visitorsChartDrilldownHandler,
-
         type: "doughnut",
         showInLegend: true,
         indexLabel: "{name}: {y}",
+        indexLabelFontSize: dimensions.width < 640 ? 14 : 20,
         yValueFormatString: "#,###'%'",
 
         dataPoints: [
-          { name: "Avability", y: opeVar[0].Ava },
+          { name: "Availability", y: opeVar[0].Ava },
           { name: "Performance", y: opeVar[0].Per },
           { name: "Quality", y: opeVar[0].Qua },
         ],
@@ -126,48 +163,69 @@ function LandingProduction() {
   };
 
   return (
-    <div class="flex flex-col  gap-x-6 gap-y-8 sm:grid-cols-6 p-4">
-      <div class="flex justify-center">
-        <div className="mr-10">
-          <h2>Year serch</h2>
-          <Select>
-            <option value="2021">2021</option>
-            <option value="2022">2022</option>
-            <option value="2023">2023</option>
-            <option value="2024">2024</option>
-            <option value="2025">2025</option>
-          </Select>
-        </div>
-        <div>
-          <h2>Month serch</h2>
-          <Select onChange={getDate} value={dateValue}>
-            <option value="0">All</option>
-            <option value="1">Jan</option>
-            <option value="2">Feb</option>
-            <option value="3">Mar</option>
-            <option value="4">Apr</option>
-            <option value="5">Mei</option>
-            <option value="6">Jun</option>
-            <option value="7">Jul</option>
-            <option value="8">Agu</option>
-            <option value="9">Sep</option>
-            <option value="10">Okt</option>
-            <option value="11">Nov</option>
-            <option value="12">Des</option>
-          </Select>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex flex-col sm:flex-row justify-center gap-6 mb-4">
+          <div>
+            <h5 className="mb-1 text-text">Year Search</h5>
+            <Select
+              sx={{
+                border: "1px solid",
+                borderColor: borderColor,
+                text: tulisanColor,
+                borderRadius: "0.395rem",
+                background: "var(--color-background)",
+                _hover: {
+                  borderColor: hoverBorderColor,
+                },
+              }}>
+              <option value="2021">2021</option>
+              <option value="2022">2022</option>
+              <option value="2023">2023</option>
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+            </Select>
+          </div>
+          <div>
+            <h5 className="mb-1 text-text">Month Search</h5>
+            <Select onChange={getDate} value={dateValue}
+              sx={{
+                border: "1px solid",
+                borderColor: borderColor,
+                borderRadius: "0.395rem",
+                background: "var(--color-background)",
+                _hover: {
+                  borderColor: hoverBorderColor,
+                },
+              }}>
+              <option value="0">All</option>
+              <option value="1">Jan</option>
+              <option value="2">Feb</option>
+              <option value="3">Mar</option>
+              <option value="4">Apr</option>
+              <option value="5">Mei</option>
+              <option value="6">Jun</option>
+              <option value="7">Jul</option>
+              <option value="8">Agu</option>
+              <option value="9">Sep</option>
+              <option value="10">Okt</option>
+              <option value="11">Nov</option>
+              <option value="12">Des</option>
+            </Select>
+          </div>
         </div>
       </div>
-
-      <div className="flex flex-col">
+      <div className="flex flex-col ">
         <h1
           onClick={() => headerHendeler()}
-          class="text-center text-5xl font-bold cursor-pointer"
-        >
+          className="text-center text-text text-5xl font-bold cursor-pointer mb-1 ml-12">
           Overall Plant Effectiveness
         </h1>
+        <div overflow="hidden" className="my-3 mx-5 flex justify-center">
+          <CanvasJSChart options={options} />
+        </div>
+      </div>      
 
-        <CanvasJSChart options={options} />
-      </div>
     </div>
   );
 }

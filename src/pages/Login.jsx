@@ -1,15 +1,33 @@
-import React from "react";
-import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router";
+import logoIcon from '../assets/kalbe CH-logo-putih.png';
+import imageIcon from '../assets/gambar.jpg';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import { useState, useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
+import { useNavigate, useLocation } from "react-router";
 import { loginData } from "../features/part/userSlice";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-function Login() {
+function Login () {
+  const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('');
+  const toastDisplayed = useRef(false);
+
+  const userRedux = useSelector(state => state.user);
+
+  // ganti dengan endpoint backend milikmu
+  const LOG_ENDPOINT = 'http://10.126.15.197:8002/part/LoginData';
+
+  const loginTriggered = useRef(false);
 
   const emailHendeler = (event) => {
     setEmail(event.target.value);
@@ -18,108 +36,228 @@ function Login() {
     setPassword(event.target.value);
   };
 
-  const addLogin = () => {
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      addLogin();
+    }
+  };
+  const handleRememberMe = (event) => {
+    setRememberMe(event.target.checked);
+  };
+
+  const checkConnection = async () => {
+    try {
+      const response = await axios.get('http://10.126.15.197:8002/api/connection');
+      const { db1, db2, db3, db4, postgresql } = response.data;
+
+      const errors = [];
+      if (db1 !== "YOMAN") errors.push("DB1");
+      if (db2 !== "YOMAN") errors.push("DB2");
+      if (db3 !== "YOMAN") errors.push("DB3");
+      if (db4 !== "YOMAN") errors.push("DB4");
+      if (postgresql !== "YOMAN") errors.push("PostgreSQL");
+
+      if (errors.length === 0) {
+        setConnectionStatus('success');
+        if (!toastDisplayed.current) {
+          toast.success("All connections are successful!");
+          toastDisplayed.current = true;
+        }
+      } else {
+        setConnectionStatus('error');
+        if (!toastDisplayed.current) {
+          toast.error(`Error: Connection to ${errors.join(', ')} failed.`);
+          toastDisplayed.current = true;
+        }
+      }
+    } catch (error) {
+      setConnectionStatus('error');
+      if (!toastDisplayed.current) {
+        toast.error("Error: Unable to connect to the server. Please check your connection and try again.");
+        toastDisplayed.current = true;
+      }
+    }
+  };
+
+  useEffect(() => {
+    checkConnection();
+  }, []);
+
+  const addLogin = async () => {
+    if (!email || !password) {
+      toast.error("Email and password are required!");
+      return;
+    }
+     
     let tempData = {
       email: email,
       password: password,
     };
 
-    dispatch(loginData(tempData));
-    // navigate(0);
-    const timeout = setTimeout(() => {
-      navigate(0);
-    }, 2000);
+    const loginSuccess = await dispatch(loginData({ email, password }));
+    
+
+
+    // Pastikan loginResult.payload berisi data user (atau sesuaikan dengan return thunk-mu)
+    if (loginSuccess) {
+      loginTriggered.current = true; // tandai bahwa login barusan sukses
+
+      setTimeout(() => {
+        navigate('/dashboard'); // Redirect to Stopwatch after 2 seconds
+      }, 2000);
+    }
+    // console.log('Logging to backend:', user);
+    console.log('Login result:', loginSuccess);
+
+  };
+
+  // useEffect(() => {
+  //   if (
+  //     loginTriggered.current &&
+  //     userRedux &&
+  //     userRedux.name &&
+  //     userRedux.id_users // pastikan field tidak undefined
+  //   ) {
+  //     logLoginActivity(userRedux);
+  //     loginTriggered.current = false; // reset agar tidak double-call
+  //   }
+  // }, [userRedux]); // listen perubahan userRedux
+
+  // const logLoginActivity = async (user) => {
+  // console.log('Logging to backend 2:', user); // cek data yang dikirim
+  //   try {
+  //     await axios.post(LOG_ENDPOINT, {
+  //       name: user.name,
+  //       id: user.id_users, // atau user.id_users, sesuaikan dengan struktur userRedux
+  //       isAdmin: user.isAdmin,
+  //       level: user.level,
+  //       imagePath: user.imagePath,
+  //     });
+  //   } catch (err) {
+  //     console.log("Log login failed: ", err);
+  //   }
+  // };
+
+
+  // const logLoginActivity = async (user) => {
+  //   try {
+  //     console.log('Logging to backend 2:', user); // cek data yang dikirim
+  //     await axios.post(LOG_ENDPOINT, {
+  //       name: user.name,
+  //       id: user.id_users,
+  //       isAdmin: user.isAdmin,
+  //       level: user.level,
+  //       imagePath: user.imagePath,
+  //     });
+  //   } catch (err) {
+  //     // Optional: handle error log login
+  //     console.log("Log login failed: ", err);
+  //   }
+  // };
+
+  const handleLoginButton = async () => {
+    // 1. Log aktivitas login ke backend (kirim email/password atau data lain yang kamu mau)
+    
+
+    // 2. Proses login seperti biasa
+    addLogin();
+    // logLoginActivity();
   };
 
   return (
-    <>
-      <div className="flex min-h-full items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-8">
-          <div>
-            <img
-              className="mx-auto h-12 w-auto"
-              src="https://www.kalbeconsumerhealth.com/assets/images/logo-kalbe-black.png"
-            />
-            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-              Sign in to your account
-            </h2>
-          </div>
-          <form className="mt-8 space-y-6" action="#" method="POST">
-            <input type="hidden" name="remember" defaultValue="true" />
-            <div className="-space-y-px rounded-md shadow-sm">
-              <div>
-                <label htmlFor="email-address" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  onChange={emailHendeler}
-                  id="email-address"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="relative block w-full rounded-t-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  placeholder="Email address"
-                />
-              </div>
-              <br />
-              <div>
-                <label htmlFor="password" className="sr-only">
-                  Password
-                </label>
-                <input
-                  onChange={passwordHendeler}
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="relative block w-full rounded-b-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  placeholder="Password"
-                />
-              </div>
+    <div className="min-h-screen flex justify-end">
+    <div className="hidden md:block md:w-1/2 min-h-screen bg-no-repeat bg-left bg-cover" style={{ backgroundImage: `url(${imageIcon})` }}></div>   
+      
+      <div className="bg-hitam2 min-h-screen w-full md:w-1/2 flex justify-center items-center">
+        <div>
+          <form onSubmit={(e) => e.preventDefault()}>
+            {/* Logo */}
+            <div className="flex justify-center mb-6">
+              <img src={logoIcon} alt="Logo" className="w-[180px]" />
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-900"
-                >
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <a
-                  href="register"
-                  className="font-medium text-indigo-600 hover:text-indigo-500"
-                >
-                  Register ?
-                </a>
-              </div>
-            </div>
-
+            {/* Welcome text */}
             <div>
+              <span className="text-sm text-white">Welcome Back!</span>
+              <h1 className="text-2xl font-bold mt-1 text-white">Login to your account</h1>
+            </div>
+
+            {/* Email Input */}
+            <div className="mt-5">
+              <label className="block text-md mb-2 text-white" htmlFor="email">Email</label>
+              <input
+                className="px-4 w-full border-2 border-white bg-hitam2 py-3 rounded-md text-sm outline-none text-white"
+                type="email"
+                id="email-address"
+                name="email"
+                autoComplete="email"
+                  required
+                onChange={emailHendeler}
+                placeholder="Enter Email"
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+
+            {/* Password Input */}
+            <div className="my-3 relative">
+              <label className="block text-md mb-2 text-white" htmlFor="password">Password</label>
+              <input
+                className="px-4 w-full border-2 border-white bg-hitam2 py-3 rounded-md text-sm outline-none text-white"
+                type={showPassword ? "text" : "password"} // Toggle between text and password
+                name="password"
+                id="password"
+                value={password}
+                autoComplete="current-password"
+                  required
+                onChange={passwordHendeler}
+                placeholder="Enter Password"
+                onKeyDown={handleKeyDown}
+              />
+              {/* Eye icon inside password field */}
               <button
-                onClick={() => addLogin()}
                 type="button"
-                className="group relative flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3"></span>
-                Sign in
+                onClick={togglePasswordVisibility}
+                className="absolute right-4 top-[42px] w-5 cursor-pointer text-white focus:outline-none">
+                {showPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+              </button>
+            </div>
+
+            {/* Remember Me and Forgot Password */}
+            <div className="flex justify-between">
+              <div>
+                <input className="cursor-pointer" type="checkbox" name="rememberme"  onChange={handleRememberMe} />
+                <span className="text-sm text-white"> Remember Me</span>
+              </div>
+              <span className="text-sm text-blue-700 hover:underline cursor-pointer" 
+              onClick={() => {navigate(`/resetpass`);
+            }}>Forgot password?</span>
+            </div>
+
+            {/* Login Button */}
+            <div className="">
+              <button className={`mt-4 mb-3 w-full text-white py-2 rounded-md transition duration-100 ${connectionStatus === 'success' ? 'bg-hijau hover:bg-hijau2' 
+              : connectionStatus === 'error' ? 'bg-kotakMerah hover:bg-bdrMerah' : 'bg-blue-500 cursor-not-allowed opacity-60'}`}
+              onClick={addLogin} type="button">
+                Login now
               </button>
             </div>
           </form>
+
+          <ToastContainer position="top-center" draggable />
+
+          {/* Sign Up Link */}
+          <p className="mt-8 text-white">
+            Don't have an account? <span className="font-bold text-white"> Register</span> <span className="cursor-pointer text-blue-600 underline" onClick={() => {
+              navigate(`/register`);
+            }}> Here!</span>
+          </p>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

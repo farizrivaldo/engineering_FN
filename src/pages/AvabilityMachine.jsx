@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import CanvasJSReact from "../canvasjs.react";
 import moment from "moment/moment";
 import axios from "axios";
@@ -17,17 +17,15 @@ import {
   Table,
   Thead,
   Tbody,
-  Tfoot,
   Tr,
   Th,
   Td,
   TableCaption,
   TableContainer,
-  ButtonGroup,
   Stack,
-  Input,
   Select,
 } from "@chakra-ui/react";
+import { useColorMode, useColorModeValue } from "@chakra-ui/react";
 
 var CanvasJS = CanvasJSReact.CanvasJS;
 var CanvasJSChart = CanvasJSReact.CanvasJSChart;
@@ -46,9 +44,22 @@ function AvabilityMachine() {
   const [datacountMinor, setcountMinor] = useState(0);
   const [filterDataSave, setFilterDataSave] = useState([]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [isTableVisible, setIsTableVisible] = useState(true);
+
+  const { colorMode } = useColorMode();
+  const borderColor = useColorModeValue("rgba(var(--color-border))", "rgba(var(--color-border))");
+  const tulisanColor = useColorModeValue("rgba(var(--color-text))", "rgba(var(--color-text))");
+  const kartuColor = useColorModeValue("rgba(var(--color-card))", "rgba(var(--color-card))");
+
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.getAttribute("data-theme") === "dark"
+  );
+
   const fetchAvaMachine = async (date) => {
     let response = await axios.get(
-      "http://10.126.15.137:8002/part/avamachine",
+      "http://10.126.15.197:8002/part/avamachine",
       {
         params: {
           date: date,
@@ -59,7 +70,7 @@ function AvabilityMachine() {
   };
 
   const fetchPart = async (data) => {
-    let response = await axios.get("http://10.126.15.137:8002/part/get", {
+    let response = await axios.get("http://10.126.15.197:8002/part/get", {
       params: {
         date: data,
       },
@@ -102,6 +113,7 @@ function AvabilityMachine() {
     if (selectMachine == "Avability CM5") {
       return el.Mesin.includes("CM5");
     }
+    setIsTableVisible(true); // Show the table
   });
 
   let objTotalBreakdown = 0;
@@ -138,16 +150,35 @@ function AvabilityMachine() {
     }
   });
 
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+  
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(filterData.length / rowsPerPage)));
+  };
+
   const renderPartList = () => {
-    return filterData
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const visibleData = filterData.slice(startIndex, startIndex + rowsPerPage);
+
+    if (filterData.length === 0) {
+      return (
+        <Tr>
+          <Td colSpan={10} textAlign="center" className="text-red-500" display="table-cell">
+            No data available
+          </Td>
+        </Tr>
+      );
+    }
+    return visibleData
       .sort((a, b) => b.Total - a.Total)
-      .map((partdata) => {
-        return (
-          <Tr>
+      .map((partdata, index) => (
+          <Tr key={index}>
             <Td>{partdata.Mesin}</Td>
             <Td>{partdata.Line}</Td>
             {partdata.Total <= 10 ? (
-              <Td className="bg-amber-100">{partdata.Pekerjaan}</Td>
+              <Td className="bg-amber-200">{partdata.Pekerjaan}</Td>
             ) : (
               <Td>{partdata.Pekerjaan}</Td>
             )}
@@ -159,13 +190,13 @@ function AvabilityMachine() {
             <Td>{partdata.Tawal}</Td>
             <Td>{partdata.Tahir}</Td>
             {partdata.Total <= 10 ? (
-              <Td className="bg-amber-100">{partdata.Total}</Td>
+              <Td className="bg-amber-200">{partdata.Total}</Td>
             ) : (
               <Td>{partdata.Total}</Td>
             )}
           </Tr>
-        );
-      });
+        )
+      );
   };
 
   const renderCountMinor = () => {
@@ -201,11 +232,27 @@ function AvabilityMachine() {
     chart.axisY2[0].set("maximum", 100);
   };
 
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      setIsDarkMode(currentTheme === 'dark');
+    };
+    // Observe attribute changes
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    return () => observer.disconnect();
+  }, []);
+
   const options = {
-    theme: "light2",
+    zoomEnabled: true,
+    theme: isDarkMode ? "dark2" : "light2",
+    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+    margin: 8,
     height: 800,
     title: {
-      text: "Avability Machine",
+      text: "Availability Machine",
+      fontColor: isDarkMode ? "white" : "black"
     },
 
     axisY: {
@@ -216,7 +263,7 @@ function AvabilityMachine() {
     },
     data: [
       {
-        indexLabelFontColor: "black",
+        indexLabelFontColor: isDarkMode ? "white" : "black",
         click: visitorsChartDrilldownHandler,
         type: "column",
         dataPoints: dataPointsAva,
@@ -225,23 +272,25 @@ function AvabilityMachine() {
   };
 
   return (
-    <>
-      <div>
-        <br />
-        <br />
-
+    <div>
+      <div className="block bg-card rounded-md justify-center my-2 mx-12 p-1 lg:overflow-y-hidden ">
         <CanvasJSChart
           options={options}
+          overflow="hidden"
           onRef={(ref) => (chartRef.current = ref)}
         />
         {/*You can get reference to the chart instance as shown above using onRef. This allows you to access all chart properties and methods*/}
       </div>
       <br />
-      <div>
-        <Button className="ml-4" colorScheme="red" onClick={() => backPage()}>
+      <Stack
+        className="flex flex-row justify-left mb-4  "
+        direction="row"
+        spacing={4}
+        >
+        <Button className="ml-12" colorScheme="red" onClick={() => backPage()}>
           Back
         </Button>
-      </div>
+      </Stack>
 
       <div className="flex flex-row justify-center  pb-10 ">
         <Card
@@ -249,6 +298,10 @@ function AvabilityMachine() {
           overflow="hidden"
           variant="outline"
           className="mr-4"
+          sx={{
+            borderRadius: "0.395rem",
+            background: kartuColor,
+          }}
         >
           <div>
             <CircularProgress
@@ -261,11 +314,10 @@ function AvabilityMachine() {
               </CircularProgressLabel>
             </CircularProgress>
           </div>
-          <div></div>
           <Stack>
             <CardBody>
               <Heading size="md">
-                {filterAva[0] ? filterAva[0].label : "Avability"}
+                {filterAva[0] ? filterAva[0].label : "Availability"}
               </Heading>
 
               <Text py="2">
@@ -273,16 +325,47 @@ function AvabilityMachine() {
                 <Progress hasStripe value={objTotalBreakdown} />
                 <p className="mt-1">Minor Stop ({datacountMinor}x)</p>
                 <br />
-                availability is the ratio of Run Time to Planned Production
+                Availability is the ratio of Run Time to Planned Production
                 Time.
               </Text>
             </CardBody>
           </Stack>
         </Card>
       </div>
-
-      <div>
-        <TableContainer>
+      <Stack 
+        className="flex flex-row justify-center "
+        direction="row"
+        spacing={4}
+        align="center"
+      >
+        <div>
+          <Select
+            value={rowsPerPage}
+            onChange={(e) => setRowsPerPage(Number(e.target.value))}
+            width="80px"
+            marginTop="26px"
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={40}>40</option>
+            <option value={60}>60</option>
+            <option value={100}>100</option>
+          </Select>
+        </div>
+        <div>
+          <br />
+          <Button
+            className="w-40 font-sans"
+            colorScheme="red"
+            onClick={() => setIsTableVisible(!isTableVisible)}
+          >
+            {isTableVisible ? "Hide All Data" : "Show All Data"}
+          </Button>
+        </div>
+      </Stack>
+      <br />
+      <div className="mx-8 rounded-md bg-card">
+        <TableContainer className="overflow-y-hidden">
           <Table variant="simple">
             <TableCaption>Imperial to metric conversion factors</TableCaption>
             <Thead>
@@ -303,7 +386,27 @@ function AvabilityMachine() {
           </Table>
         </TableContainer>
       </div>
-    </>
+      {/* Pagination Controls */}
+      <div className="flex justify-center items-center my-4 gap-4">
+        <Button
+          onClick={handlePrevPage}
+          isDisabled={currentPage === 1}
+          colorScheme="blue"
+        >
+          Previous
+        </Button>
+        <span className="text-text">
+          Page {currentPage} of {Math.ceil(filterData.length / rowsPerPage)}
+        </span>
+        <Button
+          onClick={handleNextPage}
+          isDisabled={currentPage === Math.ceil(filterData.length / rowsPerPage)}
+          colorScheme="blue"
+        >
+          Next
+        </Button>
+      </div>
+    </div>
   );
 }
 

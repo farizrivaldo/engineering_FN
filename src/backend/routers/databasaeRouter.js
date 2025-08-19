@@ -24,7 +24,6 @@ routers.post("/check-Login", veryfyToken, databaseControllers.checkLogin);
 routers.patch("/userupdate/:id", databaseControllers.updateUsers);
 routers.delete("/userdelete/:id", databaseControllers.deleteUseers);
 routers.patch("/useredit/:id", databaseControllers.editUsers);
-routers.patch("/changePassword", databaseControllers.changePassword);
 
 routers.get("/instrument", databaseControllers.fetchDataInstrument);
 routers.post("/hardness", databaseControllers.fetchDataHardness);
@@ -132,6 +131,7 @@ routers.get("/138", databaseControllers.fetch138);
 
 //=====================EBR==========================================================
 routers.get("/PmaGetData", databaseControllers.GetDataEBR_PMA);
+module.exports = routers;
 
 //==============INSTRUMENT IPC========================================INSTRUMENT IPC==========================================
 routers.get("/getMoistureData", databaseControllers.getMoistureData);
@@ -151,82 +151,5 @@ routers.get("/fetchPower", databaseControllers.fetchPower);
 routers.get("/PowerMeterGraph", databaseControllers.PowerMeterGraph);
 
 //==============BATCH RECORD ========================================BATCH RECORD ==========================================
-routers.get("/PMARecord1", databaseControllers.PMARecord1);
-routers.get("/BinderRecord1", databaseControllers.BinderRecord1);
-routers.get("/WetmillRecord1", databaseControllers.WetmillRecord1);
-routers.get("/FBDRecord1", databaseControllers.FBDRecord1);
-routers.get("/EPHRecord1", databaseControllers.EPHRecord1);
-routers.get("/TumblerRecord1", databaseControllers.TumblerRecord1);
-routers.get("/FetteRecord1", databaseControllers.FetteRecord1);
-// routers.get("/DedusterRecord1", databaseControllers.DedusterRecord1);
-// routers.get("/LifterRecord1", databaseControllers.DedusterRecord1);
-// routers.get("/MetalDetectorRecord1", databaseControllers.DedusterRecord1);
-// routers.get("/HMRecord1", databaseControllers.HMRecord1);
-// routers.get("/IJPRecord1", databaseControllers.IJPRecord1);
-// routers.get("/CM1Record1", databaseControllers.CM1Record1);
-
-routers.get("/PMARecord3", databaseControllers.PMARecord3);
-// routers.get("/BinderRecord3", databaseControllers.BinderRecord3);
-routers.get("/WetmillRecord3", databaseControllers.WetmillRecord3);
-routers.get("/FBDRecord3", databaseControllers.FBDRecord3);
-routers.get("/EPHRecord3", databaseControllers.EPHRecord3);
-// routers.get("/TumblerRecord3", databaseControllers.TumblerRecord3);
-// routers.get("/FetteRecord3", databaseControllers.FetteRecord3);
-// routers.get("/DedusterRecord3", databaseControllers.DedusterRecord3);
-// routers.get("/LifterRecord3", databaseControllers.DedusterRecord3);
-// routers.get("/MetalDetectorRecord3", databaseControllers.DedusterRecord3);
-routers.get("/HMRecord3", databaseControllers.HMRecord3);
-// routers.get("/IJPRecord3", databaseControllers.IJPRecord3);
-// routers.get("/CM1Record3", databaseControllers.CM1Record3);
-
-routers.get("/SearchPMARecord1", databaseControllers.SearchPMARecord1);
-routers.get("/SearchBinderRecord1", databaseControllers.SearchBinderRecord1);
-//routers.get("/SearchWetMillRecord1", databaseControllers.SearchWetMillRecord1);
-routers.get("/SearchFBDRecord1", databaseControllers.SearchFBDRecord1);
-routers.get("/SearchEPHRecord1", databaseControllers.SearchEPHRecord1);
-routers.get("/SearchTumblerRecord1", databaseControllers.SearchTumblerRecord1);
-routers.get("/SearchFetteRecord1", databaseControllers.SearchFetteRecord1);
-
-routers.get("/SearchPMARecord3", databaseControllers.SearchPMARecord3);
-//routers.get("/SearchWetmillRecord3", databaseControllers.SearchWetmillRecord3);
-routers.get("/SearchFBDRecord3", databaseControllers.SearchFBDRecord3);
-routers.get("/SearchEPHRecord3", databaseControllers.SearchEPHRecord3);
-routers.get("/SearchHMRecord3", databaseControllers.SearchHMRecord3);
-
-
-routers.post("/CreateParameter", databaseControllers.CreateParameter);
-routers.get("/GetParameter", databaseControllers.GetParameter);
-routers.post("/CreateJam", databaseControllers.CreateJam);
-routers.get("/GetJam", databaseControllers.GetJam);
-routers.post("/CreateLimit", databaseControllers.CreateLimit);
-routers.get("/GetLimit", databaseControllers.GetLimit);
-
-//==============SHOW LAST DATA ========================================SHOW LAST DATA==========================================
-routers.get("/GetDailyVibrasi138", databaseControllers.GetDailyVibrasi138);
-routers.get("/GetDailyGedung138", databaseControllers.GetDailyGedung138);
-routers.get("/GetDailyChiller138", databaseControllers.GetDailyChiller138);
-routers.get("/GetDailyBoiler138", databaseControllers.GetDailyBoiler138);
-routers.get("/GetDailyInstrumentIPC",databaseControllers.GetDailyInstrumentIPC);
-routers.get("/GetDailyPower55", databaseControllers.GetDailyPower55);
-routers.get("/GetDailyHVAC55", databaseControllers.GetDailyHVAC55);
-routers.get("/GetDailyEMSUTY", databaseControllers.GetDailyEMSUTY);
-routers.get("/GetDailyDehum", databaseControllers.GetDailyDehum);
-routers.get("/GetDailyWATER", databaseControllers.GetDailyWATER);
-// routers.get("/GetDailyINV_HVAC", databaseControllers.GetDailyINV_HVAC);
-
-//==============GRAFANA NIH BOS ========================================GRAFANA NIH BOS==========================================
-routers.get("/GrafanaWater", databaseControllers.GrafanaWater);
-routers.get("/GrafanaPower", databaseControllers.GrafanaPower);
-routers.get("/GrafanaMVMDPyear", databaseControllers.GrafanaMVMDPyear);
-routers.get("/GrafanaPDAMyear", databaseControllers.GrafanaPDAMyear);
-
-//==============ReportMesin ========================================ReportMesin======================================================
-routers.get("/HM1Report", databaseControllers.HM1Report);
-routers.post("/HM1Report", databaseControllers.HM1Report);
-routers.get("/LogData", databaseControllers.LogData);
-routers.get("/alldowntime", databaseControllers.alldowntime);
-routers.post("/HM1InsertDowntime", databaseControllers.HM1InsertDowntime);
-routers.post("/HM1InsertDowntimeWithSubRows", databaseControllers.HM1InsertDowntimeWithSubRows);
-routers.post("/LoginData", databaseControllers.LoginData);
-routers.post("/LogoutData", databaseControllers.LogoutData);
-module.exports = routers;
+routers.get("/BatchRecord1", databaseControllers.BatchRecord1);
+routers.get("/BatchRecord3", databaseControllers.BatchRecord3);

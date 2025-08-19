@@ -7,38 +7,42 @@ import {
     TabPanel,
     Card,
     CardBody,
+    Box,
   } from "@chakra-ui/react";
   import WaterExportDaily from "./WaterExportDaily";
   import WaterExportMonthly from "./WaterExportMonthly";
   import WaterExportYearly from "./WaterExportYearly";
 
 function WaterExport() {
-    return (
-        <div>
-          <Card>
-            <CardBody>
-              <Tabs isFitted size={"lg"} variant="enclosed" class=" p-3  ">
-                <TabList>
-                  <Tab>Daily</Tab>
-                  <Tab>Monthly</Tab>
-                  <Tab>Yearly</Tab>
-                </TabList>
-                <TabPanels>
-                  <TabPanel>
-                    <WaterExportDaily />
-                  </TabPanel>
-                  <TabPanel>
-                    <WaterExportMonthly />
-                  </TabPanel>
-                  <TabPanel>
-                    <WaterExportYearly />
-                  </TabPanel>
-                </TabPanels>
-              </Tabs>
-            </CardBody>
-          </Card>
-        </div>
-      );
+  return (
+    <div>
+    <br />
+      <Tabs isFitted width="100%" maxW="inherit" mx="auto">
+        <TabList>
+          <Tab>Daily</Tab>
+          <Tab>Monthly</Tab>
+          <Tab>Yearly</Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel>
+            <Box overflow="auto">
+              <WaterExportDaily />
+            </Box>
+          </TabPanel>
+          <TabPanel>
+            <Box overflow="auto">
+              <WaterExportMonthly />
+            </Box>
+          </TabPanel>
+          <TabPanel>
+            <Box overflow="auto">
+              <WaterExportYearly />
+            </Box>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
+    </div>
+  );
     
 }
 export default WaterExport;

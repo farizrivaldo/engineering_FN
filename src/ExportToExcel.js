@@ -19,7 +19,7 @@ export const ExportToExcel = ({ apiData, fileName }) => {
   return (
     <Button 
     className="m1-4"
-    colorScheme="gray"
+    colorScheme="green"
     onClick={(e) => exportToCSV(apiData, fileName)}>
     Export</Button>
   );

@@ -1,7 +1,5 @@
 import React, { useEffect, Component, useState } from "react";
-import CanvasJSReact from "../canvasjs.react";
 import { Button, 
-    ButtonGroup, 
     Stack, 
     Input, 
     Select, 
@@ -17,6 +15,7 @@ import { Button,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { ExportToExcel } from "../ExportToExcel";
+import { useColorMode, useColorModeValue } from "@chakra-ui/react";
 
 function WaterExportMonthly() {
     const [dataExport, setData] = useState([])
@@ -24,9 +23,18 @@ function WaterExportMonthly() {
     const [finishDate, setFinishDate] = useState();
     const [fileName, setfilename] = useState();
 
+    const { colorMode } = useColorMode();
+    const borderColor = useColorModeValue("rgba(var(--color-border))", "rgba(var(--color-border))");
+    const tulisanColor = useColorModeValue("rgba(var(--color-text))", "rgba(var(--color-text))");
+    const hoverBorderColor = useColorModeValue("rgba(var(--color-border2))", "rgba(var(--color-border2))");
+
+    const [isDarkMode, setIsDarkMode] = useState(
+        document.documentElement.getAttribute("data-theme") === "dark"
+      );
+
     const fetchWaterTotalizer = async () => {
         let response1 = await axios.get(
-            "http://10.126.15.137:8002/part/ExportWaterTotalizerMonthly",
+            "http://10.126.15.197:8002/part/ExportWaterTotalizerMonthly",
             {
               params: {
                 start: startDate,
@@ -37,9 +45,10 @@ function WaterExportMonthly() {
           setData(response1.data); 
           setfilename("Water Totalizer Data Monthly")
     };
+
     const fetchWaterConsumption = async () => {
         let response = await axios.get(
-            "http://10.126.15.137:8002/part/ExportWaterConsumptionMonthly", 
+            "http://10.126.15.197:8002/part/ExportWaterConsumptionMonthly", 
             {
               params: {
                 start: startDate,
@@ -59,6 +68,18 @@ function WaterExportMonthly() {
         var dataInput = e.target.value;
         setFinishDate(dataInput);
     }; 
+
+    useEffect(() => {
+        const handleThemeChange = () => {
+          const currentTheme = document.documentElement.getAttribute('data-theme');
+          setIsDarkMode(currentTheme === 'dark');
+        };
+        // Observe attribute changes
+        const observer = new MutationObserver(handleThemeChange);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    
+        return () => observer.disconnect();
+      }, []);
 
     const previewTable = () => {
         return dataExport.map((data) =>{
@@ -96,7 +117,8 @@ function WaterExportMonthly() {
 
     return (
         <div>
-            <div align="center"><h1 style={{ fontSize: "2rem"}}><b>Export Monthly Water Data </b></h1></div>
+            <div align="center"><h1 className="text-4xl text-text"><b>Export Monthly Water Data </b></h1></div>
+            <br />
             <Stack
                 className="flex flex-row justify-center mb-4  "
                 direction="row"
@@ -104,30 +126,63 @@ function WaterExportMonthly() {
                 align="center"
             >
             <div>
-                <h2>Start Time</h2>
+                <h5 className="mb-1">Start Time</h5>
                 <Input
                     onChange={dateStart}
                     placeholder="Select Date"
                     size="md"
                     type="month"
+                    css={{
+                        "&::-webkit-calendar-picker-indicator": {
+                          color: isDarkMode ? "white" : "black",
+                          filter: isDarkMode ? "invert(1)" : "none",
+                        },
+                    }}
+                    sx={{
+                        border: "1px solid",
+                        borderColor: borderColor,
+                        borderRadius: "0.395rem",
+                        background: "var(--color-background)", // background color from Tailwind config
+                
+                        _hover: {
+                            borderColor: hoverBorderColor,
+                        },
+                    }}
                 />
-                </div>
-                <div>Finish Time
+            </div>
+            <div>
+                <h5 className="mb-1">Finish Time</h5>
                 <Input
                     onChange={dateFinish}
                     placeholder="Select Date"
                     size="md"
                     type="month"
+                    css={{
+                        "&::-webkit-calendar-picker-indicator": {
+                          color: isDarkMode ? "white" : "black",
+                          filter: isDarkMode ? "invert(1)" : "none",
+                        },
+                    }}
+                    sx={{
+                        border: "1px solid",
+                        borderColor: borderColor,
+                        borderRadius: "0.395rem",
+                        background: "var(--color-background)", // background color from Tailwind config
+                
+                        _hover: {
+                            borderColor: hoverBorderColor,
+                        },
+                    }}
                 />
-                </div>
-                <div> Data Type : 
+            </div>
+            <div className="text-text mt-1"> Data Type : 
                 <RadioGroup>
-                <Stack direction='row'>
-                    <Radio value='1' onClick={() => fetchWaterConsumption()}>Consumption</Radio>
-                    <Radio value='2' onClick={() => fetchWaterTotalizer()}>Totalizer</Radio>
-                </Stack>
+                    <Stack direction='row'>
+                        <Radio className="text-text" value='1' onClick={() => fetchWaterConsumption()}>Consumption</Radio>
+                        <Radio className="text-text" value='2' onClick={() => fetchWaterTotalizer()}>Totalizer</Radio>
+                    </Stack>
                 </RadioGroup>
-                </div>
+            </div>
  
             </Stack>
             <Stack
@@ -140,41 +195,41 @@ function WaterExportMonthly() {
                     <ExportToExcel apiData={dataExport} fileName={fileName} />
                 </div>
             </Stack>
-            <div align="center"><h1 style={{ fontSize: "2rem"}}><b>Preview {fileName} :</b></h1></div>
-            <TableContainer>
-          <Table variant="simple">
-            <Thead>
-              <Tr backgroundColor="aliceblue">
-                <Th>Date Time</Th>
-                <Th>PDAM</Th>
-                <Th>Domestik</Th>
-                <Th>Chiller</Th>
-                <Th>Softwater</Th>
-                <Th>Boiler</Th>
-                <Th>Inlet Pretreatment</Th>
-                <Th>Outlet Pretreatment</Th>
-                <Th>Reject Osmotron</Th>
-                <Th>Taman</Th>
-                <Th>Inlet WWTP Kimia</Th>
-                <Th>Inlet WWTP Biologi</Th>
-                <Th>Outlet WWTP</Th>
-                <Th>CIP</Th>
-                <Th>Hotwater</Th>
-                <Th>Lab</Th>
-                <Th>Atas Toilet Lt2</Th>
-                <Th>Atas Lab QC</Th>
-                <Th>Workshop</Th>
-                <Th>Air Mancur</Th>
-                <Th>Osmotron</Th>
-                <Th>Loopo</Th>
-                <Th>Produksi</Th>
-                <Th>Washing</Th>
-                <Th>Lantai 1</Th>
-              </Tr>
-            </Thead>
-            <Tbody>{previewTable()}</Tbody>
-          </Table>
-        </TableContainer>
+            <div align="center"><h1 className=" text-2xl text-text"><b>Preview {fileName} :</b></h1></div>
+            <TableContainer className="bg-card rounded-md">
+                <Table key={colorMode} variant="simple">
+                    <Thead>
+                        <Tr backgroundColor="lightblue">
+                            <Th sx={{color: tulisanColor,}}>Date Time</Th>
+                            <Th sx={{color: tulisanColor,}}>PDAM</Th>
+                            <Th sx={{color: tulisanColor,}}>Domestik</Th>
+                            <Th sx={{color: tulisanColor,}}>Chiller</Th>
+                            <Th sx={{color: tulisanColor,}}>Softwater</Th>
+                            <Th sx={{color: tulisanColor,}}>Boiler</Th>
+                            <Th sx={{color: tulisanColor,}}>Inlet Pretreatment</Th>
+                            <Th sx={{color: tulisanColor,}}>Outlet Pretreatment</Th>
+                            <Th sx={{color: tulisanColor,}}>Reject Osmotron</Th>
+                            <Th sx={{color: tulisanColor,}}>Taman</Th>
+                            <Th sx={{color: tulisanColor,}}>Inlet WWTP Kimia</Th>
+                            <Th sx={{color: tulisanColor,}}>Inlet WWTP Biologi</Th>
+                            <Th sx={{color: tulisanColor,}}>Outlet WWTP</Th>
+                            <Th sx={{color: tulisanColor,}}>CIP</Th>
+                            <Th sx={{color: tulisanColor,}}>Hotwater</Th>
+                            <Th sx={{color: tulisanColor,}}>Lab</Th>
+                            <Th sx={{color: tulisanColor,}}>Atas Toilet Lt2</Th>
+                            <Th sx={{color: tulisanColor,}}>Atas Lab QC</Th>
+                            <Th sx={{color: tulisanColor,}}>Workshop</Th>
+                            <Th sx={{color: tulisanColor,}}>Air Mancur</Th>
+                            <Th sx={{color: tulisanColor,}}>Osmotron</Th>
+                            <Th sx={{color: tulisanColor,}}>Loopo</Th>
+                            <Th sx={{color: tulisanColor,}}>Produksi</Th>
+                            <Th sx={{color: tulisanColor,}}>Washing</Th>
+                            <Th sx={{color: tulisanColor,}}>Lantai 1</Th>
+                        </Tr>
+                    </Thead>
+                    <Tbody>{previewTable()}</Tbody>
+                </Table>
+            </TableContainer>
         </div>
     );
 }

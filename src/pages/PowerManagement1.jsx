@@ -1,8 +1,9 @@
 import React, { useEffect, Component, useState } from "react";
 import CanvasJSReact from "../canvasjs.react";
-import { Button, ButtonGroup, Stack, Input, Select } from "@chakra-ui/react";
+import { Button, ButtonGroup, Stack, Input, Select, Spinner } from "@chakra-ui/react";
 import axios from "axios";
 import { Chart } from "react-google-charts";
+import { useColorMode, useColorModeValue } from "@chakra-ui/react";
 
 var CanvasJS = CanvasJSReact.CanvasJS;
 var CanvasJSChart = CanvasJSReact.CanvasJSChart;
@@ -120,6 +121,31 @@ export default function PowerManagement() {
   const [PP2AC31RND, setPP2AC31RND] = useState([])
   const [LP2PRO31RND, setLP2PRO31RND] = useState([])
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading2, setLoading2] = useState(false);
+  const [error2, setError2] = useState(null);
+  const [loading3, setLoading3] = useState(false);
+  const [error3, setError3] = useState(null);
+
+  const { colorMode } = useColorMode();
+  const [isTableVisible, setIsTableVisible] = useState(true);
+  const borderColor = useColorModeValue("rgba(var(--color-border))", "rgba(var(--color-border))");
+  const tulisanColor = useColorModeValue("rgba(var(--color-text))", "rgba(var(--color-text))");
+  const hoverBorderColor = useColorModeValue("rgba(var(--color-border2))", "rgba(var(--color-border2))");
+  const kartuColor = useColorModeValue("rgba(var(--color-card))", "rgba(var(--color-card))");
+
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.getAttribute("data-theme") === "dark"
+  );
+
+  const [chartKey, setChartKey] = useState(0);
+
+  // Setiap kali dark mode berubah, force remount Chart
+  useEffect(() => {
+    setChartKey(prev => prev + 1);
+  }, [isDarkMode]);
+
   useEffect(() => {
     var bodyWidth = document.body.clientWidth;
     var bodyHeight = document.body.clientHeight;
@@ -129,7 +155,7 @@ export default function PowerManagement() {
 
   const fetchPowerSankey = async () => {
     let response = await axios.get(
-      "http://10.126.15.137:8002/part/PowerSankey",
+      "http://10.126.15.197:8002/part/PowerSankey",
       {
         params: {
           start: startSankey,
@@ -704,53 +730,73 @@ export default function PowerManagement() {
         list.push(persen.toFixed(2))
         data1.push(list)
       };
+  
   const fetchDataDayly = async () => {
-    let response = await axios.get(
-      "http://10.126.15.137:8002/part/PowerDaily",
-      {
-        params: {
-          area: powerArea,
-          start: startDate,
-          finish: finishDate,
-        },
+    setLoading(true); // Start spinner
+    setError(null);   // Clear previous errors
+
+    try {
+      let response = await axios.get(
+        "http://10.126.15.197:8002/part/PowerDaily",
+        {
+          params: {
+            area: powerArea,
+            start: startDate,
+            finish: finishDate,
+          },
+        }
+      )
+      if (powerArea === "cMT-Gedung-UTY_MVMDP_data") {
+        var multipliedData = response.data.map((data) => ({
+          label: data.label,
+          y: data.y,
+          x: data.x,
+        })); 
+      } else if (
+        powerArea === "cMT-Gedung-UTY_LVMDP1_data" ||
+        powerArea === "cMT-Gedung-UTY_LVMDP2_data" ||
+        powerArea === "cMT-Gedung-UTY_SDP.1-Produksi_data"
+      ) {
+        var multipliedData = response.data.map((data) => ({
+          label: data.label,
+          y: data.y,
+          x: data.x,
+        }));
+      } else {
+        var multipliedData = response.data.map((data) => ({
+          label: data.label,
+          y: data.y,
+          x: data.x,
+        }));
       }
-    )
-    if (powerArea === "cMT-Gedung-UTY_MVMDP_data") {
-      var multipliedData = response.data.map((data) => ({
-        label: data.label,
-        y: data.y,
-        x: data.x,
-      })); 
-    } else if (
-      powerArea === "cMT-Gedung-UTY_LVMDP1_data" ||
-      powerArea === "cMT-Gedung-UTY_LVMDP2_data" ||
-      powerArea === "cMT-Gedung-UTY_SDP.1-Produksi_data"
-    ) {
-      var multipliedData = response.data.map((data) => ({
-        label: data.label,
-        y: data.y,
-        x: data.x,
-      }));
-    } else {
-      var multipliedData = response.data.map((data) => ({
-        label: data.label,
-        y: data.y,
-        x: data.x,
-      }));
+
+      setDailyPower(multipliedData);
+
+      const totalY = multipliedData.reduce((sum, data) => sum + data.y, 0);
+      const averageY = Math.ceil(totalY / multipliedData.length);
+
+      setAvarageDaily(averageY);
+      setTotalDaily(totalY);
+
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to fetch data. Please try again.");
+    } finally {
+      const delay = 2000; // 2 seconds in milliseconds
+        setTimeout(() => {
+          setLoading(false); // Stop spinner
+          console.log("Finished fetching data, stopping spinner...");
+        }, delay);
     }
-
-    setDailyPower(multipliedData);
-
-    const totalY = multipliedData.reduce((sum, data) => sum + data.y, 0);
-    const averageY = Math.ceil(totalY / multipliedData.length);
-
-    setAvarageDaily(averageY);
-    setTotalDaily(totalY);
   };
 
   const fetchDataMonthly = async () => {
+    setLoading2(true); // Start spinner
+    setError2(null);   // Clear previous errors
+
+    try {
     let response = await axios.get(
-      "http://10.126.15.137:8002/part/PowerMonthly",
+      "http://10.126.15.197:8002/part/PowerMonthly",
       {
         params: {
           area: areaMonth,
@@ -790,57 +836,70 @@ export default function PowerManagement() {
     const averageY = Math.ceil(totalY / multipliedData1.length);
     setAvarageMonthly(averageY);
     setTotalMonthly(totalY);
+
+  } catch (err) {
+    console.error("Error fetching data:", err);
+    setError2("Failed to fetch data. Please try again.");
+  } finally {
+    const delay = 2000; // 2 seconds in milliseconds
+      setTimeout(() => {
+        setLoading2(false); // Stop spinner
+        console.log("Finished fetching data, stopping spinner...");
+      }, delay);
+  }
   };
 
   const fetchSec = async () => {
-    let response = await axios.get(
-      "http://10.126.15.137:8002/part/getPowerSec",
-      {
+    setLoading3(true);
+    setError3(null);
+    try {
+      let response = await axios.get("http://10.126.15.197:8002/part/getPowerSec", {
         params: {
           area: secArea,
           start: secStart,
           finish: secFinish,
         },
-      }
-    );
-    let response2 = await axios.get(
-      "http://10.126.15.137:8002/part/getavgpower",
-      {
+      });
+
+      let response2 = await axios.get("http://10.126.15.197:8002/part/getavgpower", {
         params: {
           area: secArea,
           start: secStart,
           finish: secFinish,
         },
+      });
+
+      console.log('Response1:', response.data);
+      console.log('Response2:', response2.data);
+
+      if (Array.isArray(response2.data) && response2.data.length > 0) {
+        const totalLL = Number(response2.data[0].RR) + Number(response2.data[0].SS) + Number(response2.data[0].TT);
+        const totalLN = Number(response2.data[0].RN) + Number(response2.data[0].SN) + Number(response2.data[0].TN);
+
+        const RRdata = (Number(response2.data[0].RR) / totalLL) * 100;
+        const SSdata = (Number(response2.data[0].SS) / totalLL) * 100;
+        const TTdata = (Number(response2.data[0].TT) / totalLL) * 100;
+
+        const RNdata = (Number(response2.data[0].RN) / totalLN) * 100;
+        const SNdata = (Number(response2.data[0].SN) / totalLN) * 100;
+        const TNdata = (Number(response2.data[0].TN) / totalLN) * 100;
+
+        setPercentRR(RRdata);
+        setPercentSS(SSdata);
+        setPercentTT(TTdata);
+        setPercentRN(RNdata);
+        setPercentSN(SNdata);
+        setPercentTN(TNdata);
+        settotalRR(Number(response2.data[0].RR).toFixed(2));
+        settotalSS(Number(response2.data[0].SS).toFixed(2));
+        settotalTT(Number(response2.data[0].TT).toFixed(2));
+        settotalRN(Number(response2.data[0].RN).toFixed(2));
+        settotalSN(Number(response2.data[0].SN).toFixed(2));
+        settotalTN(Number(response2.data[0].TN).toFixed(2));
+      } else {
+        console.error("Data response2 tidak ditemukan atau kosong atau bukan array");
       }
-    );
 
-    const totalLL =
-      Number(response2.data[0].RR) +
-      Number(response2.data[0].SS) +
-      Number(response2.data[0].TT);
-
-    const totalLN =
-      Number(response2.data[0].RN) +
-      Number(response2.data[0].SN) +
-      Number(response2.data[0].TN);
-
-    const RRdata = (Number(response2.data[0].RR) / totalLL) * 100;
-    const SSdata = (Number(response2.data[0].SS) / totalLL) * 100;
-    const TTdata = (Number(response2.data[0].TT) / totalLL) * 100;
-
-    const RNdata = (Number(response2.data[0].RN) / totalLN) * 100;
-    const SNdata = (Number(response2.data[0].SN) / totalLN) * 100;
-    const TNdata = (Number(response2.data[0].TN) / totalLN) * 100;
-
-    // let response1 = await axios.get("http://10.126.15.137:8002/part/getRangeSet");
-
-    setPercentRR(RRdata);
-    setPercentSS(SSdata);
-    setPercentTT(TTdata);
-    setPercentRN(RNdata);
-    setPercentSN(SNdata);
-    setPercentTN(TNdata);
-    if (secArea == "cMT-Gedung-UTY_MVMDP_Detik_data") {
       var multipliedData = response.data.map((data) => ({
         label: data.datetime.slice(0, -5).replace("T", " "),
         y: Number(data.freq.toFixed(2)),
@@ -863,21 +922,13 @@ export default function PowerManagement() {
       const minFreq = Math.min(...response.data.map((item) => item.freq));
       const minPtoP = Math.min(...response.data.map((item) => item.PtoP));
       const minPtoN = Math.min(...response.data.map((item) => item.PtoN));
-      const sumFreq = response.data.reduce(
-        (total, item) => total + item.freq,
-        0
-      );
-      const sumPtoP = response.data.reduce(
-        (total, item) => total + item.PtoP,
-        0
-      );
-      const sumPtoN = response.data.reduce(
-        (total, item) => total + item.PtoN,
-        0
-      );
+      const sumFreq = response.data.reduce((total, item) => total + item.freq, 0);
+      const sumPtoP = response.data.reduce((total, item) => total + item.PtoP, 0);
+      const sumPtoN = response.data.reduce((total, item) => total + item.PtoN, 0);
       const avgFreq = sumFreq / response.data.length;
       const avgPtoP = sumPtoP / response.data.length;
       const avgPtoN = sumPtoN / response.data.length;
+
       setdatamaxFreq(maxFreq.toFixed(2));
       setdatamaxPtoP(maxPtoP.toFixed(2));
       setdatamaxPtoN(maxPtoN.toFixed(2));
@@ -887,92 +938,22 @@ export default function PowerManagement() {
       setdataavgFreq(avgFreq.toFixed(2));
       setdataavgPtoP(avgPtoP.toFixed(2));
       setdataavgPtoN(avgPtoN.toFixed(2));
-      settotalRR(Number(response2.data[0].RR).toFixed(2));
-      settotalSS(Number(response2.data[0].SS).toFixed(2));
-      settotalTT(Number(response2.data[0].TT).toFixed(2));
-      settotalRN(Number(response2.data[0].RN).toFixed(2));
-      settotalSN(Number(response2.data[0].SN).toFixed(2));
-      settotalTN(Number(response2.data[0].TN).toFixed(2));
-    } else {
-      var multipliedData = response.data.map((data) => ({
-        label: data.datetime.slice(0, -5).replace("T", " "),
-        y: Number(data.freq.toFixed(2)) / 1000,
-        x: data.id,
-      }));
-      var multipliedData1 = response.data.map((data) => ({
-        label: data.datetime.slice(0, -5).replace("T", " "),
-        y: Number(data.PtoP.toFixed(2)) / 100,
-        x: data.id,
-      }));
-      var multipliedData2 = response.data.map((data) => ({
-        label: data.datetime.slice(0, -5).replace("T", " "),
-        y: Number(data.PtoN.toFixed(2)) / 100,
-        x: data.id,
-      }));
 
-      var freqArrayMax = [];
-      var freqArrayMin = [];
-
-      // for (var i = 0; i <= response.data.length; i++) {
-      //   freqArrayMax.push({
-      //     y: response1.data[0].Freq_max,
-      //     x: response.data[0].id + i,
-      //   });
-      //   freqArrayMin.push({
-      //     y: response1.data[0].Freq_min,
-      //     x: response.data[0].id + i,
-      //   });
-      // }
-
-      setmaxSecFreq(freqArrayMax);
-      setminSecFreq(freqArrayMin);
-
-      // var multipliedData3 = response1.data.map((data) => ({
-      //   y: Number(data.Freq_max),
-      //   x: data.id,
-      // }));
-      const maxFreq = Math.max(...response.data.map((item) => item.freq));
-      const maxPtoP = Math.max(...response.data.map((item) => item.PtoP));
-      const maxPtoN = Math.max(...response.data.map((item) => item.PtoN));
-      const minFreq = Math.min(...response.data.map((item) => item.freq));
-      const minPtoP = Math.min(...response.data.map((item) => item.PtoP));
-      const minPtoN = Math.min(...response.data.map((item) => item.PtoN));
-      const sumFreq = response.data.reduce(
-        (total, item) => total + item.freq,
-        0
-      );
-      const sumPtoP = response.data.reduce(
-        (total, item) => total + item.PtoP,
-        0
-      );
-      const sumPtoN = response.data.reduce(
-        (total, item) => total + item.PtoN,
-        0
-      );
-      const avgFreq = sumFreq / response.data.length;
-      const avgPtoP = sumPtoP / response.data.length;
-      const avgPtoN = sumPtoN / response.data.length;
-      setdatamaxFreq((maxFreq / 1000).toFixed(2));
-      setdatamaxPtoP((maxPtoP / 100).toFixed(2));
-      setdatamaxPtoN((maxPtoN / 100).toFixed(2));
-      setdataminFreq((minFreq / 1000).toFixed(2));
-      setdataminPtoP((minPtoP / 100).toFixed(2));
-      setdataminPtoN((minPtoN / 100).toFixed(2));
-      setdataavgFreq((avgFreq / 1000).toFixed(2));
-      setdataavgPtoP((avgPtoP / 100).toFixed(2));
-      setdataavgPtoN((avgPtoN / 100).toFixed(2));
-      settotalRR((Number(response2.data[0].RR) / 100).toFixed(2));
-      settotalSS((Number(response2.data[0].SS) / 100).toFixed(2));
-      settotalTT((Number(response2.data[0].TT) / 100).toFixed(2));
-      settotalRN((Number(response2.data[0].RN) / 100).toFixed(2));
-      settotalSN((Number(response2.data[0].SN) / 100).toFixed(2));
-      settotalTN((Number(response2.data[0].TN) / 100).toFixed(2));
+      setSecFreq(multipliedData);
+      setSecPtP(multipliedData1);
+      setSecPtN(multipliedData2);
+    } catch (error) {
+      console.error("Error fetching data", error);
+      setError3("Failed to fetch data. Please try again.");
+    } finally {
+      const delay = 2000; // 2 seconds in milliseconds
+      setTimeout(() => {
+        setLoading3(false);
+        console.log("Finished fetching data, stopping spinner...");
+      }, delay);
     }
-
-    setSecFreq(multipliedData);
-    setSecPtP(multipliedData1);
-    setSecPtN(multipliedData2);
   };
+
 
   let dateStart = (e) => {
     var dataInput = e.target.value;
@@ -1026,14 +1007,52 @@ export default function PowerManagement() {
     setFinishSankey(dataInput);
   };
 
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      setIsDarkMode(currentTheme === 'dark');
+    };
+    // Observe attribute changes
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Paksa override style tooltip Google Chart setiap dark mode berubah
+  // useEffect(() => {
+  //   const updateTooltipAndLabel = () => {
+  //     // Tooltip
+  //     document.querySelectorAll('.google-visualization-tooltip').forEach(el => {
+  //       el.style.background = isDarkMode ? "#18181b" : "#fff";
+  //       el.style.color = isDarkMode ? "#fafafa" : "#222";
+  //     });
+  //     // SVG Label
+  //     document.querySelectorAll('.google-visualization-sankey text').forEach(el => {
+  //       el.setAttribute('fill', isDarkMode ? "#fafafa" : "#222");
+  //     });
+  //   };
+  //   const interval = setInterval(updateTooltipAndLabel, 200);
+  //   return () => clearInterval(interval);
+  // }, [isDarkMode, data]);
+
+
+// ============================================================== CHART ===========================================================================================
+
   const options = {
-    theme: "light1",
+    responsive: true, // Membuat chart bisa menyesuaikan ukuran container
+    maintainAspectRatio: false, // Agar chart tidak terdistorsi saat resize
+    theme: isDarkMode ? "dark2" : "light2",
+    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+    borderRadius: 12, // Membuat sudut melengkung (mirip rounded-lg)
     title: {
       text: "Daily Power",
+      fontColor: isDarkMode ? "white" : "black"
     },
     subtitles: [
       {
         text: "kilo watt per hour",
+        fontColor: isDarkMode ? "white" : "black"
       },
     ],
     axisY: {
@@ -1046,6 +1065,7 @@ export default function PowerManagement() {
       {
         type: "splineArea",
         name: "Kwh",
+        lineColor: isDarkMode ? "#3623ff" : "#43b0f1",
         showInLegend: true,
         xValueFormatString: "",
         yValueFormatString: "",
@@ -1065,13 +1085,25 @@ export default function PowerManagement() {
   };
   
   const options2 = {
-    theme: "light2",
+    responsive: true, // Membuat chart bisa menyesuaikan ukuran container
+    maintainAspectRatio: false, // Agar chart tidak terdistorsi saat resize
+    theme: isDarkMode ? "dark2" : "light2",
+    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+    borderRadius: 12, // Membuat sudut melengkung (mirip rounded-lg)
+    margin: {
+      top: 12,
+      left: 12,
+      right: 12,
+      bottom: 12,
+    },
     title: {
       text: "Monthly Power",
+      fontColor: isDarkMode ? "white" : "black"
     },
     subtitles: [
       {
         text: "kilo watt per hour",
+        fontColor: isDarkMode ? "white" : "black"
       },
     ],
     axisY: {
@@ -1092,6 +1124,7 @@ export default function PowerManagement() {
       {
         type: "splineArea",
         name: "Kwh",
+        lineColor: isDarkMode ? "#3623ff" : "#43b0f1",
         showInLegend: true,
         xValueFormatString: "",
         yValueFormatString: "",
@@ -1103,13 +1136,19 @@ export default function PowerManagement() {
   };
 
   const options3 = {
-    theme: "light5",
+    responsive: true,
+    maintainAspectRatio: false, 
+    theme: isDarkMode ? "dark2" : "light2",
+    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+    cornerRadius: 8,
     title: {
       text: "Phase to Netral",
+      fontColor: isDarkMode ? "white" : "black"
     },
     subtitles: [
       {
         text: "Trend Volt",
+        fontColor: isDarkMode ? "white" : "black"
       },
     ],
     axisY: {
@@ -1131,13 +1170,19 @@ export default function PowerManagement() {
   };
 
   const options4 = {
-    theme: "light3",
+    responsive: true,
+    maintainAspectRatio: false, 
+    theme: isDarkMode ? "dark2" : "light2",
+    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+    cornerRadius: 8,
     title: {
       text: "Phase to Phase",
+      fontColor: isDarkMode ? "white" : "black"
     },
     subtitles: [
       {
         text: "Trend Volt",
+        fontColor: isDarkMode ? "white" : "black"
       },
     ],
     axisY: {
@@ -1159,13 +1204,19 @@ export default function PowerManagement() {
   };
 
   const options5 = {
-    theme: "light2",
+    responsive: true,
+    maintainAspectRatio: false, 
+    theme: isDarkMode ? "dark2" : "light2",
+    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+    cornerRadius: 8,
     title: {
       text: "Frequency",
+      fontColor: isDarkMode ? "white" : "black"
     },
     subtitles: [
       {
         text: "Trend Frequency",
+        fontColor: isDarkMode ? "white" : "black"
       },
     ],
     axisY: {
@@ -1203,10 +1254,13 @@ export default function PowerManagement() {
   };
 
   const options6 = {
-    theme: "light2",
+    responsive: true,
+    maintainAspectRatio: false, 
+    responsive: true,
+    maintainAspectRatio: false, 
+    theme: isDarkMode ? "dark2" : "light2",
+    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
     animationEnabled: true,
-    // width: datawidth,
-    // height: dataheight,
 
     title: {},
     subtitles: [
@@ -1215,7 +1269,7 @@ export default function PowerManagement() {
 
         text: `Volt L-L`,
         verticalAlign: "center",
-
+        fontColor: isDarkMode ? "white" : "black",
         fontSize: 30,
         dockInsidePlotArea: true,
       },
@@ -1239,7 +1293,10 @@ export default function PowerManagement() {
     ],
   };
   const options7 = {
-    theme: "light2",
+    responsive: true,
+    maintainAspectRatio: false, 
+    theme: isDarkMode ? "dark2" : "light2",
+    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
     animationEnabled: true,
     // width: datawidth,
     // height: dataheight,
@@ -1251,7 +1308,7 @@ export default function PowerManagement() {
 
         text: `Volt L-N`,
         verticalAlign: "center",
-
+        fontColor: isDarkMode ? "white" : "black",
         fontSize: 30,
         dockInsidePlotArea: true,
       },
@@ -1275,35 +1332,35 @@ export default function PowerManagement() {
     ],
   };
 
-  const colors = ['#a6cee3', '#b2df8a', '#fb9a99', '#fdbf6f',
-  '#cab2d6', '#ffff99', '#1f78b4', '#33a02c'];
+  const lightModeColors = ['#a6cee3', '#b2df8a', '#fb9a99', '#fdbf6f',
+    '#cab2d6', '#ffff99', '#1f78b4', '#33a02c'];
+  
+  const darkModeColors = ['#2c3e50', '#16a085', '#e74c3c', '#f39c12',
+    '#8e44ad', '#f1c40f', '#2980b9', '#27ae60'];
 
   const options8 = {
-      sankey: {
-        node: { nodePadding: 20,
-                label: { fontSize: 16 },
+    responsive: true,
+    maintainAspectRatio: false, 
+    tooltip: { isHtml: true },
+    sankey: {
+      node: { nodePadding: 20,
+              label: { fontSize: 16,            
               },
+            },
 
-        link: {
-          colorMode: 'gradient',
-          colors: colors
-        },
-        
-        
-      }
+      link: {
+        colorMode: 'gradient',
+        colors: isDarkMode ? darkModeColors : lightModeColors,
+      }, 
+    }
   };
 
   return (
     <div>
-      <Stack
-        className="flex flex-row justify-center mb-4  "
-        direction="row"
-        spacing={4}
-        align="center"
-      >
-        <div>
-          <h2>Panel</h2>
-          <Select placeholder="Select Panel" onChange={getPowerArea}>
+      <div className="flex flex-col xl:flex-row justify-center my-4 space-y-4 xl:space-y-0 xl:space-x-4">
+        <div className="flex flex-col xl:w-64">
+          <h5 className="mb-1">Panel</h5>
+          <Select placeholder="Select Panel" onChange={getPowerArea} className="w-full">
             <option value="cMT-Gedung-UTY_MVMDP_data">MVMDP</option>
             <option value="cMT-Gedung-UTY_LVMDP1_data">LVMDP1</option>
             <option value="cMT-Gedung-UTY_LVMDP2_data">LVMDP2</option>
@@ -1403,53 +1460,73 @@ export default function PowerManagement() {
             <option value="cMT-Gedung-UTY_LP.2-PRO 3.1 RND_data">LP.2-PRO 3.1 RND</option>
           </Select>
         </div>
-        <div>
-          <h2>Start Time</h2>
+        <div className="flex flex-col items-center xl:w-56">
+          <h5 className="mb-1">Start Time</h5>
           <Input
             onChange={dateStart}
             placeholder="Select Date and Time"
             size="md"
             type="date"
+            className="w-full"
+            css={{
+              "&::-webkit-calendar-picker-indicator": {
+                color: isDarkMode ? "white" : "black",
+                filter: isDarkMode ? "invert(1)" : "none",
+              },
+            }}
           />
         </div>
-        <div>
-          <h2>Finish Time</h2>
+        <div className="flex flex-col items-center xl:w-56">
+          <h5 className="mb-1">Finish Time</h5>
           <Input
             onChange={dateFinish}
             placeholder="Select Date and Time"
             size="md"
             type="date"
+            className="w-full"
+            css={{
+              "&::-webkit-calendar-picker-indicator": {
+                color: isDarkMode ? "white" : "black",
+                filter: isDarkMode ? "invert(1)" : "none",
+              },
+            }}
           />
         </div>
-        <div>
-          <br />
+        <div className="flex flex-col">
+          <div className="mb-1 invisible">jan diapus</div>
           <Button
-            className="ml-4"
-            colorScheme="gray"
+            className="ml-2"
+            colorScheme="blue"
             onClick={() => fetchDataDayly()}
           >
             Submit
           </Button>
         </div>
-        <div className="mt-3">
-          <div className="ml-16">Total = {totalDaily.toLocaleString()} Kwh</div>
-          <div className="ml-16">
-            Avarage = {avarageDaily.toLocaleString()} Kwh
-          </div>
-        </div>
-      </Stack>
-      <div className="flex flex-row justify-center mx-12 pb-10 ">
-        <CanvasJSChart className="" options={options} />
-      </div>
-
-      <Stack
-        className="flex flex-row justify-center mb-4  "
-        direction="row"
-        spacing={4}
-        align="center"
-      >
         <div>
-          <h2>Panel</h2>
+          <div className="ml-16 text-text">Total = {totalDaily.toLocaleString()} Kwh</div>
+          <div className="ml-16 text-text">Average = {avarageDaily.toLocaleString()} Kwh</div>
+        </div>
+      </div>
+      <div className="flex flex-row box-border justify-center mx-8 p-1 bg-card rounded-lg overflow-x-auto relative">
+      {loading ? (
+        <Spinner
+        thickness="4px"
+        speed="0.65s"
+        emptyColor="gray.200"
+        color="blue.500"
+        size="xl"
+      />
+      ) : error ? (
+        <div className="text-red-500 ">No available data</div>
+      ) : (
+        <CanvasJSChart className="w-full" options={options} />
+      )}
+      </div>
+      <br />
+
+      <div className="flex flex-col xl:flex-row justify-center my-4 space-y-4 xl:space-y-0 xl:space-x-4">
+        <div className="flex flex-col xl:w-64">
+          <h5 className="mb-1">Panel</h5>
           <Select placeholder="Select Panel" onChange={getAreaMonth}>
             <option value="cMT-Gedung-UTY_MVMDP_data">MVMDP</option>
             <option value="cMT-Gedung-UTY_LVMDP1_data">LVMDP1</option>
@@ -1500,7 +1577,7 @@ export default function PowerManagement() {
             </option>
             <option value="cMT-Gedung-UTY_PP.2-Puyer_data">PP.2-Puyer</option>
             <option value="cMT-Gedung-UTY_PP.2-Mixagrib_data">
-              PP.2-Mixagrib
+              PP.2-Mixagrip
             </option>
             <option value="cMT-Gedung-UTY_PP.2-LabLt.2_data">
               PP.2-LabLt.2
@@ -1550,53 +1627,79 @@ export default function PowerManagement() {
             <option value="cMT-Gedung-UTY_LP.2-PRO 3.1 RND_data">LP.2-PRO 3.1 RND</option>
           </Select>
         </div>
-        <div>
-          <h2>Start Time</h2>
+        <div className="flex flex-col xl:w-56">
+          <h5 className="mb-1">Start Monthly</h5>
           <Input
-                    onChange={getStartMonth}
-                    placeholder="Select Date"
-                    size="md"
-                    type="month"
-                />
+              onChange={getStartMonth}
+              placeholder="Select Month"
+              size="md"
+              type="month"
+              css={{
+                "&::-webkit-calendar-picker-indicator": {
+                  color: isDarkMode ? "white" : "black",
+                  filter: isDarkMode ? "invert(1)" : "none",
+                },
+              }}
+            />
         </div>
-        <div>
-          <h2>Month serch</h2>
+        <div className="flex flex-col xl:w-56">
+          <h5 className="mb-1">Finish Monthly</h5>
           <Input
-                    onChange={getFinishMonth}
-                    placeholder="Select Date"
-                    size="md"
-                    type="month"
-                />  
+            onChange={getFinishMonth}
+            placeholder="Select Month"
+            size="md"
+            type="month"
+            css={{
+              "&::-webkit-calendar-picker-indicator": {
+                color: isDarkMode ? "white" : "black",
+                filter: isDarkMode ? "invert(1)" : "none",
+              },
+            }}
+          />  
         </div>
-        <div>
-          <br />
+        <div className="flex flex-col">
+          <div className="mb-1 invisible">jan diapus</div>
           <Button
-            className="ml-4"
-            colorScheme="gray"
+            className="ml-2"
+            colorScheme="blue"
             onClick={() => fetchDataMonthly()}
           >
             Submit
           </Button>
         </div>
-        <div className="mt-3">
-          <div className="ml-16">
+        <div>
+          <div className="ml-16 text-text">
             Total = {totalMonthly.toLocaleString()} Kwh
           </div>
-          <div className="ml-16">
-            Avarage = {avarageMonthly.toLocaleString()} Kwh
+          <div className="ml-16 text-text">
+            Average = {avarageMonthly.toLocaleString()} Kwh
           </div>
         </div>
-      </Stack>
-      <CanvasJSChart align="center" className="" options={options2} />
+      </div>
+      <div className="flex flex-row box-border justify-center p-1 mx-8 bg-card rounded-lg shadow-lg overflow-x-auto relative">
+        {loading2 ? (
+          <Spinner
+          thickness="4px"
+          speed="0.65s"
+          emptyColor="gray.200"
+          color="blue.500"
+          size="xl"
+        />
+        ) : error2 ? (
+          <div className="text-red-500 flex flex-col items-center">No available data</div>
+        ) : (
+          <CanvasJSChart className="w-full" options={options2} />
+        )}
+      </div>
 
       <Stack
-        className="flex flex-row justify-center mb-4 mt-4 "
+        className="flex flex-row justify-center my-4 "
         direction="row"
         spacing={4}
         align="center"
       >
         <div>
-          <h2>Panel</h2>
+          <h5 className="mb-1">Panel</h5>
           <Select placeholder="Select Panel" onChange={getSecArea}>
             <option value="cMT-Gedung-UTY_MVMDP_Detik_data">MVMDP</option>
             <option value="cMT-Gedung-UTY_LVMDP1_Detik_data">LVMDP1</option>
@@ -1607,120 +1710,162 @@ export default function PowerManagement() {
           </Select>
         </div>
         <div>
-          <h2>Start Time</h2>
+          <h5 className="mb-1">Start Time</h5>
           <Input
             onChange={getSecStart}
             placeholder="Select Date and Time"
             size="md"
             type="datetime-local"
+            css={{
+              "&::-webkit-calendar-picker-indicator": {
+                color: isDarkMode ? "white" : "black",
+                filter: isDarkMode ? "invert(1)" : "none",
+              },
+            }}
           />
         </div>
         <div>
-          <h2>Finish Time</h2>
+          <h5 className="mb-1">Finish Time</h5>
           <Input
             onChange={getSecFinish}
             placeholder="Select Date and Time"
             size="md"
             type="datetime-local"
+            css={{
+              "&::-webkit-calendar-picker-indicator": {
+                color: isDarkMode ? "white" : "black",
+                filter: isDarkMode ? "invert(1)" : "none",
+              },
+            }}
           />
         </div>
         <div>
-          <br />
+          <div className="mb-1 invisible">jan diapus</div>
           <Button
-            className="ml-4"
-            colorScheme="gray"
+            className="ml-2"
+            colorScheme="blue"
             onClick={() => fetchSec()}
           >
             Submit
           </Button>
         </div>
       </Stack>
-      <div className="flex justify-center font-bold text-4xl mt-10">
+      <div className="flex justify-center font-bold text-text text-4xl mt-8">
         Voltage Balance
       </div>
-      <div className="flex flex-row mx-50 px-30 mt-2">
-        <CanvasJSChart className="" options={options6} />
-        <CanvasJSChart className="" options={options7} />
-      </div>
+      <div>
+      {loading3 ? (
+        <div className="flex justify-center items-center mt-3 w-full h-full">
+          <Spinner
+            thickness="4px"
+            speed="0.65s"
+            emptyColor="gray.200"
+            color="blue.500"
+            size="xl"
+          />
+         </div>
+        ) : error3 ? (
+          <div className="text-red-500 flex flex-col items-center">No available data</div>
+        ) : (
+          <>
+          <div className="flex flex-row mx-20 mt-3 gap-2 overflow-x-auto overflow-y-hidden relative">
+            <CanvasJSChart className="" options={options6} />
+            <CanvasJSChart className="" options={options7} />
+          </div>
 
-      <div className="flex flex-row mt-10">
-        <CanvasJSChart className="" options={options3} />
-        <CanvasJSChart className="" options={options4} />
-        <CanvasJSChart className="" options={options5} />
+          <div className="flex flex-row mt-10 mx-2 gap-2 overflow-x-auto overflow-y-hidden relative">
+            <CanvasJSChart className="" options={options3} />
+            <CanvasJSChart className="" options={options4} />
+            <CanvasJSChart className="" options={options5} />
+          </div>
+          </>
+        )}
       </div>
       <div className="flex flex-row justify-around mt-4">
         <div className="flex flex-col">
-          <p> Max L-N : {datamaxPtoN} V</p>
-          <p> Min L-N : {dataminPtoN} V</p>
-          <p> avg L-N : {dataavgPtoN} V</p>
+          <p className="text-text"> Max L-N : {datamaxPtoN} V</p>
+          <p className="text-text"> Min L-N : {dataminPtoN} V</p>
+          <p className="text-text"> avg L-N : {dataavgPtoN} V</p>
         </div>
         <div className="flex flex-col">
-          <p> Max L-L : {datamaxPtoP} V</p>
-          <p> Min L-L : {dataminPtoP} V</p>
-          <p> avg L-L : {dataavgPtoP} V</p>
+          <p className="text-text"> Max L-L : {datamaxPtoP} V</p>
+          <p className="text-text"> Min L-L : {dataminPtoP} V</p>
+          <p className="text-text"> avg L-L : {dataavgPtoP} V</p>
         </div>
         <div className="flex flex-col">
-          <p> Max Freq : {datamaxFreq} Hz</p>
-          <p> Min Freq : {dataminFreq} Hz</p>
-          <p> avg Freq : {dataavgFreq} Hz</p>
+          <p className="text-text"> Max Freq : {datamaxFreq} Hz</p>
+          <p className="text-text"> Min Freq : {dataminFreq} Hz</p>
+          <p className="text-text"> avg Freq : {dataavgFreq} Hz</p>
         </div>
       </div>
-      <Stack
-          className="flex flex-row justify-center mb-4  "
-          direction="row"
-          spacing={4}
-          align="center">
-          
-          <div>
-          <h2>Start Time</h2>
-          <Input
-              onChange={sankeyStart}
-              placeholder="Select Date and Time"
-              size="md"
-              type="date"
+      <br />
+      <div className="flex flex-col xl:flex-row justify-center my-4 space-y-4 xl:space-y-0 xl:space-x-4">
+        <div className="flex flex-col xl:w-56">
+          <h5 className="mb-1">Start Time</h5>
+          <Input onChange={sankeyStart}
+            placeholder="Select Date and Time"
+            size="md"
+            type="date"
+            css={{
+              "&::-webkit-calendar-picker-indicator": {
+                color: isDarkMode ? "white" : "black",
+                filter: isDarkMode ? "invert(1)" : "none",
+              },
+            }}
           />
-          </div>
-          <div>Finish Time
+        </div>
+        <div className="flex flex-col xl:w-56">
+          <h5 className="mb-1">Finish Time</h5>
           <Input
-              onChange={sankeyFinish}
-              placeholder="Select Date and Time"
-              size="md"
-              type="date"
+            onChange={sankeyFinish}
+            placeholder="Select Date and Time"
+            size="md"
+            type="date"
+            css={{
+              "&::-webkit-calendar-picker-indicator": {
+                color: isDarkMode ? "white" : "black",
+                filter: isDarkMode ? "invert(1)" : "none",
+              },
+            }}
           />
-          </div>
-          <div>
-              <br />
-              <Button
-                  className="m1-4"
-                  colorScheme="gray"
-                  onClick={() => fetchPowerSankey()}
-              >
-                  Submit
-              </Button>
-          </div>
-        </Stack>
-        <div align="center"><h1 style={{ fontSize: "2rem"}}><b>Power Sankey Diagram </b></h1></div>
-        <div align="center"><h3 style={{ fontSize: "1rem"}}><b>kWh</b></h3></div>
-        <div align="center" className="flex flex-row justify-center mx-12 pb-10">
+        </div>
+        <div className="flex flex-col">
+          <div className="mb-1 invisible">jan diapus</div>
+          <Button
+            className="ml-2"
+            colorScheme="blue"
+            onClick={() => fetchPowerSankey()}
+            >
+            Submit
+          </Button>
+        </div>
+      </div>
+      <div align="center"><h1 style={{ fontSize: "2rem"}}><b className="text-text">Power Sankey Diagram </b></h1></div>
+      <div align="center"><h3 style={{ fontSize: "1rem"}}><b className="text-text">kWh</b></h3></div>
+      <div align="center" className={`flex flex-row justify-center pb-10 overflow-x-auto overflow-y-hidden relative ${isDarkMode ? 'sankey-dark' : 'sankey-light'}`}>
         <Chart
           chartType= "Sankey"
-          width= "100%"
+          width="900px" // Ubah dari "100%" ke ukuran lebih besar
           height="1000px"
           data={data}
-          options={options8}>
+          options={options8}
+          overflowX="auto"
+          style={{ minWidth: "1000px" }}>
         </Chart>
-        </div>
-        <div align="center"><h1 style={{ fontSize: "2rem"}}><b>Power Sankey Diagram (%)</b></h1></div>
-        <div align="center"><h3 style={{ fontSize: "1rem"}}><b>Total Supply Listrik : {supplylistrik} Kwh</b></h3></div>
-        <div align="center" className="flex flex-row justify-center mx-12 pb-10">
+      </div>
+      <div align="center"><h1 style={{ fontSize: "2rem"}}><b>Power Sankey Diagram (%)</b></h1></div>
+      <div align="center"><h3 style={{ fontSize: "1rem"}}><b>Total Supply Listrik : {supplylistrik} Kwh</b></h3></div>
+      <div align="center" className={`flex flex-row justify-center pb-10 overflow-x-auto overflow-y-hidden relative ${isDarkMode ? 'sankey-dark' : 'sankey-light'}`}>
         <Chart
           chartType="Sankey"
-          width= "100%"
+          width="900px" // Ubah dari "100%" ke ukuran lebih besar
           height="1000px"
           data={data1}
-          options={options8}>
+          options={options8}
+          overflowX="auto"
+          style={{ minWidth: "1000px" }}>
         </Chart>
-        </div>
+      </div>
     </div>
   );
 }

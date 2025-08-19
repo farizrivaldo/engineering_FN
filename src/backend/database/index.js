@@ -8,7 +8,6 @@ const db = mysql.createConnection({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE1,
   port: process.env.DB_PORT,
-  multipleStatements: true,
 });
 
 const db2 = mysql.createConnection({
@@ -17,7 +16,6 @@ const db2 = mysql.createConnection({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE2,
   port: process.env.DB_PORT,
-  multipleStatements: true,
 });
 
 const db3 = mysql.createConnection({
@@ -26,7 +24,6 @@ const db3 = mysql.createConnection({
   password: process.env.DB_PASSWORD2,
   database: process.env.DB_DATABASE3,
   port: process.env.DB_PORT2,
-  multipleStatements: true,
 });
 
 const db4 = mysql.createConnection({
@@ -35,7 +32,6 @@ const db4 = mysql.createConnection({
   password: process.env.DB_PASSWORD2,
   database: process.env.DB_DATABASE4,
   port: process.env.DB_PORT2,
-  multipleStatements: true,
 });
 
 const post = new Pool({
@@ -44,7 +40,6 @@ const post = new Pool({
   password: process.env.DB_PASSWORD3,
   database: process.env.DB_DATABASE5,
   port: process.env.DB_PORT3,
-  multipleStatements: true,
 });
 
 db.connect((err) => {

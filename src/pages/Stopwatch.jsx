@@ -1,13 +1,16 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Select } from "@chakra-ui/react";
+import Header from "../components/header";
+import { client, subscribe } from '../features/mqttClient';
 
 const Stopwatch = () => {
   const [time, setTime] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isTen, setTen] = useState();
-  const [messages, setMessages] = useState([]); // Menyimpan pesan dari WebSocket
-  const [singleMessages, setSingleMessages] = useState()
   const intervalRef = useRef(null);
+
+  const [messages, setMessages] = useState([]);
+  const [counter, setCounter] = useState(0);
 
   const formatTime = (milliseconds) => {
     const totalMilliseconds = Math.floor(milliseconds);
@@ -30,6 +33,12 @@ const Stopwatch = () => {
   const selectMinuits = (e) => {
     setTen(e.target.value);
   };
+
+  const items = [
+    { id: 1, name: "Item 1" },
+    { id: 2, name: "Item 2" },
+    { id: 3, name: "Item 3" }
+  ];
 
   useEffect(() => {
     if (isTen == 20) {
@@ -65,6 +74,53 @@ const Stopwatch = () => {
     }
   }, [time]);
 
+//   useEffect(() => {
+//     // Subscribe to an MQTT topic
+//     const topic = 'my/test/topic';
+//     subscribe(topic);
+
+//     // Listen for incoming messages
+//     client.on('message', (topic, message) => {
+//         setMessages((prevMessages) => [
+//             ...prevMessages,
+//             { topic, message: message.toString() },
+//         ]);
+//     });
+
+//     // Cleanup on unmount
+//     return () => {
+//         client.end(); // Close MQTT connection
+//     };
+// }, []);
+
+useEffect(() => {
+  const topic = 'my/test/topic'; // Ganti dengan topik yang sesuai
+  
+  // Subscribe ke topik tertentu
+  client.subscribe(topic, (err) => {
+      if (err) {
+          console.error('Failed to subscribe to topic:', topic);
+      } else {
+          console.log(`Subscribed to topic: ${topic}`);
+      }
+  });
+
+  // Mendengarkan pesan masuk
+  client.on('message', (topic, message) => {
+      console.log(`Received message on topic ${topic}:`, message.toString());
+      setMessages((prevMessages) => [
+          ...prevMessages,
+          { topic, message: message.toString() },
+      ]);
+  });
+
+  // Membersihkan koneksi saat komponen unmount
+  return () => {
+      client.end(); // Menutup koneksi MQTT
+  };
+}, []);
+
+
   const pauseStopwatch = () => {
     setIsRunning(false);
     clearInterval(intervalRef.current);
@@ -76,72 +132,63 @@ const Stopwatch = () => {
     setTime(0);
   };
 
-  // WebSocket setup
-  useEffect(() => {
-    const socket = new WebSocket("ws://10.126.15.137:8081");
-
-    socket.onopen = () => {
-      console.log("WebSocket terhubung");
-    };
-
-    socket.onmessage = (event) => {
-      const message = event.data;
-      setMessages((prevMessages) => [...prevMessages, message]);
-      setSingleMessages(message)
-
-    };
-
-    socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    socket.onclose = () => {
-      console.log("WebSocket terputus");
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, []);
-
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <h1 className="text-9xl font-bold">{formatTime(time)}</h1>
-      <div className="space-x-4">
+  <div>
+    <Header />
+    <h1 className="text-9xl text-text font-bold">{formatTime(time)}</h1>
+    <div className="space-x-4">
         {!isRunning ? (
           <button
-            className="bg-green-500 hover:bg-green-600 text-white px-8 py-4 rounded"
-            onClick={startStopwatch}
+          className="bg-cta hover:bg-ctactive text-text px-8 py-4 rounded"
+          onClick={startStopwatch}
           >
             Start
           </button>
         ) : (
           <button
-            className="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded"
-            onClick={pauseStopwatch}
+          className="bg-red-500 hover:bg-red-600 text-text px-8 py-4 rounded"
+          onClick={pauseStopwatch}
           >
             Pause
           </button>
         )}
         <button
-          className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 rounded"
+          className="bg-blue-500 hover:bg-blue-600 text-text px-8 py-4 rounded"
           onClick={resetStopwatch}
-        >
+          >
           Reset
         </button>
         <button>
-          <Select placeholder="Select Min" onChange={selectMinuits}>
+          <Select placeholder="Select Min" className="text-text" onChange={selectMinuits}>
             <option value={10}>10 Menit</option>
             <option value={15}>15 Menit</option>
             <option value={20}>20 Menit</option>
           </Select>
         </button>
-      </div>
-      <div className="mt-4 p-4 border border-gray-300 w-full max-w-md">
-        <h2 className="text-lg font-bold mb-2">Pesan WebSocket:</h2>
-        <h2>{singleMessages}</h2>
-      </div>
     </div>
+    <div>
+      <h1>MQTT Data</h1>
+        <ul>
+          {messages.map((msg, index) => (
+            <li key={index}>
+                <strong>Topic:</strong> {msg.topic} <br />
+                <strong>Message:</strong> {msg.message}
+            </li>
+          ))}
+        </ul>
+    </div>
+    <br />
+    <div>
+      {items.map((item) => (
+        <div key={Math.random()}>
+          <button onClick={() => setCounter(counter + 1)}>Increment</button>
+          <p>{counter}</p>
+          <p>{item.name}</p>
+        </div>
+      ))}
+    </div>
+
+  </div>
   );
 };
 

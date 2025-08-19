@@ -1,4 +1,3 @@
-import React from "react";
 import { useEffect } from "react";
 import { useParams } from "react-router";
 import { useState } from "react";
@@ -15,6 +14,10 @@ function CreateEdit() {
   const navigate = useNavigate();
   const partId = useSelector((state) => state.part.partId);
   const tanggal = moment(partId.Tanggal).format("MM/MM/YYYY");
+
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.getAttribute("data-theme") === "dark"
+  );
 
   useEffect(() => {
     dispatch(getDataById(id, tanggal));
@@ -108,76 +111,86 @@ function CreateEdit() {
   const finishTimeHendeler = (even) => {
     setNewFinishTime(even.target.value);
   };
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      setIsDarkMode(currentTheme === 'dark');
+    };
+    // Observe attribute changes
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div>
-      <div className="ml-60 mr-60">
-        <div className="space-y-20 ">
-          <div className="border-b border-gray-900/10 pb-12">
-            <h2 className="text-base font-semibold leading-7 text-gray-900 mt-10">
-              EDITE DATA MAINTENANCE {id}
+      <div className="px-4 sm:px-6 md:px-8 lg:px-16 xl:px-24 py-6 max-w-7xl mx-auto">
+        <div className="space-y-8 ">
+          <div className="border-b border-gray-200 pb-6">
+            <h2 className="text-xl font-bold text-text sm:text-2xl mt-6">
+              EDIT DATA MAINTENANCE {id}
             </h2>
 
-            <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-              <div className="sm:col-span-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
                 <label
-                  htmlFor="username"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  htmlFor="line"
+                  className="block text-sm font-medium leading-6 text-text" 
                 >
                   Line Area
                 </label>
-                <div className="mt-2">
-                  <Select
-                    placeholder="Select Line"
-                    id="line"
-                    onChange={lineHendeler}
-                    value={newLine}
-                  >
-                    <option value="Line1">Line 1</option>
-                    <option value="Line2">Line 2</option>
-                    <option value="Line3">Line 3</option>
-                    <option value="Line4">Line 4</option>
-                  </Select>
-                </div>
+                <Select
+                  id="line"
+                  className="block w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  onChange={lineHendeler}
+                  value={newLine}
+                >
+                  <option value="" disabled>Select Line</option>
+                  <option value="Line1">Line 1</option>
+                  <option value="Line2">Line 2</option>
+                  <option value="Line3">Line 3</option>
+                  <option value="Line4">Line 4</option>
+                </Select>
               </div>
-              <div className="sm:col-span-4">
+              <div className="space-y-2">
                 <label
-                  htmlFor="username"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  htmlFor="machine"
+                  className="block text-sm font-medium leading-6 text-text"
                 >
                   Machine
                 </label>
-                <div className="mt-2">
-                  <Select
-                    placeholder="Select Machine"
-                    onChange={machineHendeler}
-                    value={newMachine}
-                  >
-                    <option value="PMA">PMA</option>
-                    <option value="FBD">FBD</option>
-                    <option value="EPH">EPH</option>
-                    <option value="FinalMixing">Final MIxing</option>
-                    <option value="Fette">Fette</option>
-                    <option value="Coating">Coating</option>
-                    <option value="Striping">Striping</option>
-                    <option value="CM1">CM1</option>
-                    <option value="Cm2">CM2</option>
-                    <option value="CM3">CM3</option>
-                    <option value="CM4">CM4</option>
-                    <option value="CM5">CM5</option>
-                    <option value="CC1">CC1</option>
-                    <option value="CC2">CC2</option>
-                  </Select>
-                </div>
+                <Select
+                  className="block w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  onChange={machineHendeler}
+                  value={newMachine}
+                >
+                  <option value="" disabled>Select Machine</option>
+                  <option value="PMA">PMA</option>
+                  <option value="FBD">FBD</option>
+                  <option value="EPH">EPH</option>
+                  <option value="FinalMixing">Final MIxing</option>
+                  <option value="Fette">Fette</option>
+                  <option value="Coating">Coating</option>
+                  <option value="Striping">Striping</option>
+                  <option value="CM1">CM1</option>
+                  <option value="Cm2">CM2</option>
+                  <option value="CM3">CM3</option>
+                  <option value="CM4">CM4</option>
+                  <option value="CM5">CM5</option>
+                  <option value="CC1">CC1</option>
+                  <option value="CC2">CC2</option>
+                </Select>
               </div>
 
-              <div className="sm:col-span-4">
+              <div  className="space-y-2">
                 <label
                   htmlFor="Pekerjaan"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  className="block text-sm font-medium leading-6 text-text"
                 >
                   Pekerjaan
                 </label>
-                <div className="mt-2">
                   <input
                     onChange={jobHendeler}
                     id="Pekerjaan"
@@ -185,72 +198,54 @@ function CreateEdit() {
                     type="Pekerjaan"
                     value={newJob}
                     autoComplete="Pekerjaan"
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                    className="block w-full rounded-md border border-border bg-card text-text py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                   />
-                </div>
               </div>
 
-              <div className="sm:col-span-4">
+              <div className="space-y-2">
                 <label
-                  htmlFor="about"
-                  className="block text-sm font-medium leading-6 text-gray-900"
-                >
-                  Detail Pekerjaan
-                </label>
-                <div className="mt-2">
-                  <textarea
-                    onChange={jobDetailHendeler}
-                    value={newJobDetail}
-                    id="Detail"
-                    name="Detail"
-                    autoComplete="Detail"
-                    rows={3}
-                    className="block w-full rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:py-1.5 sm:text-sm sm:leading-6"
-                  />
-                </div>
-              </div>
-
-              <div className="sm:col-span-4">
-                <label
-                  htmlFor="photo"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  htmlFor="tanggal"
+                  className="block text-sm font-medium leading-6 text-text"
                 >
                   Tanggal ({tanggal})
                 </label>
-                <div className="mt-2 flex items-center gap-x-3">
+                <div className="">
                   <Input
                     defaultValue={newDate}
                     value={newDate}
                     onChange={dateHendeler}
                     placeholder={newDate}
-                    size="md"
                     type="date"
+                    className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                    css={{
+                      "&::-webkit-calendar-picker-indicator": {
+                        color: isDarkMode ? "white" : "black",
+                        filter: isDarkMode ? "invert(1)" : "none",
+                      },
+                    }}
                   />
                 </div>
               </div>
 
-              <div className="sm:col-span-4">
+              <div className="space-y-2">
                 <label
-                  htmlFor="Pekerjaan"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  htmlFor="Sparepart"
+                  className="block text-sm font-medium leading-6 text-text"
                 >
                   Sparepart Name
                 </label>
-                <div className="mt-2">
-                  <input
-                    id="Pekerjaan"
-                    name="Pekerjaan"
-                    type="Pekerjaan"
-                    autoComplete="Pekerjaan"
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
+                <input
+                  id="sparepart"
+                  type="text"
+                  className="block w-full rounded-md border text-text bg-card border-border py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  placeholder="Masukkan nama sparepart"
+                />
               </div>
 
-              <div className="sm:col-span-4">
+              <div className="space-y-2">
                 <label
-                  htmlFor="Pekerjaan"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  htmlFor="Quantity"
+                  className="block text-sm font-medium leading-6 text-text"
                 >
                   Quantity
                 </label>
@@ -259,24 +254,26 @@ function CreateEdit() {
                     onChange={quantityHendeler}
                     value={newQuantity}
                     size="md"
+                    className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                     type="number"
                   />
                 </div>
               </div>
 
-              <div className="sm:col-span-4">
+              <div className="space-y-2">
                 <label
                   htmlFor="username"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  className="block text-sm font-medium leading-6 text-text"
                 >
                   Unit
                 </label>
-                <div className="mt-2">
+                <div>
                   <Select
                     onChange={unitHendeler}
-                    placeholder="Select Unit"
+                    className="block w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                     value={newUnit}
                   >
+                    <option value="" disabled>Select Unit</option>
                     <option value="Pcs">Pcs</option>
                     <option value="Rol">Rol</option>
                     <option value="Meter">Meter</option>
@@ -288,19 +285,20 @@ function CreateEdit() {
                 </div>
               </div>
 
-              <div className="sm:col-span-4">
+              <div className="space-y-2">
                 <label
-                  htmlFor="username"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  htmlFor="pic"
+                  className="block text-sm font-medium leading-6 text-text"
                 >
                   PIC
                 </label>
-                <div className="mt-2">
+                <div>
                   <Select
                     onChange={PICHendeler}
-                    placeholder="Select PIC"
+                     className="block w-full rounded-md border border-gray-300 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                     value={newPIC}
                   >
+                    <option value="" disabled>Select PIC</option>
                     <option value="SGO">Sugino</option>
                     <option value="MKF">Khaerul</option>
                     <option value="RAO">Renaldo</option>
@@ -311,10 +309,10 @@ function CreateEdit() {
                 </div>
               </div>
 
-              <div className="sm:col-span-4">
+              <div className="space-y-2">
                 <label
                   htmlFor="photo"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  className="block text-sm font-medium leading-6 text-text"
                 >
                   Awal Pengerjaan
                 </label>
@@ -323,15 +321,21 @@ function CreateEdit() {
                     value={newStartTime}
                     onChange={startTimeHendeler}
                     placeholder="Select Date and Time"
-                    size="md"
                     type="time"
+                    className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                    css={{
+                      "&::-webkit-calendar-picker-indicator": {
+                        color: isDarkMode ? "white" : "black",
+                        filter: isDarkMode ? "invert(1)" : "none",
+                      },
+                    }}
                   />
                 </div>
               </div>
-              <div className="sm:col-span-4">
+              <div className="space-y-2">
                 <label
                   htmlFor="photo"
-                  className="block text-sm font-medium leading-6 text-gray-900"
+                  className="block text-sm font-medium leading-6 text-text"
                 >
                   Akhir Pengerjaan
                 </label>
@@ -340,25 +344,45 @@ function CreateEdit() {
                     value={newFinishTime}
                     onChange={finishTimeHendeler}
                     placeholder="Select Date and Time"
-                    size="md"
                     type="time"
+                    className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                    css={{
+                      "&::-webkit-calendar-picker-indicator": {
+                        color: isDarkMode ? "white" : "black",
+                        filter: isDarkMode ? "invert(1)" : "none",
+                      },
+                    }}
                   />
                 </div>
+              </div>
+              {/* Detail Pekerjaan - Full Width */}
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="detail" className="block text-sm font-medium text-text">
+                  Detail Pekerjaan
+                </label>
+                <textarea
+                  id="detail"
+                  rows={4}
+                  onChange={jobDetailHendeler}
+                  value={newJobDetail}
+                  className="block w-full rounded-md border border-border bg-card text-text py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+                  placeholder="Masukkan detail pekerjaan"
+                />
               </div>
             </div>
           </div>
         </div>
-        <div className="mt-6 flex items-center justify-end gap-x-6">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-4 mt-8">
           <button
             type="button"
-            className="text-sm font-semibold leading-6 text-gray-900"
+            className="mt-3 sm:mt-0 w-full sm:w-auto px-4 py-2 rounded-md shadow-sm text-sm font-medium text-text hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             onClick={() => navigate("/Maintenance")}
           >
             Cancel
           </button>
           <button
             onClick={() => editData()}
-            className="rounded-md bg-indigo-600 py-2 px-3 text-sm font-semibold text-white shadow-sm"
+            className="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Save
           </button>

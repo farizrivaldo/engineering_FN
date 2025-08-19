@@ -243,7 +243,7 @@ function HVACchiller() {
 
   const submitDataCompare = async () => {
     let response1 = await axios.get(
-      "http://10.126.15.137:8002/part/getChillerData",
+      "http://10.126.15.197:8002/part/getChillerData",
       {
         params: {
           chiller: chillerCompair,
@@ -341,7 +341,7 @@ function HVACchiller() {
     setCompresor(setCompresor1);
 
     let response = await axios.get(
-      "http://10.126.15.137:8002/part/getChillerData",
+      "http://10.126.15.197:8002/part/getChillerData",
       {
         params: {
           chiller: setChiller1,
@@ -514,7 +514,7 @@ function HVACchiller() {
         >
           <div>
             <Button
-              className={`ml-2 w-full border-2 border-2 border-gray-600 ${
+              className={`ml-2 w-full border-2 border-gray-600 ${
                 activeChiller === "chiller1" ? "bg-black" : ""
               }`}
               colorScheme={activeChiller === "chiller1" ? "blue" : "gray"}
@@ -527,7 +527,7 @@ function HVACchiller() {
             <div className="grid grid-flow-col">
               <div>
                 <Button
-                  className={`ml-2 w-full border-2 border-2 ${
+                  className={`ml-2 w-full border-2 ${
                     activeCompressor === "compresor1"
                       ? "bg-blue-500 text-white"
                       : "border-gray-600"
@@ -542,7 +542,7 @@ function HVACchiller() {
               </div>
               <div>
                 <Button
-                  className={`ml-2 w-full border-2 border-2 ${
+                  className={`ml-2 w-full border-2 ${
                     activeCompressor === "compresor2"
                       ? "bg-blue-500 text-white"
                       : "border-gray-600"
@@ -579,7 +579,7 @@ function HVACchiller() {
             <div className="grid grid-flow-col">
               <div>
                 <Button
-                  className={`ml-2 w-full border-2 border-2 ${
+                  className={`ml-2 w-full border-2 ${
                     activeCompressor === "compresor3"
                       ? "bg-blue-500 text-white"
                       : "border-gray-600"
@@ -594,7 +594,7 @@ function HVACchiller() {
               </div>
               <div>
                 <Button
-                  className={`ml-2 w-full border-2 border-2 ${
+                  className={`ml-2 w-full border-2 ${
                     activeCompressor === "compresor4"
                       ? "bg-blue-500 text-white"
                       : "border-gray-600"
@@ -618,7 +618,7 @@ function HVACchiller() {
         >
           <div>
             <Button
-              className={`ml-2 w-full border-2 border-2 border-gray-600 ${
+              className={`ml-2 w-full border-2 border-gray-600 ${
                 activeChiller === "chiller3" ? "bg-black" : ""
               }`}
               colorScheme={activeChiller === "chiller3" ? "blue" : "gray"}
@@ -631,7 +631,7 @@ function HVACchiller() {
             <div className="grid grid-flow-col">
               <div>
                 <Button
-                  className={`ml-2 w-full border-2 border-2 ${
+                  className={`ml-2 w-full border-2 ${
                     activeCompressor === "compresor5"
                       ? "bg-blue-500 text-white"
                       : "border-gray-600"
@@ -646,7 +646,7 @@ function HVACchiller() {
               </div>
               <div>
                 <Button
-                  className={`ml-2 w-full border-2 border-2 ${
+                  className={`ml-2 w-full border-2 ${
                     activeCompressor === "compresor6"
                       ? "bg-blue-500 text-white"
                       : "border-gray-600"

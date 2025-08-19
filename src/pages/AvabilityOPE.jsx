@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import CanvasJSReact from "../canvasjs.react";
 import axios from "axios";
 import { Button } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useState } from "react";
+
 var CanvasJS = CanvasJSReact.CanvasJS;
 var CanvasJSChart = CanvasJSReact.CanvasJSChart;
 
@@ -14,11 +15,15 @@ function AvabilityOPE() {
 
   const [avabilityCM1, setAvabilityCM1] = useState(1);
 
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.getAttribute("data-theme") === "dark"
+  );
+
   const dateValue = useSelector((state) => state.prod.date);
   const dataLine1 = avabilityCM1.toFixed(2);
   const dataPointsAva = [
     {
-      indexLabelFontColor: "black",
+      indexLabelFontColor: isDarkMode ? "white" : "black",
       indexLabel: String(dataLine1) + "%",
       label: "Line 1",
       y: avabilityCM1,
@@ -33,7 +38,7 @@ function AvabilityOPE() {
   });
 
   const fetchAvaLine = async (date) => {
-    let response = await axios.get("http://10.126.15.137:8002/part/avaline", {
+    let response = await axios.get("http://10.126.15.197:8002/part/avaline", {
       params: {
         date: date,
       },
@@ -80,11 +85,28 @@ function AvabilityOPE() {
     chart.axisY2[0].set("maximum", 100);
   };
 
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      setIsDarkMode(currentTheme === 'dark');
+    };
+    // Observe attribute changes
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    return () => observer.disconnect();
+  }, []);
+
   const options = {
-    theme: "light2",
+    zoomEnabled: true,
+    animationEnabled: true,
+    theme: isDarkMode ? "dark2" : "light2",
+    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+    
     // height: 800,
     title: {
-      text: "Avability Line",
+      text: "Availability Line",
+      fontColor: isDarkMode ? "white" : "black"
     },
 
     axisY: {
@@ -103,27 +125,24 @@ function AvabilityOPE() {
   };
 
   return (
-    <>
-      <div>
-        <br />
-        <br />
-        <br />
-        <br />
-        <br />
-
+    <div>
+      <br />
+      <div className="flex flex-row flex-shrink-0 z-99 bg-card overflow-y-hidden relative rounded-md justify-center shadow-md mx-12 ">
+      {/* <div className="relative w-full max-w-full"> */}
         <CanvasJSChart
           options={options}
           onRef={(ref) => (chartRef.current = ref)}
         />
-        {/*You can get reference to the chart instance as shown above using onRef. This allows you to access all chart properties and methods*/}
+      {/* </div> */}
       </div>
+      {/*You can get reference to the chart instance as shown above using onRef. This allows you to access all chart properties and methods*/}
       <br />
-      <div>
-        <Button className="ml-4" colorScheme="red" onClick={() => backPage()}>
+      <div className="block ml-12">
+        <Button colorScheme="red" onClick={() => backPage()}>
           Back
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 

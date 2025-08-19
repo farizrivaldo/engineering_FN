@@ -5,38 +5,38 @@ import {
   TabPanels,
   Tab,
   TabPanel,
+  Box,
   Card,
   CardBody,
 } from "@chakra-ui/react";
 import HVACchillerChart from "./HVACchillerChart";
 import HVAChandeling from "./HVAChandeling";
 import HVACheating from "./HVACheating";
+
 function HVAC() {
   return (
-    <div>
-      <Card>
-        <CardBody>
-          <Tabs isFitted size={"lg"} variant="enclosed" class=" p-3  ">
-            <TabList>
-              <Tab>CHILLER</Tab>
-              <Tab>AIR HANDLING</Tab>
-              <Tab>HEATING</Tab>
-            </TabList>
-            <TabPanels>
-              <TabPanel>
-                <HVACchillerChart />
-              </TabPanel>
-              <TabPanel>
-                <HVAChandeling />
-              </TabPanel>
-              <TabPanel>
-                <HVACheating />
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-        </CardBody>
-      </Card>
-    </div>
+    <>
+      <Tabs isFitted size={"lg"} variant="enclosed" width="100%" maxW="1300px" mx="auto">
+        <TabList>
+          <Tab>CHILLER</Tab>
+          <Tab>AIR HANDLING</Tab>
+          <Tab>HEATING</Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel>
+            <Box overflow="auto">
+              <HVACchillerChart />
+            </Box>
+          </TabPanel>
+          <TabPanel>
+            <HVAChandeling />
+          </TabPanel>
+          <TabPanel>
+            <HVACheating />
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
+    </>
   );
 }
 

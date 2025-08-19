@@ -115,7 +115,7 @@ export default function Navbar() {
   var imageData = ``;
 
   if (userGlobal.imagePath) {
-    imageData = `http://10.126.15.137:8002${userGlobal.imagePath}`;
+    imageData = `http://10.126.15.197:8002${userGlobal.imagePath}`;
   } else {
     imageData =
       "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png";
@@ -147,6 +147,7 @@ export default function Navbar() {
                   onClick={() => navigate("/")}
                 />
               </div>
+         
 
               <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <div className="hidden sm:ml-6 sm:block">
@@ -179,6 +180,7 @@ export default function Navbar() {
                   )}
                 </div>
               </div>
+           
               <div>
                 <p class="text-white mr-4">{currentDateTimeString}</p>
               </div>
