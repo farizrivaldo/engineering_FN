@@ -64,205 +64,203 @@ export default function HVACchillerChart() {
   );
 
   const fetchDataChiller = async () => {
-    //ini console log penting, nanti kalau ada masalah nyalain aja ini komennya
-    // console.log("please keluar bang", data);
-    setLoading(true); 
-    setError(null);
+  setLoading(true); 
+  setError(null);
 
-    try {
-      // Validasi list sebelum membuat request
-      if (!list || list.some(item => !item.area || !item.chiller))  {
-        throw new Error("List tidak valid. Pastikan memiliki setidaknya 4 elemen dengan 'area' dan 'chiller'.");
-      }
-      
-      let arr = list.map((item) => ({ params: item })); // Create array of request params
-      console.log("Request Params:", arr);
-
-      // Buat array permintaan API berdasarkan jumlah elemen di list
-      const requests = list.map((item) =>
-        axios.get("http://10.126.15.197:8002/part/ChillerGraph", { params: item })
-      );
-
-      // Fetch semua data secara paralel
-      const responses = await Promise.all(requests);
-
-      // Map data dari respons ke array dataPoints untuk chart
-      const mappedDataArray = responses.map((response, index) =>
-        mapData(response.data, list[index]?.area)
-      );
-
-      // Set data ke state berdasarkan jumlah elemen
-      setData(mappedDataArray);
-      //ini juga sama buat ngeliat isi dari mappedDataArray liat si isi si data
-        console.log("All data fetched successfully", mappedDataArray);
-        } catch (err) {
-          console.error("Error fetching data:", err);
-          setError("Failed to fetch data");
-        } finally {
-          const delay = 2000; // 2 seconds in milliseconds
-          setTimeout(() => {
-            setLoading(false); // Stop spinner after requests finish
-            console.log("Finished fetching data, stopping spinner...");
-          }, delay);
-        }             
-      };
-
-      const mapData = (data, area) => {
-        if (!Array.isArray(data) || data.length === 0) {
-          console.warn("Data kosong atau tidak valid:", data);
-          return [];
-        }
-      
-        return data.map(item => {
-          //pake console ini ges biar tau datanya masuk pa kaga
-          // console.log("Mapping item:", item);
-          if (item.x === undefined || item.y === undefined) {
-            console.error("Data tidak valid:", item);
-            return null;
-          }
-      
-          let mappedItem = {
-            label: item.label,
-            y: item.y,
-            x: item.x,
-          };
-      
-          if (area === "R-EvapPress") {
-            mappedItem.y = item.y * 2;
-          } else if (["R-UnitCap", "R-Status", "R-Alarm"].includes(area)) {
-            mappedItem.x = item.x + 10;
-          }
-      
-          return mappedItem;
-        }).filter(Boolean); // Hapus item null, berarti kalau ada value yang null/undefined dia bakal hapus dari array
-      };
-
-        const mapDataResponse2 = (data, area) => {
-          return data.map((item) => {
-            let mappedItem = {
-              label: new Date(item.x).toLocaleString("id-ID", {
-                timeZone: "Asia/Jakarta",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false
-                }).replace(/\//g, "-").replace(",", ""), // Format jadi YYYY-MM-DD HH:mm
-              y: item.y,
-              x: item.x,
-            };
-        
-            if (area === "R-EvapPress") {
-              mappedItem.y = item.y * 2; // Example of modifying y for "R-EvapPress"
-            } else if (area === "R-UnitCap" || area === "R-Status" || area === "R-Alarm") {
-              mappedItem.x = item.x + 10; // Example of modifying x for other areas
-            } else {
-              mappedItem.y = item.y;
-              mappedItem.x = item.x; 
-            }
-        
-            return mappedItem;
-          });
-        };  
-                
-    const handleAddlist = () => {  
-      setList ([...list, {area: "", chiller: "",komp: "", start: "", finish: ""}])
-    };
-        
-    const handleDeleteList = (i) => {
-      const newList = [...list];
-      newList.splice(i, 1);
-      setList(newList);
-      if (i === 1){
-        setData1()}
-      else if (i === 0){
-        setData()
-      }
-      else if (i === 2){
-        setData2()
-      }
-      else if (i === 3){
-        setData3()
-      }
-    };
-
-    const handleListChange = (e, i) => {
-      const field = e.target.name;
-      const newList = [...list];
-      newList[i][field] = e.target.value;
-      setList(newList); 
-    };
-
-    // Pastikan list memiliki elemen valid sebelum fetch
-    useEffect(() => {
-      if (list.length >= 4 && list.every(item => item.area && item.chiller)) {
-        fetchDataChiller();
-      }
-    }, [list]);
+  try {
+    if (!list || list.some(item => !item.area || !item.chiller))  {
+      throw new Error("List tidak valid. Pastikan memiliki setidaknya 4 elemen dengan 'area' dan 'chiller'.");
+    }
     
-    useEffect(() => {
-      const handleThemeChange = () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        setIsDarkMode(currentTheme === 'dark');
-      };
-      // Observe attribute changes
-      const observer = new MutationObserver(handleThemeChange);
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  
-      return () => observer.disconnect();
-    }, []);
+    let arr = list.map((item) => ({ params: item }));
+    console.log("Request Params:", arr);
 
-    var localeOptions = {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      timeZone: "UTC",
-      hour12: false
+    const requests = list.map((item) =>
+      axios.get("http://10.126.15.197:8002/part/ChillerGraph", { params: item })
+    );
+
+    const responses = await Promise.all(requests);
+
+    const mappedDataArray = responses.map((response, index) =>
+      mapData(response.data, list[index]?.area)
+    );
+
+    setData(mappedDataArray);
+    console.log("All data fetched successfully", mappedDataArray);
+  } catch (err) {
+    console.error("Error fetching data:", err);
+    setError("Failed to fetch data");
+  } finally {
+    const delay = 2000;
+    setTimeout(() => {
+      setLoading(false);
+      console.log("Finished fetching data, stopping spinner...");
+    }, delay);
+  }             
+};
+
+const mapData = (data, area) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    console.warn("Data kosong atau tidak valid:", data);
+    return [];
+  }
+
+  return data.map(item => {
+    if (item.x === undefined || item.y === undefined) {
+      console.error("Data tidak valid:", item);
+      return null;
+    }
+
+    let mappedItem = {
+      // Use UTC formatting for consistent display
+      label: new Date(item.x).toISOString().slice(0, 19).replace('T', ' '),
+      y: item.y,
+      x: item.x,
     };
 
-    const options = {
-      zoomEnabled: true,
-      theme: isDarkMode ? "dark2" : "light2",
-      backgroundColor: isDarkMode ? "#171717" : "#ffffff",
-      title: {
-        text: "HVAC Chiller",
-        fontColor: isDarkMode ? "white" : "black"
-      },
-      axisY: {
-        prefix: "",
-      },
-      axisX: {
-        valueFormatString: "DD MMM YYYY HH:mm",
-        labelFormatter: function (e) {
-          let date = new Date(e.value);
-          return date.toLocaleString("id-ID", localeOptions);
-        },
-      },
-      toolTip: {
-        shared: true,
-      },
-      data: data.map((dataPoints, index) => ({
-        type: "spline",
-        name: `${index + 1}.${list[index]?.area || "Area"}`,
-        showInLegend: true,
-        markerType: "circle",
-        yValueFormatString: "",
-        xValueType: "dateTime",
-        dataPoints: dataPoints,
-        color: ["red", "blue", "green", "magenta"][index % 4], // Warna dinamis
-      })),
+    if (area === "R-EvapPress") {
+      mappedItem.y = item.y * 2;
+    } else if (["R-UnitCap", "R-Status", "R-Alarm"].includes(area)) {
+      mappedItem.x = item.x + 10;
+    }
+
+    return mappedItem;
+  }).filter(Boolean);
+};
+
+// Fixed version - ensures UTC display
+const mapDataResponse2 = (data, area) => {
+  return data.map((item) => {
+    let mappedItem = {
+      // Use UTC formatting instead of Jakarta timezone
+      label: new Date(item.x).toISOString().slice(0, 16).replace('T', ' '),
+      y: item.y,
+      x: item.x,
     };
 
-    useEffect(()=>{
-      if (list.length >=4){
-          setState(true);
-      } else {
-          setState(false);
+    if (area === "R-EvapPress") {
+      mappedItem.y = item.y * 2;
+    } else if (area === "R-UnitCap" || area === "R-Status" || area === "R-Alarm") {
+      mappedItem.x = item.x + 10;
+    } else {
+      mappedItem.y = item.y;
+      mappedItem.x = item.x; 
+    }
+
+    return mappedItem;
+  });
+};  
+
+const handleAddlist = () => {  
+  setList ([...list, {area: "", chiller: "",komp: "", start: "", finish: ""}])
+};
+
+const handleDeleteList = (i) => {
+  const newList = [...list];
+  newList.splice(i, 1);
+  setList(newList);
+  if (i === 1){
+    setData1()}
+  else if (i === 0){
+    setData()
+  }
+  else if (i === 2){
+    setData2()
+  }
+  else if (i === 3){
+    setData3()
+  }
+};
+
+const handleListChange = (e, i) => {
+  const field = e.target.name;
+  const newList = [...list];
+  newList[i][field] = e.target.value;
+  setList(newList); 
+};
+
+useEffect(() => {
+  if (list.length >= 4 && list.every(item => item.area && item.chiller)) {
+    fetchDataChiller();
+  }
+}, [list]);
+
+useEffect(() => {
+  const handleThemeChange = () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    setIsDarkMode(currentTheme === 'dark');
+  };
+  const observer = new MutationObserver(handleThemeChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  return () => observer.disconnect();
+}, []);
+
+// Fixed locale options - explicitly use UTC and English locale to avoid confusion
+var localeOptions = {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit", 
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "UTC",
+  hour12: false
+};
+
+const options = {
+  zoomEnabled: true,
+  theme: isDarkMode ? "dark2" : "light2",
+  backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+  title: {
+    text: "HVAC Chiller (UTC)",  // Added UTC indicator
+    fontColor: isDarkMode ? "white" : "black"
+  },
+  axisY: {
+    prefix: "",
+  },
+  axisX: {
+    valueFormatString: "DD MMM YYYY HH:mm",
+    labelFormatter: function (e) {
+      // Use English locale to ensure consistent UTC formatting
+      let date = new Date(e.value);
+      return date.toLocaleString("en-US", localeOptions);
+    },
+  },
+  toolTip: {
+    shared: true,
+    // Custom content formatter to ensure UTC display
+    contentFormatter: function (e) {
+      var content = "";
+      var utcDate = new Date(e.entries[0].dataPoint.x).toLocaleString("en-US", localeOptions);
+      content += "<strong>" + utcDate + " UTC</strong><br/>";
+      
+      for (var i = 0; i < e.entries.length; i++) {
+        content += "<span style='color:" + e.entries[i].dataSeries.color + "'>" + 
+                   e.entries[i].dataSeries.name + "</span>: " + 
+                   e.entries[i].dataPoint.y + "<br/>";
       }
-    });
+      return content;
+    }
+  },
+  data: data.map((dataPoints, index) => ({
+    type: "spline",
+    name: `${index + 1}.${list[index]?.area || "Area"}`,
+    showInLegend: true,
+    markerType: "circle",
+    yValueFormatString: "",
+    xValueType: "dateTime",
+    dataPoints: dataPoints,
+    color: ["red", "blue", "green", "magenta"][index % 4],
+  })),
+};
+
+useEffect(()=>{
+  if (list.length >=4){
+      setState(true);
+  } else {
+      setState(false);
+  }
+}); 
 
 // ========================================================= Ini dibawah Chart =======================================================================
       let dateStart = (e) =>{
