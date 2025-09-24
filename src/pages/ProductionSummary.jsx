@@ -122,116 +122,151 @@ function ProductionSummary() {
     console.log(response.data);
     console.log(response1.data);
 
-    setOeeCm1(response.data);
-    setVarOee(response1.data);
+setOeeCm1(response.data);
+setVarOee(response1.data);
 
-    // console.log(oeeChart);
+// console.log(oeeChart);
 
-    var resultAva = [];
-    for (var i = 0; i < response.data.length; i++) {
-      var objAva = {
-        x: response.data[i].id,
-        y: Number(response.data[i].avability.toFixed(2)),
-      };
-      resultAva.push(objAva);
-    }
-    setAvaLine(resultAva);
-
-    // Filter dan proses data performance
-    const resultPer = response.data
-      .filter(item => isValidPerformance(item.performance))
-      .map(item => ({
-          x: item.id,
-          y: Number(item.performance.toFixed(2))
-      }));
-    setPerLine(resultPer);
-    console.log(perLine);
-    console.log(resultPer);
-
-    var resultQua = [];
-    for (i = 0; i < response.data.length; i++) {
-      var objQua = {
-        x: response.data[i].id,
-        y: Number(response.data[i].quality.toFixed(2)),
-      };
-      resultQua.push(objQua);
-    }
-    setQuaLine(resultQua);
-
-    //Output==================================
-    let objOut = 0;
-    for (i = 0; i < response.data.length; i++) {
-      objOut += Number(response.data[i].output);
-    }
-    setTotalOut(objOut);
-
-    //Runtime====================================
-    let objRun = 0;
-    for (i = 0; i < response.data.length; i++) {
-      objRun += Number(response.data[i].runTime);
-    }
-    setTotalRun(objRun);
-
-    //Stop==================================
-    let objStop = 0;
-    for (i = 0; i < response.data.length; i++) {
-      objStop += Number(response.data[i].stopTime);
-    }
-    setTotalStop(objStop);
-    //Idle====================================
-    let objIdle = 0;
-    for (i = 0; i < response.data.length; i++) {
-      objIdle += Number(response.data[i].idleTime);
-    }
-    setTotalIdle(objIdle);
-
-    ////Speed========================================
-    let objSpeed = ((objOut * 25) / 4 / objRun).toFixed(1);
-
-    setTotalSpeed(objSpeed);
-
-    //OEE CHART========================================
-    var OeeChart = [];
-    for (i = 0; i < response.data.length; i++) {
-      var objOeeChart = {
-        label: moment
-          .tz(
-            new Date(response.data[i].time * 1000).toLocaleString(),
-            "America/Los_Angeles"
-          )
-          .format("YYYY-MM-DD HH:mm"),
-        y: Number(response.data[i].oee.toFixed(2)),
-      };
-      OeeChart.push(objOeeChart);
-    }
-    setOeeChart(OeeChart);
-    //console.log(OeeChart);
+var resultAva = [];
+for (var i = 0; i < response.data.length; i++) {
+  var objAva = {
+    x: response.data[i].id,
+    // Add null check for 'avability'
+    y: response.data[i].avability != null ? Number(response.data[i].avability.toFixed(2)) : 0,
   };
+  resultAva.push(objAva);
+}
+setAvaLine(resultAva);
+
+// Filter dan proses data performance
+const resultPer = response.data
+  .filter(item => isValidPerformance(item.performance))
+  .map(item => ({
+    x: item.id,
+    // Add null check for 'performance'
+    y: item.performance != null ? Number(item.performance.toFixed(2)) : 0
+  }));
+setPerLine(resultPer);
+console.log(perLine);
+console.log(resultPer);
+
+var resultQua = [];
+for (i = 0; i < response.data.length; i++) {
+  var objQua = {
+    x: response.data[i].id,
+    // Add null check for 'quality'
+    y: response.data[i].quality != null ? Number(response.data[i].quality.toFixed(2)) : 0,
+  };
+  resultQua.push(objQua);
+}
+setQuaLine(resultQua);
+
+//Output==================================
+let objOut = 0;
+for (i = 0; i < response.data.length; i++) {
+  objOut += Number(response.data[i].output);
+}
+setTotalOut(objOut);
+
+//Runtime====================================
+let objRun = 0;
+for (i = 0; i < response.data.length; i++) {
+  objRun += Number(response.data[i].runTime);
+}
+setTotalRun(objRun);
+
+//Stop==================================
+let objStop = 0;
+for (i = 0; i < response.data.length; i++) {
+  objStop += Number(response.data[i].stopTime);
+}
+setTotalStop(objStop);
+
+//Idle====================================
+let objIdle = 0;
+for (i = 0; i < response.data.length; i++) {
+  objIdle += Number(response.data[i].idleTime);
+}
+setTotalIdle(objIdle);
+
+//Speed========================================
+// Add a check to prevent division by zero and a null check for objRun
+let objSpeed = (objOut != null && objRun > 0) ? ((objOut * 25) / 4 / objRun).toFixed(1) : "0";
+
+setTotalSpeed(objSpeed);
+
+    // OEE CHART========================================
+var OeeChart = [];
+for (let i = 0; i < response.data.length; i++) {
+  // Check if 'oee' is a valid number before using toFixed()
+  let oeeValue = response.data[i].oee != null ? Number(response.data[i].oee.toFixed(2)) : 0;
+  
+  var objOeeChart = {
+    label: moment
+      .tz(
+        new Date(response.data[i].time * 1000).toLocaleString(),
+        "America/Los_Angeles"
+      )
+      .format("YYYY-MM-DD HH:mm"),
+    y: oeeValue,
+  };
+  OeeChart.push(objOeeChart);
+}
+setOeeChart(OeeChart);
+  }
 
   let changeMachine = (e) => {
     var dataInput = e.target.value;
     setMachine(dataInput);
   };
 
-  let dateStart = (e) => {
-    var dataInput = e.target.value;
+let dateStart = (e) => {
+  var dataInput = e.target.value;
+  let unixInput = Math.floor(new Date(dataInput).getTime() / 1000);
+  let unixNow = Math.floor(new Date().getTime() / 1000);
 
-    let unixStart = Math.floor(new Date(dataInput).getTime() / 1000);
-    setStartDate(unixStart);
-  };
+  // Check if the selected date is not in the future
+  if (unixInput <= unixNow) {
+    setStartDate(unixInput);
+  } else {
+    alert("The start date cannot be in the future.");
+    // Optionally, clear the input field after an invalid selection
+    e.target.value = '';
+  }
+};
 
-  let dateFinish = (e) => {
-    var dataInput = e.target.value;
+let dateFinish = (e) => {
+  var dataInput = e.target.value;
+  let unixInput = Math.floor(new Date(dataInput).getTime() / 1000);
+  let unixNow = Math.floor(new Date().getTime() / 1000);
 
-    let unixFinish = Math.floor(new Date(dataInput).getTime() / 1000);
-    setFinishDate(unixFinish);
-  };
+  // Check if the selected date is not in the future
+  if (unixInput <= unixNow) {
+    setFinishDate(unixInput);
+  } else {
+    alert("The end date cannot be in the future.");
+    // Optionally, clear the input field after an invalid selection
+    e.target.value = '';
+  }
+};
 
-  let submitData = () => {
-    fetchData(machineData, startDate, finishDate);
-  };
 
-  useEffect(() => {}, []);
+let submitData = () => {
+    // Check if a machine has been selected
+    if (!machineData) {
+        alert("Please select a machine.");
+        return; // Stop the function if no machine is selected
+    }
+
+    // Existing date validation
+    if (startDate && finishDate && startDate <= finishDate) {
+        fetchData(machineData, startDate, finishDate);
+    } else {
+        alert("The start date cannot be later than the end date.");
+    }
+};
+
+  
 
   let oeeCalculation =
     (oeeVar[0].Ava / 100) * (oeeVar[0].Per / 100) * (oeeVar[0].Qua / 100) * 100;
@@ -274,15 +309,15 @@ function ProductionSummary() {
               .format("YYYY-MM-DD HH:mm")
               }
           </Td>
-          <Td className="bg-blue-400">{cm1.avability.toFixed(2)}</Td>
-          <Td className="bg-red-400">{cm1.performance.toFixed(2)}</Td>
-          <Td className="bg-green-400">{cm1.quality.toFixed(2)}</Td>
-          <Td>{cm1.oee.toFixed(2)}</Td>
-          <Td>{cm1.output}</Td>
-          <Td>{cm1.runTime}</Td>
-          <Td>{cm1.stopTime}</Td>
-          <Td>{cm1.idleTime}</Td>
-        </Tr>
+        <Td className="bg-blue-400"> {cm1.avability != null ? cm1.avability.toFixed(2) : 'N/A'} </Td>
+    <Td className="bg-red-400"> {cm1.performance != null ? cm1.performance.toFixed(2) : 'N/A'} </Td>
+    <Td className="bg-green-400"> {cm1.quality != null ? cm1.quality.toFixed(2) : 'N/A'} </Td>
+    <Td> {cm1.oee != null ? cm1.oee.toFixed(2) : 'N/A'} </Td>
+    <Td>{cm1.output}</Td>
+    <Td>{cm1.runTime}</Td>
+    <Td>{cm1.stopTime}</Td>
+    <Td>{cm1.idleTime}</Td>
+  </Tr>
       ));
     };
     
@@ -309,7 +344,7 @@ function ProductionSummary() {
     subtitles: [
       {
         //text: `${oeeCalculation.oee.toFixed(2)}% OEE`,
-        text: `${oeeCalculation.toFixed(2)}% OEE`,
+        text: `${oeeCalculation != null && !isNaN(oeeCalculation) ? oeeCalculation.toFixed(2) : 'N/A'}% OEE`,
         verticalAlign: "center",
         fontSize: 26,
         dockInsidePlotArea: true,
@@ -432,13 +467,13 @@ function ProductionSummary() {
         >
           <div>
             <CircularProgress
-              value={oeeVar[0].Ava.toFixed(2)}
+              value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
               color="purple.400"
               size="200px"
               fontSize="150px"
             >
               <CircularProgressLabel>
-                {oeeVar[0].Ava.toFixed(2)}%
+                {oeeVar[0].Per != null ? `${oeeVar[0].Per.toFixed(2)}%` : 'N/A'}
               </CircularProgressLabel>
             </CircularProgress>
           </div>
@@ -474,13 +509,13 @@ function ProductionSummary() {
         >
           <div>
             <CircularProgress
-              value={oeeVar[0].Per.toFixed(2)}
+              value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
               color="green.400"
               size="200px"
               fontSize="150px"
             >
               <CircularProgressLabel>
-                {oeeVar[0].Per.toFixed(2)}%
+               {oeeVar[0].Per != null ? `${oeeVar[0].Per.toFixed(2)}%` : 'N/A'}
               </CircularProgressLabel>
             </CircularProgress>
           </div>
@@ -512,13 +547,13 @@ function ProductionSummary() {
         >
           <div>
             <CircularProgress
-              value={oeeVar[0].Qua.toFixed(2)}
+              value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
               color="red.400"
               size="200px"
               fontSize="150px"
             >
               <CircularProgressLabel>
-                {oeeVar[0].Qua.toFixed(2)}%
+                {oeeVar[0].Qua != null ? `${oeeVar[0].Qua.toFixed(2)}%` : 'N/A'}    
               </CircularProgressLabel>
             </CircularProgress>
           </div>
@@ -551,10 +586,9 @@ function ProductionSummary() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:flex xl:flex-row xl:justify-center gap-4 w-full">
           <div className="col-span-1 xl:flex-1">
             <label className="block text-sm font-medium leading-4 text-text">
-              Mesin
+              Machine
             </label>
             <Select
-              placeholder="Select Machine"
               onChange={changeMachine}
               sx={{
                 border: "1px solid",
@@ -566,6 +600,7 @@ function ProductionSummary() {
                 },
               }}
             >
+              <option disabled selected hidden value=""> Select Machine </option>
               <option value="mezanine.tengah_Cm1_data">Cm1</option>
               <option value="mezanine.tengah_Cm2_data">Cm2</option>
               <option value="mezanine.tengah_Cm3_data">Cm3</option>
@@ -671,6 +706,7 @@ function ProductionSummary() {
           </div>
         </div>
       </div>
+      
       <div className="flex justify-center">
         {isTableVisible && (
           <TableContainer className="bg-card rounded-md mt-4 mx-4" sx={{ overflowX: "auto", maxWidth: "96%" }}>
