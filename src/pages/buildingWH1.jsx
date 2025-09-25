@@ -7,6 +7,9 @@ import autoTable from "jspdf-autotable";
 // import { useReactToPrint } from "react-to-print";
 import { useColorMode, useColorModeValue } from "@chakra-ui/react";
 
+import moment from 'moment';
+import 'moment-timezone';
+
 var CanvasJS = CanvasJSReact.CanvasJS;
 var CanvasJSChart = CanvasJSReact.CanvasJSChart;
 
@@ -93,6 +96,8 @@ export default function BuildingRnD() {
         setState(true);
       }
 
+      
+
     const maxSuhu = response.data.reduce ((acc, data) => Math.max (acc, data.y), Number.NEGATIVE_INFINITY);
     var max = Number(maxSuhu.toFixed(2))
     setmaxSuhu(max)
@@ -143,6 +148,16 @@ export default function BuildingRnD() {
     setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(AllDataWH1.length / rowsPerPage)));
   };
 
+const formatDate = (dateString) => {
+  // First, parse the date string assuming its original timezone is GMT+11.
+  const sourceDate = moment.tz(dateString, 'Etc/GMT-11');
+  
+  // Now, convert that moment object to the desired display timezone, e.g., 'Asia/Jakarta'.
+  const convertedDate = sourceDate.clone().tz('UTC');
+
+  return convertedDate.format('YYYY-MM-DD HH:mm');
+};
+
   const table = () => {
     const startIndex = (currentPage - 1) * rowsPerPage;
     const visibleData = AllDataWH1.slice(startIndex, startIndex + rowsPerPage);
@@ -160,7 +175,7 @@ export default function BuildingRnD() {
     return visibleData.map((data, index) => (
       <Tr key={startIndex + index}>
         <Td>{startIndex + index + 1}</Td> {/* No column */}
-        <Td>{data.tgl}</Td>
+        <Td>{formatDate(data.tgl)}</Td> {/* Use the new function here */}
         <Td>{data.temp}</Td>
         <Td>{data.RH}</Td>
       </Tr>
@@ -177,13 +192,20 @@ export default function BuildingRnD() {
       { header: "RH", dataKey: "RH" },
     ];
 
-    // Buat body dengan tambahan nomor urut (No)
-    const body = AllDataWH1.map((data, idx) => ({
-      no: idx + 1,
-      tgl: data.tgl,
-      temp: data.temp,
-      RH: data.RH
-    }));
+const body = AllDataWH1.map((data, idx) => {
+  // Use moment.tz to convert the date string to the target timezone
+  const convertedDate = moment.tz(data.tgl, 'UTC');
+
+  // Format the date to your desired string format
+  const formattedDate = convertedDate.format('YYYY-MM-DD HH:mm');
+
+  return {
+    no: idx + 1,
+    tgl: formattedDate, // Use the new formatted date
+    temp: data.temp,
+    RH: data.RH,
+  };
+});
 
     // allDataTable adalah array of object
     autoTable(doc, {
@@ -202,10 +224,12 @@ export default function BuildingRnD() {
     setStartDate(dataInput);
     console.log(dataInput);
   };    
+
   let dateFinish = (e) => {
     var dataInput = e.target.value;
     setFinishDate(dataInput);
   };
+
   let getArea = (e) => {
     var dataInput = e.target.value;
     setArea(dataInput);
@@ -255,6 +279,7 @@ export default function BuildingRnD() {
     },
     toolTip: {
       shared: true,
+      
     }, 
     data: [
         {
@@ -288,7 +313,8 @@ export default function BuildingRnD() {
       <div className="flex flex-row justify-center space-x-4 my-6 flex-wrap xl:flex-nowrap ">
         <div>
           <h5 className="mb-1">Area</h5>
-            <Select placeholder="Select Area"  onChange={getArea}>
+            <Select onChange={getArea}>
+              <option disabled selected hidden value=""> Select  </option>
               <option value="RakLayer3-C56WH1">C56 WH1</option>
               <option value="RakLayer3-C64WH1">C64 WH1</option>
               <option value="RakLayer3-C72WH1">C72 WH1</option>
@@ -297,6 +323,8 @@ export default function BuildingRnD() {
         </div>
         <div>
           <h5 className="mb-1">Start Time</h5>
+
+          
           <Input
             onChange={dateStart}
             placeholder="Select Date and Time"
