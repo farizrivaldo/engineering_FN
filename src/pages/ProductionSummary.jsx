@@ -53,6 +53,7 @@ function ProductionSummary() {
   const [startDate, setStartDate] = useState();
   const [finishDate, setFinishDate] = useState();
 
+  const [showAlert, setShowAlert] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -83,7 +84,8 @@ function ProductionSummary() {
     //console.log(e.dataPoint.name);
   };
 
-  const fetchData = async (data, start, finish) => {
+const fetchData = async (data, start, finish) => {
+  try {
     let response = await axios.get("http://10.126.15.197:8002/part/oee", {
       params: {
         machine: data,
@@ -91,6 +93,11 @@ function ProductionSummary() {
         finish: finish,
       },
     });
+
+    if (!response.data || response.data.length === 0) {
+      alert("No data available for the selected range.");
+      return; // Exit early if no data
+    }
 
     // kode dari MAX VALID sampai isValidPerformance ini buat filter tabel yang paling bawah, kan ada nilai yg kocag tuh 
     // nilai yg kocag akan di filter ilang
@@ -119,101 +126,131 @@ function ProductionSummary() {
         },
       }
     );
+    
     console.log(response.data);
     console.log(response1.data);
 
-setOeeCm1(response.data);
-setVarOee(response1.data);
+    setOeeCm1(response.data);
+    setVarOee(response1.data);
 
-// console.log(oeeChart);
+    // console.log(oeeChart);
 
+// Availability
 var resultAva = [];
 for (var i = 0; i < response.data.length; i++) {
-  var objAva = {
-    x: response.data[i].id,
-    // Add null check for 'avability'
-    y: response.data[i].avability != null ? Number(response.data[i].avability.toFixed(2)) : 0,
-  };
-  resultAva.push(objAva);
+  if (response.data[i].avability != null && response.data[i].time != null) {
+    var objAva = {
+      // Use moment.unix() to create a UTC-based moment object
+    x: new Date(response.data[i].time * 1000), 
+      y: Number(response.data[i].avability.toFixed(2)),
+    };
+    resultAva.push(objAva);
+  }
 }
 setAvaLine(resultAva);
 
 // Filter dan proses data performance
-const resultPer = response.data
-  .filter(item => isValidPerformance(item.performance))
-  .map(item => ({
-    x: item.id,
-    // Add null check for 'performance'
-    y: item.performance != null ? Number(item.performance.toFixed(2)) : 0
-  }));
-setPerLine(resultPer);
+const resultPer = Array.isArray(response.data)
+  ? response.data.filter(item => item.performance != null && item.time != null)
+  : [];
+
+const filteredData = resultPer.map(item => ({
+  // Convert the Unix timestamp to a WIB Date object
+  x: new Date(item.time * 1000), 
+  y: Number(item.performance.toFixed(2)),
+}));
+setPerLine(filteredData);
+
+
+// setPerLine(resultPer);
+
 console.log(perLine);
 console.log(resultPer);
 
+// Quality
 var resultQua = [];
 for (i = 0; i < response.data.length; i++) {
-  var objQua = {
-    x: response.data[i].id,
-    // Add null check for 'quality'
-    y: response.data[i].quality != null ? Number(response.data[i].quality.toFixed(2)) : 0,
-  };
-  resultQua.push(objQua);
+  if (response.data[i].quality != null) { // Check for null data
+    var objQua = {
+      x: new Date(response.data[i].time * 1000),
+      y: Number(response.data[i].quality.toFixed(2)),
+    };
+    resultQua.push(objQua);
+  }
 }
 setQuaLine(resultQua);
 
-//Output==================================
-let objOut = 0;
-for (i = 0; i < response.data.length; i++) {
-  objOut += Number(response.data[i].output);
-}
-setTotalOut(objOut);
 
-//Runtime====================================
-let objRun = 0;
-for (i = 0; i < response.data.length; i++) {
-  objRun += Number(response.data[i].runTime);
-}
-setTotalRun(objRun);
+    //Output==================================
+    let objOut = 0;
+    for (i = 0; i < response.data.length; i++) {
+      objOut += Number(response.data[i].output);
+    }
+    setTotalOut(objOut);
 
-//Stop==================================
-let objStop = 0;
-for (i = 0; i < response.data.length; i++) {
-  objStop += Number(response.data[i].stopTime);
-}
-setTotalStop(objStop);
+    //Runtime====================================
+    let objRun = 0;
+    for (i = 0; i < response.data.length; i++) {
+      objRun += Number(response.data[i].runTime);
+    }
+    setTotalRun(objRun);
 
-//Idle====================================
-let objIdle = 0;
-for (i = 0; i < response.data.length; i++) {
-  objIdle += Number(response.data[i].idleTime);
-}
-setTotalIdle(objIdle);
+    //Stop==================================
+    let objStop = 0;
+    for (i = 0; i < response.data.length; i++) {
+      objStop += Number(response.data[i].stopTime);
+    }
+    setTotalStop(objStop);
 
-//Speed========================================
-// Add a check to prevent division by zero and a null check for objRun
-let objSpeed = (objOut != null && objRun > 0) ? ((objOut * 25) / 4 / objRun).toFixed(1) : "0";
+    //Idle====================================
+    let objIdle = 0;
+    for (i = 0; i < response.data.length; i++) {
+      objIdle += Number(response.data[i].idleTime);
+    }
+    setTotalIdle(objIdle);
 
-setTotalSpeed(objSpeed);
+    //Speed========================================
+    // Add a check to prevent division by zero and a null check for objRun
+    let objSpeed = (objOut != null && objRun > 0) ? ((objOut * 25) / 4 / objRun).toFixed(1) : "0";
+
+    setTotalSpeed(objSpeed);
 
     // OEE CHART========================================
-var OeeChart = [];
-for (let i = 0; i < response.data.length; i++) {
-  // Check if 'oee' is a valid number before using toFixed()
-  let oeeValue = response.data[i].oee != null ? Number(response.data[i].oee.toFixed(2)) : 0;
-  
-  var objOeeChart = {
-    label: moment
-      .tz(
-        new Date(response.data[i].time * 1000).toLocaleString(),
-        "America/Los_Angeles"
-      )
-      .format("YYYY-MM-DD HH:mm"),
-    y: oeeValue,
-  };
-  OeeChart.push(objOeeChart);
-}
-setOeeChart(OeeChart);
+    var OeeChart = [];
+    for (let i = 0; i < response.data.length; i++) {
+      // Check if 'oee' is a valid number before using toFixed()
+      let oeeValue = response.data[i].oee != null ? Number(response.data[i].oee.toFixed(2)) : 0;
+      
+      var objOeeChart = {
+        label: moment
+            .unix(response.data[i].time) // Correctly handles the Unix timestamp
+            .tz("UTC") // Applies the target timezone directly
+            .format("YYYY-MM-DD HH:mm"),
+         y: oeeValue,
+      };
+      OeeChart.push(objOeeChart);
+    }
+    setOeeChart(OeeChart);
+    
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    alert("Failed to fetch data. Please check your network connection or try again.");
+    // You might also want to clear states on error
+    setOeeCm1([]);
+    setVarOee([]);
+    // Clear other states as well
+    setAvaLine([]);
+    setPerLine([]);
+    setQuaLine([]);
+    setTotalOut(0);
+    setTotalRun(0);
+    setTotalStop(0);
+    setTotalIdle(0);
+    setTotalSpeed(0);
+    setOeeChart([]);
   }
+};
+// ...existing code...
 
   let changeMachine = (e) => {
     var dataInput = e.target.value;
@@ -268,59 +305,76 @@ let submitData = () => {
 
   
 
-  let oeeCalculation =
+// Add a check before performing the calculation
+let oeeCalculation = 0; // Default to 0
+if (oeeVar && oeeVar[0] && oeeVar[0].Ava != null && oeeVar[0].Per != null && oeeVar[0].Qua != null) {
+  oeeCalculation =
     (oeeVar[0].Ava / 100) * (oeeVar[0].Per / 100) * (oeeVar[0].Qua / 100) * 100;
+}
 
-    const renderCm1 = () => {
-      // Filter data anomali terlebih dahulu
-      const filteredOeeCm1 = oeeCm1.filter(cm1 => {
-          // Cek apakah performance adalah nilai yang wajar
+const renderCm1 = () => {
+    // Add this check at the very beginning of the function
+    if (!oeeCm1 || !Array.isArray(oeeCm1)) {
         return (
-          // Memastikan performance bukan Infinity
-          isFinite(cm1.performance) &&
-          // Memastikan performance tidak melebihi batas wajar (misalnya 200%)
-          cm1.performance <= 200 &&
-          // Memastikan performance tidak negatif
-          cm1.performance >= 0
+            <Tr>
+                <Td colSpan={10} textAlign="center" display="table-cell" className="text-red-500">
+                    No data available
+                </Td>
+            </Tr>
         );
-      });
+    }
+  
+    // Filter data anomali terlebih dahulu
+    const filteredOeeCm1 = oeeCm1.filter(cm1 => {
+        // Cek apakah performance adalah nilai yang wajar
+        return (
+            // Memastikan performance bukan Infinity
+            isFinite(cm1.performance) &&
+            // Memastikan performance tidak melebihi batas wajar (misalnya 200%)
+            cm1.performance <= 200 &&
+            // Memastikan performance tidak negatif
+            cm1.performance >= 0
+        );
+    });
+  
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const currentData = filteredOeeCm1.slice(indexOfFirstRow, indexOfLastRow);
 
-      const indexOfLastRow = currentPage * rowsPerPage;
-      const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-      const currentData = filteredOeeCm1.slice(indexOfFirstRow, indexOfLastRow);
-    
-      if (filteredOeeCm1.length === 0) {
+    if (filteredOeeCm1.length === 0) {
         return (
-          <Tr>
-            <Td colSpan={10} textAlign="center" display="table-cell" className="text-red-500">
-              No data available
-            </Td>
-          </Tr>
+            <Tr>
+                <Td colSpan={10} textAlign="center" display="table-cell" className="text-red-500">
+                    No data available
+                </Td>
+            </Tr>
         );
+    }
+
+return currentData.map((cm1, index) => (
+    <Tr key={cm1.id}>
+        <Td>{indexOfFirstRow + index + 1}</Td> {/* Row Number */}
+        <Td>
+      {moment
+        // Use moment.unix() to create a UTC-based moment object
+        .unix(cm1.time) 
+        .utc()
+        .format("YYYY-MM-DD HH:mm")
       }
-    
-      return currentData.map((cm1, index) => (
-        <Tr key={cm1.id}>
-          <Td>{indexOfFirstRow + index + 1}</Td> {/* Row Number */}
-          <Td>
-            {moment
-              .unix(cm1.time)
-              .tz("GMT")
-              .format("YYYY-MM-DD HH:mm")
-              }
-          </Td>
+        </Td>
         <Td className="bg-blue-400"> {cm1.avability != null ? cm1.avability.toFixed(2) : 'N/A'} </Td>
-    <Td className="bg-red-400"> {cm1.performance != null ? cm1.performance.toFixed(2) : 'N/A'} </Td>
-    <Td className="bg-green-400"> {cm1.quality != null ? cm1.quality.toFixed(2) : 'N/A'} </Td>
-    <Td> {cm1.oee != null ? cm1.oee.toFixed(2) : 'N/A'} </Td>
-    <Td>{cm1.output}</Td>
-    <Td>{cm1.runTime}</Td>
-    <Td>{cm1.stopTime}</Td>
-    <Td>{cm1.idleTime}</Td>
-  </Tr>
-      ));
-    };
+        <Td className="bg-green-400"> {cm1.performance != null ? cm1.performance.toFixed(2) : 'N/A'} </Td>
+        <Td className="bg-red-400"> {cm1.quality != null ? cm1.quality.toFixed(2) : 'N/A'} </Td>
+        <Td> {cm1.oee != null ? cm1.oee.toFixed(2) : 'N/A'} </Td>
+        <Td>{cm1.output}</Td>
+        <Td>{cm1.runTime}</Td>
+        <Td>{cm1.stopTime}</Td>
+        <Td>{cm1.idleTime}</Td>
+    </Tr>
+));
+};
     
+
   useEffect(() => {
     const handleThemeChange = () => {
       const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -333,116 +387,130 @@ let submitData = () => {
     return () => observer.disconnect();
   }, []);
 
-  const options = {
-    responsive: true,
-    theme: isDarkMode ? "dark2" : "light2",
-    animationEnabled: true,
-    title: {
-      text: "Overall Equipment Effectiveness",
-      fontColor: isDarkMode ? "white" : "black"
-    },
-    subtitles: [
-      {
-        //text: `${oeeCalculation.oee.toFixed(2)}% OEE`,
-        text: `${oeeCalculation != null && !isNaN(oeeCalculation) ? oeeCalculation.toFixed(2) : 'N/A'}% OEE`,
-        verticalAlign: "center",
-        fontSize: 26,
-        dockInsidePlotArea: true,
-        fontColor: isDarkMode ? "white" : "black",
+    const options = {
+      responsive: true,
+      theme: isDarkMode ? "dark2" : "light2",
+      animationEnabled: true,
+      title: {
+        text: "Overall Equipment Effectiveness",
+        fontColor: isDarkMode ? "white" : "black"
       },
-    ],
-    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
-    // height: 410, //buat naikin tinggi 
-    data: [
-      {
-        click: visitorsChartDrilldownHandler,
-        type: "doughnut",
-        showInLegend: true,
-        indexLabel: "{name}: {y}",
-        yValueFormatString: "#,###'%'",
+      subtitles: [
+        {
+          //text: `${oeeCalculation.oee.toFixed(2)}% OEE`,
+          text: `${oeeCalculation != null && !isNaN(oeeCalculation) ? oeeCalculation.toFixed(2) : 'N/A'}% OEE`,
+          verticalAlign: "center",
+          fontSize: 26,
+          dockInsidePlotArea: true,
+          fontColor: isDarkMode ? "white" : "black",
+        },
+      ],
+      backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+      // height: 410, //buat naikin tinggi 
 
-        dataPoints: [
+
+      data: [
+        {
+          click: visitorsChartDrilldownHandler,
+          type: "doughnut",
+          showInLegend: true,
+          indexLabel: "{name}: {y}",
+          yValueFormatString: "#,###'%'",
+
+        dataPoints: oeeVar && oeeVar[0] ? [
           { name: "Avability", y: oeeVar[0].Ava },
           { name: "Performance", y: oeeVar[0].Per },
           { name: "Quality", y: oeeVar[0].Qua },
-        ],
-      },
-    ],
-  };
+        ] : [
+          // Default data points to prevent error
+          { name: "Avability", y: 0 },
+          { name: "Performance", y: 0 },
+          { name: "Quality", y: 0 },
+          ],
+        },
+      ],
+    };
 
-  const options1 = {
-    responsive: true,
-    zoomEnabled: true,
-    theme: isDarkMode ? "dark2" : "light2",
-    title: {
-      text: "OEE",
-      fontColor: isDarkMode ? "white" : "black",
-    },
-    subtitles: [
-      {
-        text: "instrument production",
+    const options1 = {
+      responsive: true,
+      zoomEnabled: true,
+      theme: isDarkMode ? "dark2" : "light2",
+      title: {
+        text: "OEE",
         fontColor: isDarkMode ? "white" : "black",
       },
-    ],
-    axisY: {
-      prefix: "",
-    },
-    toolTip: {
-      shared: true,
-    },
-    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
-    borderRadius: 12, // Membuat sudut melengkung (mirip rounded-lg)
-    margin: {
-      top: 10,
-      left: 10,
-      right: 10,
-      bottom: 10,
-    },
-    data: [
-      {
-        type: "spline",
-        name: "Avability",
-        showInLegend: true,
-        xValueFormatString: "",
-        yValueFormatString: "",
-        dataPoints: avaLine,
+      subtitles: [
+        {
+          text: "instrument production",
+          fontColor: isDarkMode ? "white" : "black",
+        },
+      ],
+ axisX: {
+    valueFormatString: "DD-MMM-YY HH:mm", 
+    valueType: "dateTime",
+    timeZone: "UTC",
+    title: "Date",
+    labelAutoFit: true, // Automatically adjusts labels to prevent overlap
+  },
+      axisY: {
+        prefix: "",
       },
-      {
-        type: "spline",
-        name: "Performance",
-        showInLegend: true,
-        xValueFormatString: "",
-        yValueFormatString: "",
-        dataPoints: perLine,
+      toolTip: {
+        shared: true,
       },
-      {
-        type: "spline",
-        name: "Quality",
-        showInLegend: true,
-        xValueFormatString: "",
-        yValueFormatString: "",
-        dataPoints: quaLine,
+      backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+      borderRadius: 12, // Membuat sudut melengkung (mirip rounded-lg)
+      margin: {
+        top: 10,
+        left: 10,
+        right: 10,
+        bottom: 10,
       },
-    ],
-  };
+      data: [
+        {
+          type: "spline",
+          name: "Avability",
+          showInLegend: true,
+          xValueFormatString: "",
+          yValueFormatString: "",
+          dataPoints: avaLine,
+        },
+        {
+          type: "spline",
+          name: "Performance",
+          showInLegend: true,
+          xValueFormatString: "",
+          yValueFormatString: "",
+          dataPoints: perLine,
+        },
+        {
+          type: "spline",
+          name: "Quality",
+          showInLegend: true,
+          xValueFormatString: "",
+          yValueFormatString: "",
+          dataPoints: quaLine,
+        },
+      ],
+    };
 
-  const options3 = {
-    theme: isDarkMode ? "dark2" : "light2",
-    animationEnabled: true,
-    responsive: true,
-    title: {
-      text: "OEE Shift",
-      fontColor: isDarkMode ? "white" : "black",
-    },
-    backgroundColor: isDarkMode ? "#171717" : "#ffffff",
-    data: [
-      {
-        // Change type to "doughnut", "line", "splineArea", etc.
-        type: "column",
-        dataPoints: oeeChart,
+    const options3 = {
+      theme: isDarkMode ? "dark2" : "light2",
+      animationEnabled: true,
+      responsive: true,
+      title: {
+        text: "OEE Shift",
+        fontColor: isDarkMode ? "white" : "black",
       },
-    ],
-  };
+      backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+      data: [
+        {
+          // Change type to "doughnut", "line", "splineArea", etc.
+          type: "column",
+          dataPoints: oeeChart,
+        },
+      ],
+    };
 
   return (
     <>
@@ -465,18 +533,32 @@ let submitData = () => {
             background: kartuColor,
           }}
         >
-          <div>
-            <CircularProgress
-              value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
-              color="purple.400"
-              size="200px"
-              fontSize="150px"
-            >
-              <CircularProgressLabel>
-                {oeeVar[0].Per != null ? `${oeeVar[0].Per.toFixed(2)}%` : 'N/A'}
-              </CircularProgressLabel>
-            </CircularProgress>
-          </div>
+<div>
+  {oeeVar && oeeVar[0] ? (
+    <>
+      <CircularProgress
+        value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
+        color="purple.400"
+        size="200px"
+        fontSize="150px"
+      >
+        <CircularProgressLabel>
+          {oeeVar[0].Per != null ? `${oeeVar[0].Per.toFixed(2)}%` : 'N/A'}
+        </CircularProgressLabel>
+      </CircularProgress>
+    </>
+  ) : (
+    // Render a placeholder or nothing if the data is not available
+    <CircularProgress
+      value={0}
+      color="purple.400"
+      size="200px"
+      fontSize="150px"
+    >
+      <CircularProgressLabel>N/A</CircularProgressLabel>
+    </CircularProgress>
+  )}
+</div>
           
           <Stack>
             <CardBody>
@@ -508,17 +590,31 @@ let submitData = () => {
           }}
         >
           <div>
-            <CircularProgress
-              value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
-              color="green.400"
-              size="200px"
-              fontSize="150px"
-            >
-              <CircularProgressLabel>
-               {oeeVar[0].Per != null ? `${oeeVar[0].Per.toFixed(2)}%` : 'N/A'}
-              </CircularProgressLabel>
-            </CircularProgress>
-          </div>
+  {oeeVar && oeeVar[0] ? (
+    <>
+      <CircularProgress
+        value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
+        color="green.400"
+        size="200px"
+        fontSize="150px"
+      >
+        <CircularProgressLabel>
+          {oeeVar[0].Per != null ? `${oeeVar[0].Per.toFixed(2)}%` : 'N/A'}
+        </CircularProgressLabel>
+      </CircularProgress>
+    </>
+  ) : (
+    // Render a placeholder or nothing if the data is not available
+    <CircularProgress
+      value={0}
+      color="green.400"
+      size="200px"
+      fontSize="150px"
+    >
+      <CircularProgressLabel>N/A</CircularProgressLabel>
+    </CircularProgress>
+  )}
+</div>
 
           <Stack>
             <CardBody>
@@ -545,18 +641,32 @@ let submitData = () => {
             background: kartuColor,
           }}
         >
-          <div>
-            <CircularProgress
-              value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
-              color="red.400"
-              size="200px"
-              fontSize="150px"
-            >
-              <CircularProgressLabel>
-                {oeeVar[0].Qua != null ? `${oeeVar[0].Qua.toFixed(2)}%` : 'N/A'}    
-              </CircularProgressLabel>
-            </CircularProgress>
-          </div>
+<div>
+  {oeeVar && oeeVar[0] ? (
+    <>
+      <CircularProgress
+        value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
+        color="red.400"
+        size="200px"
+        fontSize="150px"
+      >
+        <CircularProgressLabel>
+          {oeeVar[0].Per != null ? `${oeeVar[0].Per.toFixed(2)}%` : 'N/A'}
+        </CircularProgressLabel>
+      </CircularProgress>
+    </>
+  ) : (
+    // Render a placeholder or nothing if the data is not available
+    <CircularProgress
+      value={0}
+      color="red.400"
+      size="200px"
+      fontSize="150px"
+    >
+      <CircularProgressLabel>N/A</CircularProgressLabel>
+    </CircularProgress>
+  )}
+</div>
 
           <Stack>
             <CardBody>
