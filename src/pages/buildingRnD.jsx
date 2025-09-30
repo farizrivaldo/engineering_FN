@@ -325,7 +325,8 @@ export default function BuildingRnD() {
       <div className="flex flex-row justify-center space-x-4 my-6 flex-wrap xl:flex-nowrap ">
         <div>
           <h5 className="mb-1">Area</h5>
-          <Select placeholder="Select Area"  onChange={getArea}>
+          <Select onChange={getArea}>
+            <option disabled selected hidden value=""> Select Area </option>
             <option value="cMT-HVAC-RND-Lt.3_EMS_RND3_HMI-01_data">R. ACCEDE</option>
             <option value="cMT-HVAC-RND-Lt.3_EMS_RND3_HMI-02_data">R. JMCO RND Lt.3</option>
             <option value="cMT-HVAC-RND-Lt.3_EMS_RND3_HMI-03_data">R. Primary Packaging RND Lt. 3</option>

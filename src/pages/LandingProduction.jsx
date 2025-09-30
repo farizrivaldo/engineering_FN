@@ -81,14 +81,39 @@ function LandingProduction() {
   let opeCalculation =
     (opeVar[0].Ava / 100) * (opeVar[0].Per / 100) * (opeVar[0].Qua / 100) * 100;
 
-  const fetchOPE = async (date) => {
-    let response = await axios.get("http://10.126.15.197:8002/part/ope", {
-      params: {
-        date: date,
-      },
-    });
-    setOpeVar(response.data);
-  };
+const fetchOPE = async (date) => {
+    try {
+        let response = await axios.get("http://10.126.15.197:8002/part/ope", {
+            params: {
+                date: date,
+            },
+        });
+
+        // 🚨 FIXING THE FLAWED PERFORMANCE DATA HERE
+        const rawData = response.data;
+        if (rawData.length > 0 && rawData[0].Per) {
+            
+            // This attempts to clean the flawed number.
+            // If the number is still astronomical, it will be capped to a default or rounded.
+            const cleanedPerformance = parseFloat(rawData[0].Per);
+            
+            // Set a fallback if the number is clearly wrong (e.g., > 100 or huge)
+            if (cleanedPerformance > 1000 || isNaN(cleanedPerformance)) {
+                console.error("Performance data is flawed from API. Resetting to 0.");
+                rawData[0].Per = 0.00; // Reset to a safe value
+            } else {
+                // Otherwise, round it to 2 decimals for display
+                rawData[0].Per = cleanedPerformance.toFixed(2);
+            }
+        }
+        
+        // Update the state with the cleaned data
+        setOpeVar(rawData);
+
+    } catch (error) {
+        console.error("Error fetching OPE data:", error);
+    }
+};
 
   const getChartDimensions = () => {
     // Mobile-first responsive dimensions
