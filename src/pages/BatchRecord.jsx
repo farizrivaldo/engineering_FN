@@ -532,17 +532,54 @@ function formatTimestampUTC(uniqueTimestamp) {
   };
 
   // 1. Untuk EXPORT ke Excel
-  const exportToExcel = () => {
-    const exportData = getFormattedExportData(); // misal: format + filter sesuai kebutuhan
+const exportToExcel = (selectedLine, selectedProcess, selectedMachine, startDateInput, finishDateInput, selectedBatch) => {
+    const exportData = getFormattedExportData();
+
     if (!exportData || exportData.length === 0) {
-      toast.warning("No data to export!");
-      return;
+        toast.warning("No data to export!");
+        return;
     }
+
+    // Helper function to safely get and sanitize the value
+    const sanitizeFileName = (input) => {
+        if (!input) return 'N_A';
+        
+        // Handle object inputs (like from Select components)
+        if (typeof input === 'object') {
+            // Try common property names
+            return input.value || input.name || input.line_name || 'N_A';
+        }
+        
+        // Convert to string and remove invalid characters
+        return String(input).replace(/[\/\\:*?"<>|]/g, '_');
+    };
+
+    const formatDateForFileName = (dateString) => {
+        if (!dateString || dateString.toLowerCase() === 'dd/mm/yyyy') return 'AnyDate';
+        const parts = dateString.split('/');
+        return (parts.length === 3) ? `${parts[2]}-${parts[1]}-${parts[0]}` : dateString;
+    };
+
+    // Sanitize and format all variables
+    const lineArea = sanitizeFileName(selectedLine);
+    const process = sanitizeFileName(selectedProcess);
+    const machine = sanitizeFileName(selectedMachine);
+    const startDate = formatDateForFileName(startDateInput);
+    const finishDate = formatDateForFileName(finishDateInput);
+    const batch = sanitizeFileName(selectedBatch);
+    const prefix = `${lineArea}-${process}-${machine}`; // Example: LINE1-GRANULASI-PMA
+    const startdateRange = `${startDate.replace(/-/g, '')}`; // Example: 20251001
+    const finishdateRange = `${finishDate.replace(/-/g, '')}`; // Example: 20251031
+    
+    // Construct the final file name with all parameters
+    const fileName = `${batch}_${prefix}_(${startdateRange}-${finishdateRange}).xlsx`;
+
+    // Export
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "BatchRecord");
-    XLSX.writeFile(workbook, "BatchRecord.xlsx");
-  };
+    XLSX.writeFile(workbook, fileName);
+};
 
   const exportToPDF = () => {
     const exportData = getFormattedExportData(); // sama seperti untuk Excel
@@ -893,9 +930,9 @@ function formatTimestampUTC(uniqueTimestamp) {
           <option value={60}>60</option>
           <option value={100}>100</option>
         </Select>
-        <Button colorScheme="green" className="mb-4" onClick={exportToExcel}>
-          Export to Excel
-        </Button>
+<Button colorScheme="green" className="mb-4" onClick={() => exportToExcel(newLine, newProces, newMachine, startDate, finishDate, selectedBatch)}>
+  Export to Excel
+</Button>
         <Button colorScheme="red" className="mb-4" onClick={exportToPDF}>
           Export to PDF
         </Button>
