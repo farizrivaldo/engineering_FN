@@ -581,7 +581,34 @@ const exportToExcel = (selectedLine, selectedProcess, selectedMachine, startDate
     XLSX.writeFile(workbook, fileName);
 };
 
-  const exportToPDF = () => {
+  const exportToPDF = (selectedLine, selectedProcess, selectedMachine, startDateInput, finishDateInput, selectedBatch) => {
+
+    const sanitizeFileName = (input) => {
+        if (!input) return 'N_A';
+        
+        if (typeof input === 'object') {
+            return input.value || input.name || input.line_name || 'N_A';
+        }
+        
+        return String(input).replace(/[\/\\:*?"<>|]/g, '_');
+    };
+
+    // Helper function to format the date (Moved up to prevent TDZ issues)
+    const formatDateForFileName = (dateString) => {
+        if (!dateString || dateString.toLowerCase() === 'dd/mm/yyyy') return 'AnyDate';
+        const parts = dateString.split('/');
+        // Format YYYY-MM-DD for consistency and sorting
+        return (parts.length === 3) ? `${parts[2]}-${parts[1]}-${parts[0]}` : dateString;
+    };
+
+    const lineArea = sanitizeFileName(selectedLine);
+    const process = sanitizeFileName(selectedProcess);
+    const machine = sanitizeFileName(selectedMachine);
+    const batch = sanitizeFileName(selectedBatch);
+    const startDate = formatDateForFileName(startDateInput);
+    const finishDate = formatDateForFileName(finishDateInput);
+    
+    // --- Data Check ---
     const exportData = getFormattedExportData(); // sama seperti untuk Excel
 
     if (!exportData || exportData.length === 0) {
@@ -592,11 +619,9 @@ const exportToExcel = (selectedLine, selectedProcess, selectedMachine, startDate
     // Siapkan header kolom dari key object
     const columns = Object.keys(exportData[0]).map((key) => ({ header: key, dataKey: key }));
 
-    // Siapkan data array (array of object)
-    // const rows = exportData;
-
+    // --- PDF Setup ---
     const doc = new jsPDF({
-      orientation: "landscape", // atau "portrait" juga boleh
+      orientation: "landscape",
       unit: "pt",
       format: "A4"
     });
@@ -604,18 +629,20 @@ const exportToExcel = (selectedLine, selectedProcess, selectedMachine, startDate
     // Judul PDF
     doc.setFontSize(16);
     doc.text("Batch Record", 40, 30);
-
+    
     // Keterangannya bos ngikutin state yg distate
     doc.setFontSize(10);
     let infoY = 50; // Y awal
     const infoLineHeight = 16;
-    doc.text(`Line: ${newLine || "-"}`, 40, infoY);
-    doc.text(`Process: ${newProces || "-"}`, 180, infoY);
-    doc.text(`Machine: ${newMachine || "-"}`, 380, infoY);
+    
+    // --- PDF Info (Used correct input variables/parameters) ---
+    doc.text(`Line: ${lineArea || "-"}`, 40, infoY); // FIX: Used lineArea instead of newLine
+    doc.text(`Process: ${process || "-"}`, 180, infoY); // FIX: Used process instead of newProces
+    doc.text(`Machine: ${machine || "-"}`, 380, infoY); // FIX: Used machine instead of newMachine
     infoY += infoLineHeight;
-    doc.text(`Start Date: ${startDate || "-"}`, 40, infoY);
-    doc.text(`Finish Date: ${finishDate || "-"}`, 180, infoY);
-    doc.text(`Batch: ${selectedBatch || "-"}`, 380, infoY);
+    doc.text(`Start Date: ${startDate || "-"}`, 40, infoY); // Now safe
+    doc.text(`Finish Date: ${finishDate || "-"}`, 180, infoY); // Now safe
+    doc.text(`Batch: ${batch || "-"}`, 380, infoY);
 
     // Render tabel setelah keterangan
     autoTable(doc, {
@@ -626,9 +653,16 @@ const exportToExcel = (selectedLine, selectedProcess, selectedMachine, startDate
       headStyles: { fillColor: [41, 128, 185] },
       margin: { left: 40, right: 40 },
     });
+    
+    // --- File Name Generation ---
+    const prefix = `${lineArea}-${process}-${machine}`; // Example: LINE1-GRANULASI-PMA
+    // Remove hyphens for compact date range
+    const startdateRange = `${startDate.replace(/-/g, '')}`; 
+    const finishdateRange = `${finishDate.replace(/-/g, '')}`; 
+    
+    doc.save(`${batch}_${prefix}_(${startdateRange}-${finishdateRange}).pdf`);
+};
 
-    doc.save("BatchRecord.pdf");
-  };
 
   const renderData = () => {
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -933,7 +967,7 @@ const exportToExcel = (selectedLine, selectedProcess, selectedMachine, startDate
 <Button colorScheme="green" className="mb-4" onClick={() => exportToExcel(newLine, newProces, newMachine, startDate, finishDate, selectedBatch)}>
   Export to Excel
 </Button>
-        <Button colorScheme="red" className="mb-4" onClick={exportToPDF}>
+        <Button colorScheme="red" className="mb-4" onClick={() => exportToPDF(newLine, newProces, newMachine, startDate, finishDate, selectedBatch)}>
           Export to PDF
         </Button>
       </div>
