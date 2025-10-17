@@ -40,7 +40,7 @@ function ProductionSummary() {
   const [perLine, setPerLine] = useState([]);
   const [quaLine, setQuaLine] = useState([]);
 
-  const [toalOut, setTotalOut] = useState();
+  const [totalOut, setTotalOut] = useState();
   const [totalRun, setTotalRun] = useState();
   const [totalStop, setTotalStop] = useState();
   const [totalIdle, setTotalIdle] = useState();
@@ -56,7 +56,6 @@ function ProductionSummary() {
   const [showAlert, setShowAlert] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const { colorMode } = useColorMode();
   const [isTableVisible, setIsTableVisible] = useState(true);
   const borderColor = useColorModeValue("rgba(var(--color-border))", "rgba(var(--color-border))");
@@ -373,7 +372,66 @@ return currentData.map((cm1, index) => (
     </Tr>
 ));
 };
-    
+
+const oeeData = oeeVar && oeeVar[0];
+const ava = Number(oeeData?.Ava) || 0;
+const per = Number(oeeData?.Per) || 0;
+const qua = Number(oeeData?.Qua) || 0;
+
+
+const [showRawPerformance, setShowRawPerformance] = useState(false);
+
+// Function to toggle the state when the button is clicked
+const togglePerformanceView = () => {
+    setShowRawPerformance(prev => !prev);
+};
+
+
+// PERFORMANCE LOGIC
+const rawPerformance = per;
+const cappedPerformance = Math.min(per, 100);
+
+// Variables for the bottom Performance chart
+const rawPerformanceDisplay = rawPerformance.toFixed(2); // "117.03"
+const cappedPerformanceDisplay = cappedPerformance.toFixed(2); // "100.00"
+const currentPerformanceValue = showRawPerformance ? rawPerformanceDisplay : cappedPerformanceDisplay;
+
+const oeePerformanceYValue = showRawPerformance ? rawPerformance : cappedPerformance;
+const cappedOeeScore = (ava / 100) * (cappedPerformance / 100) * (qua / 100) * 100;
+const rawOeeScore = (ava / 100) * (rawPerformance / 100) * (qua / 100) * 100;
+const currentOeeScore = showRawPerformance ? rawOeeScore : cappedOeeScore;
+const currentOeeDisplay = currentOeeScore != null && !isNaN(currentOeeScore) ? currentOeeScore.toFixed(2) : 'N/A';
+
+// Access the current time variables
+const totalRuntime = Number(totalRun) || 0;
+const totalIdletime = Number(totalIdle) || 0;
+const totalStoptime = Number(totalStop) || 0;
+
+// Calculate the consistent baseline (Planned Production Time)
+const plannedProductionTime = totalRun + totalIdle + totalStop;
+
+//  Calculate the correct percentage for each bar
+let runtimePercent = 0;
+let idletimePercent = 0;
+let stoptimePercent = 0;
+
+if (plannedProductionTime > 0) {
+    runtimePercent = (totalRuntime / plannedProductionTime) * 100;
+    idletimePercent = (totalIdletime / plannedProductionTime) * 100;
+    stoptimePercent = (totalStoptime / plannedProductionTime) * 100;
+}
+
+const totalGood = Number(totalOut) || 0;
+const totalAfkir = 0;
+const totalProduct = totalGood + totalAfkir;
+
+let goodProductPercent = 0;
+let afkirProductPercent = 0;
+
+if (totalProduct > 0) {
+    goodProductPercent = (totalGood / totalProduct) * 100;
+    afkirProductPercent = (totalAfkir / totalProduct) * 100;
+}
 
   useEffect(() => {
     const handleThemeChange = () => {
@@ -398,7 +456,7 @@ return currentData.map((cm1, index) => (
       subtitles: [
         {
           //text: `${oeeCalculation.oee.toFixed(2)}% OEE`,
-          text: `${oeeCalculation != null && !isNaN(oeeCalculation) ? oeeCalculation.toFixed(2) : 'N/A'}% OEE`,
+          text: `${currentOeeDisplay}% OEE`,
           verticalAlign: "center",
           fontSize: 26,
           dockInsidePlotArea: true,
@@ -419,7 +477,7 @@ return currentData.map((cm1, index) => (
 
         dataPoints: oeeVar && oeeVar[0] ? [
           { name: "Avability", y: oeeVar[0].Ava },
-          { name: "Performance", y: oeeVar[0].Per },
+          { name: "Performance", y: currentPerformanceValue },
           { name: "Quality", y: oeeVar[0].Qua },
         ] : [
           // Default data points to prevent error
@@ -514,7 +572,8 @@ return currentData.map((cm1, index) => (
 
   return (
     <>
-      <div className="flex flex-col bg-background justify-center mx-12 gap-2 my-4 rounded-md shadow-md md:flex-row">
+      <div onDoubleClick={togglePerformanceView} 
+    style={{ cursor: 'pointer' }} className="flex flex-col bg-background justify-center mx-12 gap-2 my-4 rounded-md shadow-md md:flex-row">
         <div className="w-full md:w-1/2">
           <CanvasJSChart options={options} />
         </div>
@@ -533,17 +592,24 @@ return currentData.map((cm1, index) => (
             background: kartuColor,
           }}
         >
+
 <div>
+  
   {oeeVar && oeeVar[0] ? (
     <>
       <CircularProgress
         value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
         color="purple.400"
-        size="200px"
+        size="225px"
         fontSize="150px"
+        paddingLeft="10px"
+        paddingTop="25px"
       >
-        <CircularProgressLabel>
-          {oeeVar[0].Per != null ? `${oeeVar[0].Per.toFixed(2)}%` : 'N/A'}
+        <CircularProgressLabel
+          paddingLeft="10px"
+          paddingTop="25px"
+        >
+          {oeeVar[0].Ava != null ? `${oeeVar[0].Ava.toFixed(2)}%` : 'N/A'}
         </CircularProgressLabel>
       </CircularProgress>
     </>
@@ -562,17 +628,17 @@ return currentData.map((cm1, index) => (
           
           <Stack>
             <CardBody>
-              <Heading size="md">Availability</Heading>
+              <Heading size="md" mb={1}>Availability</Heading>
 
               <Text py="2">
-                Runtime ({totalRun} Min)
-                <Progress hasStripe value={100} colorScheme="purple" />
-                Idletime ({totalIdle} Min)
-                <Progress hasStripe value={(totalIdle / totalRun) * 100} colorScheme="purple" />
-                Stoptime ({totalStop} Min)
-                <Progress hasStripe value={(totalStop / totalRun) * 100} colorScheme="purple" />
+                <Text mb={1} mt={1}>Runtime ({totalRun} Min)</Text>
+                <Progress hasStripe value={runtimePercent} colorScheme="purple" />
+                <Text mb={1} mt={1}>Idletime ({totalIdle} Min)</Text>
+                <Progress hasStripe value={idletimePercent} colorScheme="purple" />
+                <Text mb={1} mt={1}>Stoptime ({totalStop} Min)</Text>
+                <Progress hasStripe value={stoptimePercent} colorScheme="purple" />
                 <br />
-                availability is the ratio of Run Time to Planned Production
+                Availability is the ratio of Run Time to Planned Production
                 Time.
               </Text>
             </CardBody>
@@ -590,17 +656,22 @@ return currentData.map((cm1, index) => (
           }}
         >
           <div>
+
   {oeeVar && oeeVar[0] ? (
     <>
       <CircularProgress
-        value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
+        value={oeeVar[0].Per != null ? Number(oeeVar[0].Qua.toFixed(2)) : 0}
         color="green.400"
-        size="200px"
+        size="225px"
         fontSize="150px"
+        paddingLeft="10px"
+        paddingTop="25px"
       >
-        <CircularProgressLabel>
-          {oeeVar[0].Per != null ? `${oeeVar[0].Per.toFixed(2)}%` : 'N/A'}
-        </CircularProgressLabel>
+      <CircularProgressLabel
+      paddingLeft="10px" 
+      paddingTop="25px">
+        {`${currentPerformanceValue}%`}
+      </CircularProgressLabel>
       </CircularProgress>
     </>
   ) : (
@@ -617,16 +688,19 @@ return currentData.map((cm1, index) => (
 </div>
 
           <Stack>
-            <CardBody>
-              <Heading size="md">Performance </Heading>
+            <CardBody p={4}>
+              <Heading size="md" mb={3}>Performance </Heading>
               <Text py="2">
-                Actual Speed {totalSpeed} slave/min
+                <Text mb={1}> Actual Speed: {totalSpeed} slave/min </Text>
                 <Progress hasStripe value={totalSpeed} colorScheme="green" />
-                Setpoint Speed 40 slave/min
-                <Progress hasStripe value={40} colorScheme="green" />
+                <Text mb={1} mt={2}> Setpoint Speed: {totalSpeed} slave/min </Text>
+                <Progress hasStripe value={totalSpeed} colorScheme="green" />
                 <br />
-                Performance is the second of the three OEE factors to be
-                calculated.
+                <Text> Performance is the second of the three OEE factors to be calculated. </Text>
+                {/* <button onClick={togglePerformanceView} style={{ marginLeft: '10px', padding: '5px 10px', cursor: 'pointer' }}>
+                    {buttonText}
+                </button> */}
+                
               </Text>
             </CardBody>
           </Stack>
@@ -645,13 +719,18 @@ return currentData.map((cm1, index) => (
   {oeeVar && oeeVar[0] ? (
     <>
       <CircularProgress
-        value={oeeVar[0].Ava != null ? Number(oeeVar[0].Ava.toFixed(2)) : 0}
+        value={oeeVar[0].Qua != null ? Number(oeeVar[0].Qua.toFixed(2)) : 0}
         color="red.400"
-        size="200px"
+        size="225px"
         fontSize="150px"
+        paddingLeft="10px"
+        paddingTop="25px"
       >
-        <CircularProgressLabel>
-          {oeeVar[0].Per != null ? `${oeeVar[0].Per.toFixed(2)}%` : 'N/A'}
+        <CircularProgressLabel
+          paddingLeft="10px"
+          paddingTop="25px"
+        >
+          {oeeVar[0].Per != null ? `${oeeVar[0].Qua.toFixed(2)}%` : 'N/A'}
         </CircularProgressLabel>
       </CircularProgress>
     </>
@@ -667,22 +746,17 @@ return currentData.map((cm1, index) => (
     </CircularProgress>
   )}
 </div>
-
           <Stack>
-            <CardBody>
-              <Heading size="md">Quality</Heading>
-
-              <Text py="2">
-                Good Product ({toalOut} Box)
-                <Progress hasStripe value={64} colorScheme="red" />
-                Afkir Product (0 Box)
-                <Progress hasStripe value={0} colorScheme="red" />
+    <CardBody p={4}>
+      <Heading size="md" mb={4}> Quality </Heading>
+        <Text mb={1}> Good Product: ({totalGood} Box) </Text>
+            <Progress hasStripe value={goodProductPercent} colorScheme="red" mb={3} />
+              <Text mb={1}> Afkir Product: ({totalAfkir} Box) </Text>
+                 <Progress hasStripe value={afkirProductPercent} colorScheme="red" mb={3} />      
                 <br />
-                Quality takes into account manufactured parts that do not meet
-                quality standards,
-              </Text>
-            </CardBody>
-          </Stack>
+         <Text> Quality takes into account manufactured parts that do not meet quality standards.</Text>
+    </CardBody>
+  </Stack>
         </Card>
       </div>
       <br />
