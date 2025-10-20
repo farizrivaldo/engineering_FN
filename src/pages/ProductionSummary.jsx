@@ -53,6 +53,9 @@ function ProductionSummary() {
   const [startDate, setStartDate] = useState();
   const [finishDate, setFinishDate] = useState();
 
+const [isFiltered, setIsFiltered] = useState(false);
+
+
   const [showAlert, setShowAlert] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -133,6 +136,27 @@ const fetchData = async (data, start, finish) => {
     setVarOee(response1.data);
 
     // console.log(oeeChart);
+
+
+// This function needs to be used BEFORE generating avaLine, perLine, etc.
+
+const filterHistoricalData = (data, isFiltered) => {
+    if (!isFiltered) {
+        return data;
+    }
+
+    return data.filter(row => {
+        // Assume row structure has properties like 'avability' and 'time' (Unix timestamp)
+        const isAvailable = Number(row.avability) > 0;
+        
+        // Weekend Check: 0=Sunday, 6=Saturday
+        const dayOfWeek = moment.unix(row.time).utc().day(); 
+        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5; 
+        
+        // Only keep the data point if it was active and occurred on a weekday
+        return isAvailable && isWeekday;
+    });
+};
 
 // Availability
 var resultAva = [];
@@ -311,8 +335,35 @@ if (oeeVar && oeeVar[0] && oeeVar[0].Ava != null && oeeVar[0].Per != null && oee
     (oeeVar[0].Ava / 100) * (oeeVar[0].Per / 100) * (oeeVar[0].Qua / 100) * 100;
 }
 
-const renderCm1 = () => {
-    // Add this check at the very beginning of the function
+// Add these variables and functions at the top of your component function
+const toggleFilter = () => {
+    setIsFiltered(prev => !prev);
+};
+
+// 💡 FIX: The primary filtering function that uses your moment.js date structure
+const filterData = (data) => {
+    if (!isFiltered) {
+        return data; // Show all data if the filter is off
+    }
+
+    return data.filter(row => {
+        // 1. Availability Check: Only keep rows where AVAILABILITY is greater than 0
+        const isAvailable = Number(row.avability) > 0;
+
+        // 2. Weekend Check: Use moment.unix() to get the day of the week
+        // We check the UNIX timestamp in the 'time' property of the row object.
+        const dayOfWeek = moment.unix(row.time).utc().day(); // 0=Sunday, 6=Saturday
+        
+        // true if it's a weekday (Monday=1 through Friday=5)
+        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5; 
+        
+        // 3. Combined Condition: Only show rows that were available AND occurred on a weekday
+        return isAvailable && isWeekday;
+    });
+};
+
+const renderCm1 = (isFiltered) => {
+    // Initial check for no data (remains the same)
     if (!oeeCm1 || !Array.isArray(oeeCm1)) {
         return (
             <Tr>
@@ -322,25 +373,39 @@ const renderCm1 = () => {
             </Tr>
         );
     }
-  
-    // Filter data anomali terlebih dahulu
-    const filteredOeeCm1 = oeeCm1.filter(cm1 => {
+    
+    // 1. Filter data anomalies and assign to a MUTABLE variable
+    let processedData = oeeCm1.filter(cm1 => {
         // Cek apakah performance adalah nilai yang wajar
         return (
-            // Memastikan performance bukan Infinity
             isFinite(cm1.performance) &&
-            // Memastikan performance tidak melebihi batas wajar (misalnya 200%)
             cm1.performance <= 200 &&
-            // Memastikan performance tidak negatif
             cm1.performance >= 0
         );
     });
-  
-    const indexOfLastRow = currentPage * rowsPerPage;
-    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-    const currentData = filteredOeeCm1.slice(indexOfFirstRow, indexOfLastRow);
 
-    if (filteredOeeCm1.length === 0) {
+    // 2. 💡 CRITICAL FIX: Apply Availability and Weekend Filters if requested
+    if (isFiltered) {
+        // Re-assign processedData by filtering it further.
+        processedData = processedData.filter(cm1 => { // 💡 FIX 2: Changed 'row' to 'cm1'
+            
+            // Availability Check: Only keep rows where AVAILABILITY is > 0
+            const isAvailable = Number(cm1.avability) > 0;
+            
+            // Weekend Check: Use moment.unix() to get the day of the week
+            const dayOfWeek = moment.unix(cm1.time).utc().day(); // 0=Sunday, 6=Saturday
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; 
+        
+             // Rule: A row is filtered OUT (returns false) ONLY IF BOTH conditions are met.
+             const shouldBeFilteredOut = (cm1.avability === 0) && isWeekend;
+
+             // We return the inverse: If it SHOULD be filtered out, return false; otherwise, return true.
+             return !shouldBeFilteredOut;
+        });
+    }
+
+    // 3. Handle data availability after all filters have run
+    if (processedData.length === 0) { // 💡 FIX 3: Check processedData, not filteredOeeCm1
         return (
             <Tr>
                 <Td colSpan={10} textAlign="center" display="table-cell" className="text-red-500">
@@ -349,28 +414,29 @@ const renderCm1 = () => {
             </Tr>
         );
     }
+ 
+    // 4. Pagination (Uses the final processedData)
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const currentData = processedData.slice(indexOfFirstRow, indexOfLastRow);
 
-return currentData.map((cm1, index) => (
-    <Tr key={cm1.id}>
-        <Td>{indexOfFirstRow + index + 1}</Td> {/* Row Number */}
-        <Td>
-      {moment
-        // Use moment.unix() to create a UTC-based moment object
-        .unix(cm1.time) 
-        .utc()
-        .format("YYYY-MM-DD HH:mm")
-      }
-        </Td>
-        <Td className="bg-blue-400"> {cm1.avability != null ? cm1.avability.toFixed(2) : 'N/A'} </Td>
-        <Td className="bg-green-400"> {cm1.performance != null ? cm1.performance.toFixed(2) : 'N/A'} </Td>
-        <Td className="bg-red-400"> {cm1.quality != null ? cm1.quality.toFixed(2) : 'N/A'} </Td>
-        <Td> {cm1.oee != null ? cm1.oee.toFixed(2) : 'N/A'} </Td>
-        <Td>{cm1.output}</Td>
-        <Td>{cm1.runTime}</Td>
-        <Td>{cm1.stopTime}</Td>
-        <Td>{cm1.idleTime}</Td>
-    </Tr>
-));
+    // 5. Render final rows (remains the same)
+    return currentData.map((cm1, index) => (
+        <Tr key={cm1.id}>
+            <Td>{indexOfFirstRow + index + 1}</Td>
+            <Td>
+                {moment.unix(cm1.time).utc().format("YYYY-MM-DD HH:mm")}
+            </Td>
+            <Td className="bg-blue-400"> {cm1.avability != null ? cm1.avability.toFixed(2) : 'N/A'} </Td>
+            <Td className="bg-green-400"> {cm1.performance != null ? cm1.performance.toFixed(2) : 'N/A'} </Td>
+            <Td className="bg-red-400"> {cm1.quality != null ? cm1.quality.toFixed(2) : 'N/A'} </Td>
+            <Td> {cm1.oee != null ? cm1.oee.toFixed(2) : 'N/A'} </Td>
+            <Td>{cm1.output}</Td>
+            <Td>{cm1.runTime}</Td>
+            <Td>{cm1.stopTime}</Td>
+            <Td>{cm1.idleTime}</Td>
+        </Tr>
+    ));
 };
 
 const oeeData = oeeVar && oeeVar[0];
@@ -871,6 +937,41 @@ if (totalProduct > 0) {
             </Select>
           </div>
           <div className="col-span-1 xl:flex-1 xl:flex xl:flex-grow flex items-end">
+<button
+    onClick={toggleFilter}
+    style={{
+        padding: '8px 16px',
+        // 💡 FIX 1: Use the blue color from the "Submit" button as the base (OFF state)
+        // We'll use a slightly darker blue/gray when filtered (ON state) for contrast.
+        backgroundColor: isFiltered ? '#48bb78' : '#f56565',
+        color: 'white',
+        border: 'none',
+        // 💡 FIX 2: Match the border radius of the other buttons
+        borderRadius: '0.25rem', // Common radius value
+        cursor: 'pointer',
+        // 💡 FIX 3: Match the bold/uppercase font style
+        fontWeight: 'bold',
+        textTransform: 'uppercase', // Ensures text looks consistent with 'Submit'
+        
+        // Ensure margin is consistent with surrounding elements if needed
+        marginRight: '0.5rem', 
+        height: '40px', // Match the height of other buttons/inputs if necessary
+        // Add a smooth transition for button hover/active states
+        transition: 'background-color 0.2s ease-in-out',
+        
+    }}
+    onMouseOver={(e) => { 
+        e.currentTarget.style.backgroundColor = isFiltered ? '#38a169' : '#e53e3e'; // Darker shade on hover
+    }}
+    onMouseOut={(e) => { 
+        e.currentTarget.style.backgroundColor = isFiltered ? '#48bb78' :  '#f56565'; // Return to base color
+    }}
+>
+    {/* 💡 FIX 4: Use a concise label that reflects the toggle status */}
+    {isFiltered 
+        ? 'On' 
+        : 'Off'}
+</button>
             <Button
               className="w-full"
               colorScheme="blue"
@@ -932,7 +1033,7 @@ if (totalProduct > 0) {
               }}>Idle Time</Th>
                 </Tr>
               </Thead>
-              <Tbody>{renderCm1()}</Tbody>
+              <Tbody>{renderCm1(isFiltered)}</Tbody>
             </Table>
           </TableContainer>
         )}
