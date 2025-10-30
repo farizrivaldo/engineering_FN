@@ -86,6 +86,7 @@ const [isFiltered, setIsFiltered] = useState(false);
     //console.log(e.dataPoint.name);
   };
 
+  // mezanine.tengah_Cm1_data
 const fetchData = async (data, start, finish) => {
   try {
     let response = await axios.get("http://10.126.15.197:8002/part/oee", {
@@ -542,12 +543,12 @@ if (totalProduct > 0) {
           yValueFormatString: "#,###'%'",
 
         dataPoints: oeeVar && oeeVar[0] ? [
-          { name: "Avability", y: oeeVar[0].Ava },
+          { name: "Availability", y: oeeVar[0].Ava },
           { name: "Performance", y: currentPerformanceValue },
           { name: "Quality", y: oeeVar[0].Qua },
         ] : [
           // Default data points to prevent error
-          { name: "Avability", y: 0 },
+          { name: "Availability", y: 0 },
           { name: "Performance", y: 0 },
           { name: "Quality", y: 0 },
           ],
@@ -578,6 +579,7 @@ if (totalProduct > 0) {
   },
       axisY: {
         prefix: "",
+        maximum: 160,
       },
       toolTip: {
         shared: true,
