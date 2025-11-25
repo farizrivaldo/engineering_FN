@@ -34,6 +34,16 @@ import Dashboard from "./pages/Dashboard";
 import Chat from "./components/Chat";
 import Header from "./components/header";
 
+import UploadComponent from './pages/CMMS/InputPWO';
+import CheckPWO from './pages/CMMS/TechnicianPage';
+import TechnicianPage from "./pages/CMMS/TechnicianPage";
+import OperationsManager from "./pages/CMMS/OperationsManager";
+import PMPUploader from "./pages/CMMS/PMPUploader";
+import DailyAssignmentPage from './pages/CMMS/DailyAssignmentPage';
+import MachineManager from "./pages/CMMS/MachineManager";
+import CompletedJobsPage from "./pages/CMMS/CompletedJobs";
+import EBRDataExporter from "./pages/CMMS/EBRDataExporter";
+import ServiceRequestForm from "./pages/CMMS/WorkOrderPages";
 
 function App() {
   const dispatch = useDispatch();
@@ -109,6 +119,7 @@ function App() {
           </>
 
           {/* Konten Utama */}
+          {/* Routes to change the URL Path */}
           <div className="overflow-x-auto">
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
@@ -131,6 +142,17 @@ function App() {
               <Route path="/HistoricalMachine" element={<MachineHistorical />} />
               <Route path="/BatchRecord" element={<BatchRecord />} />
               <Route path="/HistoryTabel" element={<HistoryTabel />} />
+              <Route path="/PWOInput" element={<UploadComponent />} />
+              <Route path="/TechnicianPage" element={<TechnicianPage />} />
+              <Route path="/MasterPMP" element={<OperationsManager />} />
+              <Route path="/PMPUploader" element={<PMPUploader />} />
+              <Route path="/assign-jobs" element={<DailyAssignmentPage />} />
+              <Route path="/MachineManager" element={<MachineManager />} />
+              <Route path="/CompletedJobs" element={<CompletedJobsPage />} />
+              <Route path="/ebr-data-exporter" element={<EBRDataExporter />} />
+              <Route path="/work-orders" element={<ServiceRequestForm />} />
+
+              
             </Routes>
           </div>
         </div>

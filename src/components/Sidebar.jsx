@@ -17,7 +17,9 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import '../index.css'
+import { AddTask, StickyNote2, Task, AssignmentInd, Description } from "@mui/icons-material";
 // import { PieChart } from "@mui/icons-material";
+
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -353,8 +355,37 @@ function Sidebar() {
         name: "History Tabel",
         icon: <TableViewIcon size={21} className="flex-shrink-0 m-[2px] gap-y-1"/>,
         path: "/HistoryTabel",
-      });
-    }
+      },{
+        name: "PMP",
+        icon: <AssignmentInd size={21}/>,
+        path: "/PWOInput",
+        subMenu: [
+          { name: "Machine Manager", path: "/MachineManager", visible: userGlobal.level > 4 },
+          { name: "PMP Uploader", path: "/PMPUploader", visible: userGlobal.level > 4 },
+          { name: "Assign PMP", path: "/assign-jobs", visible: userGlobal.level > 4 },
+          { name: "Operations", path: "/MasterPMP", visible: userGlobal.level > 4 },
+          // { name: "Input PWO Data", path: "/PWOInput", visible: userGlobal.level > 4 },
+          // { name: "Assign PWO", path: "/AssignPWO" },
+          { name: "Technician", path: "/TechnicianPage", visible: userGlobal.level <= 5 },
+          { name: "Completed PWO", path: "/CompletedJobs",visible: userGlobal.level > 4 },
+          // { name: "PWO List", path: "/ReadPWO" },
+        ],
+        
+      },
+      {
+        name: "Work Order",
+        icon: <Description size={21} className="flex-shrink-0 m-1"/>,
+        path: "/work-orders",
+      }
+
+      
+      
+    
+    
+    );
+  }
+
+    
     // Add more items as needed for higher levels
     return navigation;
   };
