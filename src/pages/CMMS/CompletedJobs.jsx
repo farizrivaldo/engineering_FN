@@ -55,7 +55,7 @@ function CompletedJobsPage() {
     if (filterYear) params.append('year', filterYear);
 
     try {
-      const response = await fetch(`http://10.126.15.197:8002/completed-jobs?${params.toString()}`);
+      const response = await fetch(`http://10.126.15.197:8002/part/completed-jobs?${params.toString()}`);
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
       setJobs(data);
