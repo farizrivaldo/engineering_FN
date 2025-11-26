@@ -69,7 +69,7 @@ function CompletedJobsPage() {
   // Fetch the operations *for a specific job* when "View Details" is clicked
   const fetchOperations = async (workOrderId) => {
     try {
-      const response = await fetch(`http://localhost:8002/part/work-order-operations/${workOrderId}`);
+      const response = await fetch(`http://10.126.15.197:8002/part/work-order-operations/${workOrderId}`);
       if (!response.ok) throw new Error('Could not fetch operations');
       const data = await response.json();
       setJobOperations(data);

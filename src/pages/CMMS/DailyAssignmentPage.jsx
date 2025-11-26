@@ -37,7 +37,7 @@ function DailyAssignmentPage() {
 
   const fetchPendingJobs = async () => {
     try {
-      const response = await fetch('http://localhost:8002/part/pending-jobs');
+      const response = await fetch('http://10.126.15.197:8002/part/pending-jobs');
       if (!response.ok) throw new Error('Network error');
       const data = await response.json();
       setPendingJobs(data);

@@ -83,7 +83,7 @@ useEffect(() => {
   // 2. Add the new fetch function
   const fetchAllOperationsList = async () => {
     try {
-      const response = await fetch('http://localhost:8002/part/all-operations-list');
+      const response = await fetch('http://10.126.15.197:8002/part/all-operations-list');
       if (!response.ok) throw new Error('Network error');
       const data = await response.json();
       setAllOperationsList(data); // data is now an array of strings
@@ -94,7 +94,7 @@ useEffect(() => {
 
   const fetchOperationsForMachine = async (machineId) => {
     try {
-      const response = await fetch(`http://localhost:8002/part/default-operations/${machineId}`);
+      const response = await fetch(`http://10.126.15.197:8002/part/default-operations/${machineId}`);
       if (!response.ok) throw new Error('Server responded with an error');
       const data = await response.json();
       setCurrentOperations(data);
@@ -135,7 +135,7 @@ useEffect(() => {
     
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8002/part/default-operations', {
+      const response = await fetch('http://10.126.15.197:8002/part/default-operations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -161,7 +161,7 @@ useEffect(() => {
     if (!window.confirm('Are you sure?')) return;
     try {
       // Calls the new delete endpoint
-      await fetch(`http://localhost:8002/part/default-operations/${operationId}`, {
+      await fetch(`http://10.126.15.197:8002/part/default-operations/${operationId}`, {
         method: 'DELETE',
       });
       toast({ title: 'Operation deleted', status: 'info' });

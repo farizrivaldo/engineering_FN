@@ -159,7 +159,7 @@ const { nameToAssetMap, assetToNameMap } = useMemo(() => {
 
   const fetchMachineList = async () => {
     try {
-      const response = await fetch('http://localhost:8002/part/machines-list');
+      const response = await fetch('http://10.126.15.197:8002/part/machines-list');
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
       setMachineList(data);
@@ -180,7 +180,7 @@ const { nameToAssetMap, assetToNameMap } = useMemo(() => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8002/part/pmp-data', {
+      const response = await fetch('http://10.126.15.197:8002/part/pmp-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -238,7 +238,7 @@ const { nameToAssetMap, assetToNameMap } = useMemo(() => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8002/part/pmp-data/${editingId}`, {
+      const response = await fetch(`http://10.126.15.197:8002/part/pmp-data/${editingId}`, {
         method: 'PUT', // Use PUT for updates
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -285,7 +285,7 @@ const { nameToAssetMap, assetToNameMap } = useMemo(() => {
 
     try {
       // Small fix: capture the response to check it
-      const response = await fetch(`http://localhost:8002/part/pmp-data/${id}`, { method: 'DELETE' });
+      const response = await fetch(`http://10.126.15.197:8002/part/pmp-data/${id}`, { method: 'DELETE' });
       
       if (!response.ok) {
         const errData = await response.json();

@@ -77,7 +77,7 @@ const loadData = async (woNumber) => {
 
     try {
       // 1. Fetch the data
-      const response = await fetch(`http://localhost:8002/part/work-order/details/${woNumber}`);
+      const response = await fetch(`http://10.126.15.197:8002/part/work-order/details/${woNumber}`);
       if (!response.ok) {
         throw new Error(`Network response was not ok (status: ${response.status})`);
       }
