@@ -42,7 +42,7 @@ function MachineManager() {
   const fetchMachines = async () => {
     try {
       // Calls your new GET /part/machines route
-      const response = await fetch('http://localhost:8002/part/machines');
+      const response = await fetch('http://10.126.15.197:8002/part/machines');
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
       setMachines(data);
@@ -69,7 +69,7 @@ function MachineManager() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8002/part/machines', {
+      const response = await fetch('http://10.126.15.197:8002/part/machines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -115,7 +115,7 @@ function MachineManager() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8002/part/machines/${editingId}`, {
+      const response = await fetch(`http://10.126.15.197:8002/part/machines/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

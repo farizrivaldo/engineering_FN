@@ -86,7 +86,7 @@ function PMPUploader() {
 
     try {
       // This route now expects a JSON array, NOT FormData
-      const response = await fetch('http://localhost:8002/api/bulk-import-pending', {
+      const response = await fetch('http://10.126.15.197:8002/api/bulk-import-pending', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(stagedJobs), // Send the staged jobs array
@@ -126,7 +126,7 @@ function PMPUploader() {
 
   const fetchPendingJobs = async () => {
     try {
-      const response = await fetch('http://localhost:8002/part/pending-jobs');
+      const response = await fetch('http://10.126.15.197:8002/part/pending-jobs');
       if (!response.ok) throw new Error('Network error');
       const data = await response.json();
       setPendingJobs(data);
@@ -137,7 +137,7 @@ function PMPUploader() {
 
   const fetchMachineList = async () => {
     try {
-      const response = await fetch('http://localhost:8002/part/machines-list');
+      const response = await fetch('http://10.126.15.197:8002/part/machines-list');
       if (!response.ok) throw new Error('Network error');
       const data = await response.json();
       setMachineList(data);
@@ -151,7 +151,7 @@ function PMPUploader() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8002/part/pending-job', {
+      const response = await fetch('http://10.126.15.197:8002/part/pending-job', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,7 +183,7 @@ function PMPUploader() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8002/part/pending-job/${editingJob.pending_id}`, {
+      const response = await fetch(`http://10.126.15.197:8002/part/pending-job/${editingJob.pending_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
