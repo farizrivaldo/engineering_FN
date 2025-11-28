@@ -20,17 +20,23 @@ import {
   Text,
   Divider,
   HStack,
-  Checkbox, // Import Checkbox
+  Checkbox,
+  InputGroup,      // <--- NEW: For styling the search bar
+  InputLeftElement // <--- NEW: For the search icon (optional)
 } from '@chakra-ui/react';
+import { Delete, Refresh, Search } from "@mui/icons-material";
 
 function DailyAssignmentPage() {
-  const [pendingJobs, setPendingJobs] = useState([]); // All jobs from the holding pen
-  const [selectedJobs, setSelectedJobs] = useState(new Set()); // IDs of checked jobs
-  const [scheduledDate, setScheduledDate] = useState(''); // The date to assign
+  const [pendingJobs, setPendingJobs] = useState([]); 
+  const [selectedJobs, setSelectedJobs] = useState(new Set()); 
+  const [scheduledDate, setScheduledDate] = useState(''); 
   const [isLoading, setIsLoading] = useState(false);
+  
+  // --- NEW STATE: Holds the search text ---
+  const [searchQuery, setSearchQuery] = useState(''); 
+
   const toast = useToast();
 
-  // 1. Fetch all pending jobs on load
   useEffect(() => {
     fetchPendingJobs();
   }, []);
@@ -46,7 +52,6 @@ function DailyAssignmentPage() {
     }
   };
 
-  // 2. Handle checking/unchecking a job
   const handleCheckboxChange = (jobId) => {
     const newSet = new Set(selectedJobs);
     if (newSet.has(jobId)) {
@@ -57,7 +62,13 @@ function DailyAssignmentPage() {
     setSelectedJobs(newSet);
   };
 
-  // 3. Handle assigning all selected jobs
+  // --- NEW LOGIC: Filter the jobs based on the search query ---
+  // We use .filter() so we don't lose the original data. 
+  // We convert both to lowercase so "PWO" matches "pwo".
+  const filteredJobs = pendingJobs.filter((job) => 
+    job.wo_number.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const handleAssignJobs = async () => {
     if (selectedJobs.size === 0) {
       toast({ title: 'No jobs selected', status: 'warning', isClosable: true });
@@ -81,51 +92,26 @@ function DailyAssignmentPage() {
 
       const result = await response.json();
       
-      // Check for full success (201)
       if (response.status === 201) {
-        toast({
-          title: 'Jobs Assigned',
-          description: result.message,
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-        });
+        toast({ title: 'Jobs Assigned', description: result.message, status: 'success', duration: 5000, isClosable: true });
       } 
-      // Check for partial success (207)
       else if (response.status === 207) {
-        toast({
-          title: 'Partial Success',
-          description: `${result.message}. See console (F12) for details.`,
-          status: 'warning',
-          duration: 9000,
-          isClosable: true,
-        });
-        // Log the specific errors
+        toast({ title: 'Partial Success', description: `${result.message}. See console.`, status: 'warning', duration: 9000, isClosable: true });
         console.error('Assignment Errors:', result.errors);
       }
-      // Check for full failure (409) or other errors
       else {
-        // This will catch 409, 500, 400, etc.
         throw new Error(result.error || result.message || 'Failed to assign jobs');
       }
 
-      // Clear selection and refresh the list ONLY if at least one job succeeded
-      if (response.ok) { // response.ok is true for 201 and 207
+      if (response.ok) { 
         setSelectedJobs(new Set());
         setScheduledDate('');
-        fetchPendingJobs(); // This will show the updated list
+        setSearchQuery(''); // Optional: Clear search after assigning
+        fetchPendingJobs(); 
       }
     
     } catch (err) {
-      // This will catch network errors and 4xx/5xx errors
-      toast({ 
-        title: 'Error Assigning Jobs', 
-        description: err.message, 
-        status: 'error',
-        duration: 9000,
-        isClosable: true,
-      });
-      console.error('Full Error Response:', err);
+      toast({ title: 'Error Assigning Jobs', description: err.message, status: 'error', duration: 9000, isClosable: true });
     } finally {
       setIsLoading(false);
     }
@@ -138,11 +124,9 @@ function DailyAssignmentPage() {
           Assign Daily PMP Jobs
         </Heading>
 
-        {/* --- 1. Assignment Controls --- */}
+        {/* --- Assignment Controls --- */}
         <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="lg">
-          <Heading as="h3" size="md" mb={4}>
-            Assignment Controls
-          </Heading>
+          <Heading as="h3" size="md" mb={4}>Assignment Controls</Heading>
           <HStack spacing={4}>
             <FormControl isRequired>
               <FormLabel>Scheduled Date for Selected Jobs</FormLabel>
@@ -166,11 +150,31 @@ function DailyAssignmentPage() {
 
         <Divider />
 
-        {/* --- 2. Pending Jobs Table --- */}
+        {/* --- Pending Jobs Table --- */}
         <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="lg">
-          <Heading as="h3" size="md" mb={4}>
-            Pending Jobs List (Holding Pen)
-          </Heading>
+          
+          {/* Header + Search Bar Area */}
+          <HStack justify="space-between" mb={4}>
+            <Heading as="h3" size="md">
+              Pending Jobs List (Holding Pen)
+            </Heading>
+            
+            {/* --- NEW: Search Input --- */}
+            <Box w="300px">
+                {/* If you don't have InputGroup/Icons, just use <Input ... /> */}
+                <InputGroup>
+                    <InputLeftElement pointerEvents='none'>
+                        <Search color='gray.300' />
+                    </InputLeftElement>
+                    <Input 
+                        placeholder="Search PWO Number..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </InputGroup>
+            </Box>
+          </HStack>
+
           <Box overflowX="auto">
             <Table variant="simple">
               <Thead>
@@ -182,14 +186,21 @@ function DailyAssignmentPage() {
                 </Tr>
               </Thead>
               <Tbody>
-                {pendingJobs.length === 0 && (
+                {/* --- UPDATE: Check filteredJobs instead of pendingJobs --- */}
+                {filteredJobs.length === 0 && (
                   <Tr>
                     <Td colSpan={4}>
-                      <Text textAlign="center">No pending jobs found.</Text>
+                      <Text textAlign="center">
+                        {pendingJobs.length === 0 
+                            ? "No pending jobs found." 
+                            : "No jobs match your search."}
+                      </Text>
                     </Td>
                   </Tr>
                 )}
-                {pendingJobs.map((job) => (
+                
+                {/* --- UPDATE: Map through filteredJobs --- */}
+                {filteredJobs.map((job) => (
                   <Tr key={job.pending_id}>
                     <Td>
                       <Checkbox
@@ -197,7 +208,8 @@ function DailyAssignmentPage() {
                         onChange={() => handleCheckboxChange(job.pending_id)}
                       />
                     </Td>
-                    <Td>{job.wo_number}</Td>
+                    {/* Highlight the match if needed, for now just text */}
+                    <Td fontWeight="bold">{job.wo_number}</Td>
                     <Td>{job.machine_name}</Td>
                     <Td>{job.asset_number}</Td>
                   </Tr>

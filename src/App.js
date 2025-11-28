@@ -44,6 +44,7 @@ import MachineManager from "./pages/CMMS/MachineManager";
 import CompletedJobsPage from "./pages/CMMS/CompletedJobs";
 import EBRDataExporter from "./pages/CMMS/EBRDataExporter";
 import ServiceRequestForm from "./pages/CMMS/WorkOrderPages";
+import SupervisorApproval from "./pages/CMMS/ApprovalPage";
 
 function App() {
   const dispatch = useDispatch();
@@ -151,6 +152,7 @@ function App() {
               <Route path="/CompletedJobs" element={<CompletedJobsPage />} />
               <Route path="/ebr-data-exporter" element={<EBRDataExporter />} />
               <Route path="/work-orders" element={<ServiceRequestForm />} />
+              <Route path="/supervisor-approval" element={<SupervisorApproval />} />
 
               
             </Routes>

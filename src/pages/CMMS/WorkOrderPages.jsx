@@ -237,7 +237,7 @@ const exportToPDF = async () => {
                 textDiv.style.fontSize = '12px'; 
                 textDiv.style.fontWeight = '500'; // Medium weight for readability
             } else {
-                textDiv.style.fontSize = '11px';
+                textDiv.style.fontSize = '12px';
             }
             
             // Layout styles
@@ -383,7 +383,7 @@ const exportToPDF = async () => {
                 <div className="text-xs">A Kalbe Company</div>
               </div>
               <div className="text-2xl font-bold text-center flex-1">WORK ORDER FORM</div>
-              <div className="text-[10px] text-right leading-tight">
+              <div className="text-[12px] text-right leading-tight">
                 <div>Page : Page 1 of 1</div>
                 <div>Printed Date : {new Date().toLocaleDateString('en-GB')} {new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit', second: '2-digit'})}</div>
                 <div>User : JIYAN.SALSABILA - SFL-OU</div>
@@ -396,7 +396,7 @@ const exportToPDF = async () => {
               <div className="col-span-2 grid grid-cols-2 gap-1">
                 {/* WR/WO Number */}
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">WR/WO Number</div>
+                  <div className="text-[12px] mb-0.5">WR/WO Number</div>
                   <div className="flex gap-1 items-center">
                     <input
                       type="text"
@@ -420,7 +420,7 @@ const exportToPDF = async () => {
 
                 {/* WR Requestor / Approved By */}
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">WR Requestor / Approved by</div>
+                  <div className="text-[12px] mb-0.5">WR Requestor / Approved by</div>
                   <div className="flex gap-1 items-center">
                     <input
                       type="text"
@@ -443,7 +443,7 @@ const exportToPDF = async () => {
 
                 {/* WR/WO Start Date */}
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">WR/WO Start Date Target</div>
+                  <div className="text-[12px] mb-0.5">WR/WO Start Date Target</div>
                   <div className="flex gap-1 items-center">
                     <input
                       type="text"
@@ -467,7 +467,7 @@ const exportToPDF = async () => {
 
                 {/* WR/WO Complete Date */}
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">WR/WO Complete Date Target</div>
+                  <div className="text-[12px] mb-0.5">WR/WO Complete Date Target</div>
                   <div className="flex gap-1 items-center">
                     <input
                       type="text"
@@ -492,7 +492,7 @@ const exportToPDF = async () => {
 
               {/* Columns 3-4: WO Description */}
               <div className="col-span-3 border border-black p-1.5">
-                <div className="text-[9px] mb-0.5">WO Description</div>
+                <div className="text-[12px] mb-0.5">WO Description</div>
                 <textarea
                   name="woDescription"
                   value={formData.woDescription}
@@ -505,7 +505,7 @@ const exportToPDF = async () => {
 
               {/* Column 5: Change Control Data */}
               <div className="col-span-1 border border-black p-1.5">
-                <div className="text-[9px] mb-0.5">Change Control Data</div>
+                <div className="text-[12px] mb-0.5">Change Control Data</div>
                 <textarea
                   name="changeControlData"
                   value={formData.changeControlData}
@@ -522,7 +522,7 @@ const exportToPDF = async () => {
               {/* Column 1: WO Type, Activity Type */}
               <div className="flex flex-col gap-1">
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">WO Type</div>
+                  <div className="text-[12px] mb-0.5">WO Type</div>
                   <select
                     name="woType"
                     value={formData.woType}
@@ -536,7 +536,7 @@ const exportToPDF = async () => {
                   </select>
                 </div>
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">Activity Type</div>
+                  <div className="text-[12px] mb-0.5">Activity Type</div>
                   <select
                     name="activityType"
                     value={formData.activityType}
@@ -554,7 +554,7 @@ const exportToPDF = async () => {
               {/* Column 2: WO Status, Activity Cause */}
               <div className="flex flex-col gap-1">
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">WO Status</div>
+                  <div className="text-[12px] mb-0.5">WO Status</div>
                   <select
                     name="woStatus"
                     value={formData.woStatus}
@@ -569,7 +569,7 @@ const exportToPDF = async () => {
                   </select>
                 </div>
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">Activity Cause</div>
+                  <div className="text-[12px] mb-0.5">Activity Cause</div>
                   <select
                     name="activityCause"
                     value={formData.activityCause}
@@ -587,7 +587,7 @@ const exportToPDF = async () => {
               {/* Column 3: Asset Number, Asset Area */}
               <div className="flex flex-col gap-1">
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">Asset Number</div>
+                  <div className="text-[12px] mb-0.5">Asset Number</div>
                   <input
                     type="text"
                     name="assetNumber"
@@ -598,7 +598,7 @@ const exportToPDF = async () => {
                   />
                 </div>
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">Asset Area</div>
+                  <div className="text-[12px] mb-0.5">Asset Area</div>
                   <input
                     type="text"
                     name="assetArea"
@@ -613,7 +613,7 @@ const exportToPDF = async () => {
               {/* Column 4: GL Charging, Asset Activity */}
               <div className="flex flex-col gap-1">
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">GL Charging</div>
+                  <div className="text-[12px] mb-0.5">GL Charging</div>
                   <input
                     type="text"
                     name="glCharging"
@@ -624,7 +624,7 @@ const exportToPDF = async () => {
                   />
                 </div>
                 <div className="border border-black p-1.5">
-                  <div className="text-[9px] mb-0.5">Asset Activity</div>
+                  <div className="text-[12px] mb-0.5">Asset Activity</div>
                   <input
                     type="text"
                     name="assetActivity"
@@ -638,7 +638,7 @@ const exportToPDF = async () => {
 
               {/* Columns 5-6: Supervisor Notes spanning 2 columns */}
               <div className="col-span-2 border border-black p-1.5">
-                <div className="text-[9px] mb-0.5">Supervisor Notes</div>
+                <div className="text-[12px] mb-0.5">Supervisor Notes</div>
                 <textarea
                   name="supervisorNotes"
                   value={formData.supervisorNotes}
@@ -653,12 +653,12 @@ const exportToPDF = async () => {
               <table className="w-full border-collapse border border-black">
                 <thead>
                   <tr className="bg-gray-100">
-                    <th className="border border-black p-1 text-[9px] text-left font-semibold" style={{width: '40px'}}>Operation</th>
-                    <th className="border border-black p-1 text-[9px] text-left font-semibold" style={{width: '25%'}}>Description</th>
-                    <th className="border border-black p-1 text-[9px] text-left font-semibold" style={{width: '60px'}}>Resources</th>
-                    <th className="border border-black p-1 text-[9px] text-left font-semibold " style={{width: '80px'}}>Executed by Technician</th>
-                    <th className="border border-black p-1 text-[9px] text-left font-semibold" style={{width: '140px'}}>Actual Start / Complete</th>
-                    <th className="border border-black p-1 text-[9px] text-left font-semibold">Technician's Notes</th>
+                    <th className="border border-black p-1 text-[14px] text-center font-semibold" style={{width: '45px'}}>Operation</th>
+                    <th className="border border-black p-1 text-[14px] text-center font-semibold" style={{width: '25%'}}>Description</th>
+                    <th className="border border-black p-1 text-[14px] text-center font-semibold" style={{width: '65px'}}>Resources</th>
+                    <th className="border border-black p-1 text-[14px] text-center font-semibold " style={{width: '95px'}}>Executed by Technician</th>
+                    <th className="border border-black p-1 text-[14px] text-center font-semibold" style={{width: '160px'}}>Actual Start / Complete</th>
+                    <th className="border border-black p-1 text-[14px] text-center font-semibold">Technician's Notes</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -669,14 +669,14 @@ const exportToPDF = async () => {
                           type="text"
                           value={op.id}
                           onChange={(e) => handleOperationChange(idx, 'id', e.target.value)}
-                          className="w-full px-1 text-[10px] focus:outline-none focus:bg-yellow-50 py-0 leading-none"
+                          className="w-full px-1 text-[12px] text-center focus:outline-none focus:bg-yellow-50 py-0 leading-none"
                         />
                       </td>
                       <td className="border border-black p-0.5">
                         <textarea
                           value={op.description}
                           onChange={(e) => handleOperationChange(idx, 'description', e.target.value)}
-                          className="w-full px-1 text-[10px] focus:outline-none focus:bg-yellow-50 resize-none leading-tight"
+                          className="w-full px-1 text-[12px] focus:outline-none focus:bg-yellow-50 resize-none leading-tight"
                           rows="2"
                         />
                       </td>
@@ -685,7 +685,7 @@ const exportToPDF = async () => {
                           type="text"
                           value={op.resources}
                           onChange={(e) => handleOperationChange(idx, 'resources', e.target.value)}
-                          className="w-full px-1 text-[10px] focus:outline-none focus:bg-yellow-50 py-0 leading-none"
+                          className="w-full px-1 text-[12px] text-center focus:outline-none focus:bg-yellow-50 py-0 leading-none"
                         />
                       </td>
                       <td className="border border-black p-0.5">
@@ -693,7 +693,7 @@ const exportToPDF = async () => {
                           type="text"
                           value={op.executedBy}
                           onChange={(e) => handleOperationChange(idx, 'executedBy', e.target.value)}
-                          className="w-full px-1 text-[10px] focus:outline-none focus:bg-yellow-50 py-0 leading-none text-blue-700"
+                          className="w-full px-1 text-[12px] text-center focus:outline-none focus:bg-yellow-50 py-0 leading-none text-blue-700"
                         />
                       </td>
                       <td className="border border-black p-0.5">
@@ -702,13 +702,13 @@ const exportToPDF = async () => {
                             type="datetime-local"
                             value={op.actualStart}
                             onChange={(e) => handleOperationChange(idx, 'actualStart', e.target.value)}
-                            className="w-full px-1 text-[9px] focus:outline-none focus:bg-yellow-50 border-b border-gray-200 py-0 leading-none text-blue-700"
+                            className="w-full px-1 text-[12px] focus:outline-none focus:bg-yellow-50 border-b border-gray-200 py-0 leading-none text-blue-700"
                           />
                           <input
                             type="datetime-local"
                             value={op.actualComplete}
                             onChange={(e) => handleOperationChange(idx, 'actualComplete', e.target.value)}
-                            className="w-full px-1 text-[9px] focus:outline-none focus:bg-yellow-50 py-0 leading-none text-blue-700"
+                            className="w-full px-1 text-[12px] focus:outline-none focus:bg-yellow-50 py-0 leading-none text-blue-700"
                           />
                         </div>
                       </td>
@@ -716,7 +716,7 @@ const exportToPDF = async () => {
                         <textarea
                           value={op.techniciansNotes}
                           onChange={(e) => handleOperationChange(idx, 'techniciansNotes', e.target.value)}
-                          className="w-full px-1 text-[10px] focus:outline-none focus:bg-yellow-50 resize-none leading-tight h-full text-blue-700"
+                          className="w-full px-1 text-[12px] focus:outline-none focus:bg-yellow-50 resize-none leading-tight h-full text-blue-700"
                           rows="2"
                         />
                       </td>
@@ -732,10 +732,10 @@ const exportToPDF = async () => {
               <div className="border-r border-black flex flex-col">
                 {/* Header Row */}
                 <div className="flex border-b border-black bg-gray-100">
-                  <div className="flex-1 border-r border-black p-1 text-[9px] font-semibold">Inventory Part -- Direct Purchase</div>
-                  <div className="w-[40px] border-r border-black p-1 text-[9px] font-semibold text-center">Qty</div>
-                  <div className="w-[40px] border-r border-black p-1 text-[9px] font-semibold text-center">Unit</div>
-                  <div className="w-[60px] p-1 text-[9px] font-semibold text-center">Issued</div>
+                  <div className="flex-1 border-r border-black p-1 text-[12px] font-semibold">Inventory Part -- Direct Purchase</div>
+                  <div className="w-[40px] border-r border-black p-1 text-[12px] font-semibold text-center">Qty</div>
+                  <div className="w-[40px] border-r border-black p-1 text-[12px] font-semibold text-center">Unit</div>
+                  <div className="w-[60px] p-1 text-[12px] font-semibold text-center">Issued</div>
                 </div>
                 <div className="flex-1 min-h-[200px] bg-white"></div>
               </div>
@@ -743,18 +743,18 @@ const exportToPDF = async () => {
               {/* RIGHT COLUMN: Failure Analysis */}
               <div className="flex flex-col justify-between">
                 <div className="p-2">
-                  <div className="text-[9px] font-semibold underline mb-2">Failure Analysis (by Supervisor and Technician):</div>
+                  <div className="text-[12px] font-semibold underline mb-2">Failure Analysis (by Supervisor and Technician):</div>
                   
                   <div className="flex flex-col gap-2">
                     {['Failure Description', 'Report Cause', 'Root Cause', 'Resolution'].map((label) => (
                        <div key={label} className="flex items-start">
-                          <div className="text-[9px] font-semibold w-24 pt-0.5 shrink-0">{label} :</div>
+                          <div className="text-[12px] font-semibold w-24 pt-0.5 shrink-0">{label} :</div>
                           <textarea
                             name={label === 'Failure Description' ? 'failureDescription' : label === 'Report Cause' ? 'reportCause' : label === 'Root Cause' ? 'rootCause' : 'resolution'}
                             value={formData[label === 'Failure Description' ? 'failureDescription' : label === 'Report Cause' ? 'reportCause' : label === 'Root Cause' ? 'rootCause' : 'resolution']}
                             onChange={handleInputChange}
                             rows="2"
-                            className="flex-1 text-[10px] border-b border-gray-300 focus:border-black focus:bg-yellow-50 focus:outline-none resize-none bg-transparent leading-tight mt-0 text-blue-700"
+                            className="flex-1 text-[12px] border-b border-gray-300 focus:border-black focus:bg-yellow-50 focus:outline-none resize-none bg-transparent leading-tight mt-0 text-blue-700"
                           />
                        </div>
                     ))}
@@ -762,7 +762,7 @@ const exportToPDF = async () => {
                 </div>
 
 {/* Footer: Revised Drawing */}
-            <div className="border-t border-black p-1.5 text-[9px] flex items-end mt-2">
+            <div className="border-t border-black p-1.5 text-[12px] flex items-end mt-2">
               <span className="mb-0.5">Need revised as built drawing? Y/N</span>
               <input
                 type="text"
@@ -793,9 +793,9 @@ const exportToPDF = async () => {
 
         {/* Warehouse Info Text */}
         <div className="border border-black p-1.5 mb-2">
-          <div className="text-[9px] mb-0.5">Warehouse officer writes more parts used for WO on next pages sign by technician</div>
-          <div className="text-[9px] mb-0.5">Unused parts returned to sparepart warehouse ? Yes / No by _______</div>
-          <div className="text-[9px]">Supervisor check issued part before closing WO, total parts type issued = _____ items</div>
+          <div className="text-[12px] mb-0.5">Warehouse officer writes more parts used for WO on next pages sign by technician</div>
+          <div className="text-[12px] mb-0.5">Unused parts returned to sparepart warehouse ? Yes / No by _______</div>
+          <div className="text-[12px]">Supervisor check issued part before closing WO, total parts type issued = _____ items</div>
         </div>
 
         {/* Approval Grid with E-Sign */}
@@ -803,7 +803,7 @@ const exportToPDF = async () => {
           
 {/* Column 1: Approved Date (UPDATED) */}
           <div className="border border-black p-1.5 flex items-center relative">
-            <div className="text-[9px] font-semibold z-10">
+            <div className="text-[12px] font-semibold z-10">
               Approved Date : 
               
                  {/* Displays "24 Nov 2025" in Blue */}
@@ -817,24 +817,25 @@ const exportToPDF = async () => {
             </div>
           </div>
 
-          {/* Column 2: Approved By (WITH SIGNATURE & DATE) */}
+{/* Column 2: Approved By (WITH SIGNATURE, DATE & NAME) */}
           <div className="border border-black p-1.5 relative h-14 flex flex-col justify-between">
             {/* Label */}
-            <div className="text-[9px] font-semibold z-10 relative">
+            <div className="text-[12px] font-semibold z-10 relative">
               Approved By : {formData.approvedBy !== '-' ? formData.approvedBy : 'Not Yet Approved'}
             </div>
 
-            {/* Signature & Date Layer */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none gap-2 pt-3">
-                {/* 1. The Signature Image */}
+            {/* Signature Layer - Centered Vertically & Horizontally */}
+            <div className="absolute inset-0 flex flex-col items-center justify-end pointer-events-none pb-1">
+              
+              {/* Row 1: Signature Image + Date */}
+              <div className="flex items-end gap-2 mb-0.5">
                 <img 
                   src="/ESIGN.png" 
                   alt="Signature" 
-                  className="h-10 w-auto object-contain opacity-90" 
+                  className="h-8 w-auto object-contain opacity-90" /* Reduced height slightly to fit name */
                 />
                 
-                {/* 2. The Formatted Date (e.g., "24 Nov 2025") */}
-                <span className="text-[9px] font-bold text-blue-800 opacity-80">
+                <span className="text-[12px] font-bold text-blue-800 opacity-80 mb-1">
                   {new Date().toLocaleDateString('en-GB', {
                     day: '2-digit',
                     month: 'short',
@@ -842,15 +843,22 @@ const exportToPDF = async () => {
                   })}
                 </span>
               </div>
+
+              {/* Row 2: Name Underneath */}
+              <span className="text-[12px] font-bold text-blue-800 opacity-80 leading-none">
+                Fauzi Perdana 
+              </span>
+
+            </div>
           </div>
 
           {/* Column 3: System Approval */}
           <div className="border border-black p-1.5 flex items-center">
-            <div className="text-[9px] font-semibold">(Approved By System)</div>
+            <div className="text-[12px] font-semibold">(Approved By System)</div>
           </div>
         </div>
 
-        <div className="text-[9px] text-gray-600">
+        <div className="text-[12px] text-gray-600">
           CR-EN-G001.00<br />
           (20 May 2020)
         </div>
@@ -887,7 +895,7 @@ const exportToPDF = async () => {
             border: 2px solid black !important; 
           }
           #printable-form > div {
-            padding: 10px !important;
+            padding: 12px !important;
           }
           #printable-form .mb-4 {
             margin-bottom: 5px !important;

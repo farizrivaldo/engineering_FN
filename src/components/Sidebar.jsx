@@ -367,6 +367,7 @@ function Sidebar() {
           // { name: "Input PWO Data", path: "/PWOInput", visible: userGlobal.level > 4 },
           // { name: "Assign PWO", path: "/AssignPWO" },
           { name: "Technician", path: "/TechnicianPage", visible: userGlobal.level <= 5 },
+          { name: "Supervisor Approval", path: "/supervisor-approval", visible: userGlobal.level > 4 },
           { name: "Completed PWO", path: "/CompletedJobs",visible: userGlobal.level > 4 },
           // { name: "PWO List", path: "/ReadPWO" },
         ],
