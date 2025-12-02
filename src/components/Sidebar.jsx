@@ -197,7 +197,19 @@ function Sidebar() {
           { name: "RnD Laboratorium Monitoring", path: "/building?tab=RnD" },
           { name: "Warehouse 1 Monitoring", path: "/building?tab=WH1" },
         ],
-      });
+      },{
+        name: "PMP",
+        icon: <AssignmentInd size={21}/>,
+        path: "/PWOInput",
+        subMenu: [
+          { name: "Technician", path: "/TechnicianPage"  },
+          { name: "Completed PWO", path: "/CompletedJobs"},
+        ],
+   
+      }
+    
+    
+    );
     }
     if (userGlobal.level == 4) {
       navigation.push({
@@ -274,7 +286,18 @@ function Sidebar() {
         name: "Batch Record",
         icon: <AssignmentIcon size={21} className="flex-shrink-0 m-[2px] gap-y-1"/>,
         path: "/BatchRecord",
-      });
+      },{
+        name: "PMP",
+        icon: <AssignmentInd size={21}/>,
+        path: "/PWOInput",
+        subMenu: [
+          { name: "Technician", path: "/TechnicianPage"  },
+          { name: "Completed PWO", path: "/CompletedJobs"},
+        ],
+        
+      }
+    
+    );
     }
     if (userGlobal.level == 5) {
       navigation.push({

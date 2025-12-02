@@ -116,13 +116,13 @@ function LandingPage () {
                 {/* "tadi nambahin xl:text-left ntah siapa tadi yg nambahin skrg dah dihapus alonami" */}
                     <div className="text-center"> 
                         <h1 className="text-5xl lg:text-6xl xl:text-7xl xl:ml-8 font-bold leading-tight text-white font-jakarta mb-8">
-                            HISTORICAL MACHINERY
+                            Computerized Maintenance Management System
                         </h1>
                         <div className="flex items-center justify-center xl:justify-start">
                             <div className="hidden xl:block w-0.5 h-28 bg-[#D9DBE1] mr-4 self-center"></div>
                             <p className="text-xl font-light text-white max-w-xl mx-auto">
-                                Pantau dan kendalikan seluruh proses produksi Anda secara real-time dan historis. 
-                                Dapatkan data akurat dan visualisasi yang jelas untuk pengambilan keputusan yang lebih baik.
+                                Monitor and control your entire production process with real-time and historical tracking. 
+                                Gain accurate data and clear visualizations for better decision-making.
                             </p>
                         </div>
                         <div className="mt-8 flex justify-center xl:justify-center xl:ml-6">

@@ -24,7 +24,7 @@ import {
   InputGroup,      // <--- NEW: For styling the search bar
   InputLeftElement // <--- NEW: For the search icon (optional)
 } from '@chakra-ui/react';
-import { Delete, Refresh, Search } from "@mui/icons-material";
+import { Search } from "@mui/icons-material";
 
 function DailyAssignmentPage() {
   const [pendingJobs, setPendingJobs] = useState([]); 

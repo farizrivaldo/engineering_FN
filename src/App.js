@@ -197,6 +197,10 @@ function App() {
               <Route path="/oeeLine" element={<OEEline />} />
               <Route path="/utility" element={<Utility />} />
               <Route path="/Stopwatch" element={<Stopwatch />} />
+              
+              <Route path="/TechnicianPage" element={<TechnicianPage />} />
+              <Route path="/CompletedJobs" element={<CompletedJobsPage />} />
+
             </Routes>
           </div>
         </div>

@@ -728,7 +728,7 @@ function Dashboard() {
       <div className="min-h-screen bg-cobabg mx-auto p-4 md:p-6 2xl:p-10 relative">
         {/* Section Title */}
         <div className="text-text text-4xl font-sans font-bold mb-8 text-center">
-          KALBE CONSUMER HEALTH OVERVIEW
+          Computerized Maintenance Monitoring System
         </div>
         <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row-reverse justify-between">
           <div className="flex flex-wrap items-start justify-end gap-x-4 gap-y-2">
