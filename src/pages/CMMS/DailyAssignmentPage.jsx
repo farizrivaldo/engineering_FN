@@ -1,6 +1,6 @@
 // src/pages/DailyAssignmentPage.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Heading,
@@ -21,19 +21,29 @@ import {
   Divider,
   HStack,
   Checkbox,
-  InputGroup,      // <--- NEW: For styling the search bar
-  InputLeftElement // <--- NEW: For the search icon (optional)
+  InputGroup,
+  InputLeftElement,
+  Select // <--- Import Select for the dropdowns
 } from '@chakra-ui/react';
 import { Search } from "@mui/icons-material";
+
+// Helper constant for month names
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
 
 function DailyAssignmentPage() {
   const [pendingJobs, setPendingJobs] = useState([]); 
   const [selectedJobs, setSelectedJobs] = useState(new Set()); 
   const [scheduledDate, setScheduledDate] = useState(''); 
   const [isLoading, setIsLoading] = useState(false);
-  
-  // --- NEW STATE: Holds the search text ---
   const [searchQuery, setSearchQuery] = useState(''); 
+
+  // --- NEW STATE: Month and Year Filters ---
+  // Default to CURRENT Month (0-11) and CURRENT Year
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth()); 
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
   const toast = useToast();
 
@@ -62,12 +72,38 @@ function DailyAssignmentPage() {
     setSelectedJobs(newSet);
   };
 
-  // --- NEW LOGIC: Filter the jobs based on the search query ---
-  // We use .filter() so we don't lose the original data. 
-  // We convert both to lowercase so "PWO" matches "pwo".
-  const filteredJobs = pendingJobs.filter((job) => 
-    job.wo_number.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // --- GET UNIQUE YEARS FROM DATA ---
+  // This ensures the dropdown contains years present in your database
+  const availableYears = useMemo(() => {
+    const years = new Set([new Date().getFullYear()]); // Always include current year
+    pendingJobs.forEach(job => {
+      if (job.created_at) {
+        years.add(new Date(job.created_at).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a); // Sort descending (2025, 2024...)
+  }, [pendingJobs]);
+
+  // --- FILTERING LOGIC ---
+  const filteredJobs = pendingJobs.filter((job) => {
+    // 1. Text Search
+    const matchesSearch = job.wo_number.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // 2. Date Filter
+    // We parse the DB date. If created_at is null, it fails the filter.
+    if (!job.created_at) return false;
+
+    const jobDate = new Date(job.created_at);
+    
+    // Check if valid date
+    if (isNaN(jobDate.getTime())) return false;
+
+    // Compare Month (0-11) and Year
+    const matchesMonth = jobDate.getMonth() === parseInt(filterMonth);
+    const matchesYear = jobDate.getFullYear() === parseInt(filterYear);
+
+    return matchesSearch && matchesMonth && matchesYear;
+  });
 
   const handleAssignJobs = async () => {
     if (selectedJobs.size === 0) {
@@ -106,7 +142,7 @@ function DailyAssignmentPage() {
       if (response.ok) { 
         setSelectedJobs(new Set());
         setScheduledDate('');
-        setSearchQuery(''); // Optional: Clear search after assigning
+        setSearchQuery(''); 
         fetchPendingJobs(); 
       }
     
@@ -153,26 +189,58 @@ function DailyAssignmentPage() {
         {/* --- Pending Jobs Table --- */}
         <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="lg">
           
-          {/* Header + Search Bar Area */}
-          <HStack justify="space-between" mb={4}>
-            <Heading as="h3" size="md">
+          {/* Header + Filters Area */}
+          <HStack justify="space-between" mb={4} wrap="wrap" spacing={4} align="flex-end">
+            <Heading as="h3" size="md" mb={1}>
               Pending Jobs List (Holding Pen)
             </Heading>
             
-            {/* --- NEW: Search Input --- */}
-            <Box w="300px">
-                {/* If you don't have InputGroup/Icons, just use <Input ... /> */}
-                <InputGroup>
-                    <InputLeftElement pointerEvents='none'>
-                        <Search color='gray.300' />
-                    </InputLeftElement>
-                    <Input 
-                        placeholder="Search PWO Number..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </InputGroup>
-            </Box>
+            <HStack spacing={3}>
+                {/* --- MONTH SELECTOR --- */}
+                <FormControl w="150px">
+                    <FormLabel fontSize="xs" mb={0} color="gray.500">Filter Month</FormLabel>
+                    <Select 
+                        value={filterMonth} 
+                        onChange={(e) => setFilterMonth(e.target.value)} 
+                        size="md"
+                        borderColor="gray.300"
+                    >
+                        {MONTH_NAMES.map((month, index) => (
+                            <option key={index} value={index}>{month}</option>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                {/* --- YEAR SELECTOR --- */}
+                <FormControl w="100px">
+                    <FormLabel fontSize="xs" mb={0} color="gray.500">Filter Year</FormLabel>
+                    <Select 
+                        value={filterYear} 
+                        onChange={(e) => setFilterYear(e.target.value)} 
+                        size="md"
+                        borderColor="gray.300"
+                    >
+                        {availableYears.map((year) => (
+                            <option key={year} value={year}>{year}</option>
+                        ))}
+                    </Select>
+                </FormControl>
+
+                {/* --- Search Input --- */}
+                <Box w="250px">
+                    <FormLabel fontSize="xs" mb={0} color="gray.500">Search</FormLabel>
+                    <InputGroup>
+                        <InputLeftElement pointerEvents='none'>
+                            <Search color='gray.300' />
+                        </InputLeftElement>
+                        <Input 
+                            placeholder="PWO Number..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </InputGroup>
+                </Box>
+            </HStack>
           </HStack>
 
           <Box overflowX="auto">
@@ -183,23 +251,22 @@ function DailyAssignmentPage() {
                   <Th>WO Number</Th>
                   <Th>Machine Name</Th>
                   <Th>Asset Number</Th>
+                  <Th>Created Date</Th> 
                 </Tr>
               </Thead>
               <Tbody>
-                {/* --- UPDATE: Check filteredJobs instead of pendingJobs --- */}
                 {filteredJobs.length === 0 && (
                   <Tr>
-                    <Td colSpan={4}>
-                      <Text textAlign="center">
+                    <Td colSpan={5}>
+                      <Text textAlign="center" py={4} color="gray.500">
                         {pendingJobs.length === 0 
-                            ? "No pending jobs found." 
-                            : "No jobs match your search."}
+                            ? "No pending jobs found in database." 
+                            : `No jobs found for ${MONTH_NAMES[filterMonth]} ${filterYear}.`}
                       </Text>
                     </Td>
                   </Tr>
                 )}
                 
-                {/* --- UPDATE: Map through filteredJobs --- */}
                 {filteredJobs.map((job) => (
                   <Tr key={job.pending_id}>
                     <Td>
@@ -208,10 +275,13 @@ function DailyAssignmentPage() {
                         onChange={() => handleCheckboxChange(job.pending_id)}
                       />
                     </Td>
-                    {/* Highlight the match if needed, for now just text */}
                     <Td fontWeight="bold">{job.wo_number}</Td>
                     <Td>{job.machine_name}</Td>
                     <Td>{job.asset_number}</Td>
+                    <Td>
+                        {/* Show formatted date */}
+                        {job.created_at ? new Date(job.created_at).toLocaleDateString('en-GB') : '-'}
+                    </Td>
                   </Tr>
                 ))}
               </Tbody>

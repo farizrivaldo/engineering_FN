@@ -34,8 +34,10 @@ function CompletedJobsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
 
-  const [filterMonth, setFilterMonth] = useState('');
-  const [filterYear, setFilterYear] = useState('');
+  // --- CHANGED: Default to CURRENT Month and Year ---
+  // Note: getMonth() returns 0 for Jan, so we add +1 to match your 'months' array values
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1); 
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobOperations, setJobOperations] = useState([]);
@@ -48,11 +50,12 @@ function CompletedJobsPage() {
   const fetchJobs = async () => {
     setIsLoading(true);
     const params = new URLSearchParams();
+    
+    // Always append current filters if they exist
     if (filterMonth) params.append('month', filterMonth);
     if (filterYear) params.append('year', filterYear);
 
     try {
-      // Ensure this URL matches your backend port/IP
       const response = await fetch(`http://10.126.15.197:8002/part/completed-jobs?${params.toString()}`);
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
