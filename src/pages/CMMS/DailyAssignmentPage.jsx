@@ -243,9 +243,15 @@ function DailyAssignmentPage() {
             </HStack>
           </HStack>
 
-          <Box overflowX="auto">
+          <Box 
+  overflowY="auto"      // Enables vertical scrolling
+  overflowX="auto"      // Enables horizontal scrolling (if table is wide)
+  maxHeight="500px"     // Sets the limit. Table scrolls if content exceeds this.
+  borderWidth="1px"     // Optional: Adds a border around the scrollable area
+  borderRadius="lg"     // Optional: Rounds the corners
+>
             <Table variant="simple">
-              <Thead>
+              <Thead position="sticky" top={0} zIndex={1} bg="gray.50">
                 <Tr>
                   <Th>Assign?</Th>
                   <Th>WO Number</Th>

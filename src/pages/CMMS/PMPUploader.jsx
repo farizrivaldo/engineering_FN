@@ -8,8 +8,14 @@ import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter,
   ModalBody, ModalCloseButton, useDisclosure,
 } from '@chakra-ui/react';
-import { Delete, Refresh } from "@mui/icons-material";
+import { Delete, Edit, Save } from "@mui/icons-material";
 import Papa from 'papaparse'; // Import the CSV parser
+
+// Helper for month names
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
 
 function PMPUploader() {
 // --- State for Bulk Uploader ---
@@ -25,6 +31,10 @@ function PMPUploader() {
   const [editingJob, setEditingJob] = useState(null); // Holds the job being edited
   const { isOpen, onOpen, onClose } = useDisclosure(); // For the Edit Modal
 
+  // --- STATE: Filters (Default to Current Date) ---
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth()); // 0-11
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+
 // --- State for Forms ---
   const [newJobMachineId, setNewJobMachineId] = useState('');
   const [newJobWoNumber, setNewJobWoNumber] = useState('');
@@ -36,28 +46,81 @@ function PMPUploader() {
   }, []);
 
   // --- 1. Parse the CSV file in the browser ---
-  const handleFileChange = (e) => {
+const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setFileName(file.name);
       
-      // Use Papaparse to read the CSV
       Papa.parse(file, {
-        header: false, // Your CSV does not have headers
+        header: false, // <--- STEP 1: Read as raw arrays first
         skipEmptyLines: true,
+        
         complete: (results) => {
-          // 'results.data' is an array of arrays, e.g., ["1", "Chopper...", "", "CKR-...", "PWO-...", "P"]
-          const jobs = results.data
+          const rows = results.data;
+          let headerRowIndex = -1;
+          let woIndex = -1;
+          let assetIndex = -1;
+          let machineIndex = -1;
+
+          // --- STEP 2: Find the Real Header Row ---
+          // Scan the first 10 rows to find where the actual headers are
+          for (let i = 0; i < Math.min(rows.length, 10); i++) {
+            const row = rows[i].map(cell => cell ? cell.toString().toLowerCase().trim() : '');
+            
+            // Look for keywords in this row
+            const wIdx = row.findIndex(cell => cell.includes('no') && cell.includes('wo'));
+            const aIdx = row.findIndex(cell => cell.includes('asset') && cell.includes('number'));
+            
+            // If we found both "WO" and "Asset" in this row, IT'S THE HEADER!
+            if (wIdx !== -1 && aIdx !== -1) {
+                headerRowIndex = i;
+                woIndex = wIdx;
+                assetIndex = aIdx;
+                // Try to find machine name (usually "Nama Mesin" or "Machine")
+                machineIndex = row.findIndex(cell => cell.includes('nama') || cell.includes('machine'));
+                break; // Stop searching
+            }
+          }
+
+          // Safety Check
+          if (headerRowIndex === -1) {
+             toast({ 
+                 title: "Header Detection Failed", 
+                 description: "Could not find a row containing 'No. WO' and 'Asset Number'. Please check the CSV.", 
+                 status: "error", 
+                 duration: 9000, 
+                 isClosable: true 
+             });
+             return;
+          }
+
+          // --- STEP 3: Map Data using the Indices we found ---
+          // Start loop from the row AFTER the header
+          const jobs = rows.slice(headerRowIndex + 1)
             .map((row) => ({
-              // We create a clean object from the row data
-              machine_name: row[1], 
-              asset_number: row[3],
-              wo_number: row[4],
+              // Use the indices we discovered dynamically
+              machine_name: machineIndex !== -1 ? row[machineIndex] : 'Unknown', 
+              asset_number: row[assetIndex],
+              wo_number: row[woIndex],
             }))
-            .filter(job => job.asset_number && job.wo_number); // Filter out 'A' rows and blanks
+            .filter(job => {
+                // Filter out garbage/empty rows
+                return job.wo_number && 
+                       typeof job.wo_number === 'string' && 
+                       job.wo_number.toUpperCase().includes('PWO');
+            });
 
           setStagedJobs(jobs);
+          
+          if (jobs.length === 0) {
+             toast({ title: "No valid PWO rows found", status: "warning" });
+          } else {
+             toast({ title: "File Parsed", description: `Found ${jobs.length} valid jobs (Headers on row ${headerRowIndex + 1}).`, status: "success" });
+          }
         },
+        error: (err) => {
+            toast({ title: "Error parsing CSV", description: err.message, status: "error" });
+        }
       });
     }
   };
@@ -146,6 +209,31 @@ function PMPUploader() {
     }
   };
 
+  // --- FILTER LOGIC ---
+  // 1. Get unique years from data + current year
+  const availableYears = useMemo(() => {
+    const years = new Set([new Date().getFullYear()]);
+    pendingJobs.forEach(job => {
+      if (job.created_at) {
+        years.add(new Date(job.created_at).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [pendingJobs]);
+
+  // 2. Filter the jobs based on selection
+  const filteredPendingJobs = pendingJobs.filter(job => {
+    if (!job.created_at) return false;
+    const date = new Date(job.created_at);
+    if (isNaN(date.getTime())) return false;
+
+    // Filter by Month (if not "All") and Year
+    const matchMonth = filterMonth === "" || date.getMonth() === parseInt(filterMonth);
+    const matchYear = date.getFullYear() === parseInt(filterYear);
+
+    return matchMonth && matchYear;
+  });
+
   // Handle CREATE
   const handleCreateJob = async (e) => {
     e.preventDefault();
@@ -218,155 +306,167 @@ function PMPUploader() {
   };
 
 
-  return (
+return (
     <Container maxW="container.xl" py={10}>
       <VStack spacing={8} align="stretch">
+        <Heading as="h2" size="lg">Manage PMP Database</Heading>
 
         {/* --- PART 1: BULK CSV UPLOADER --- */}
-        <Box p={8} borderWidth={1} borderRadius="lg" boxShadow="lg">
-          <Heading as="h2" size="lg" mb={6}>
-            Step 1: Bulk Import Pending Jobs
-          </Heading>
-          <FormControl>
-            <FormLabel>Select Monthly PMP CSV File</FormLabel>
-            <Input type="file" accept=".csv" onChange={handleFileChange} p={1} />
-          </FormControl>
-          
-          {/* Review Table appears here */}
-          {stagedJobs.length > 0 && (
-            <Box mt={6}>
-              <Heading as="h3" size="md">Review CSV Data</Heading>
-              {/* ... (Your CSV review table... ) ... */}
-              <Button colorScheme="blue" isFullWidth mt={4} onClick={handleSaveToPending}>
-                Save {stagedJobs.length} Jobs to Pending List
-              </Button>
-            </Box>
-          )}
+        <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="md" bg="white">
+          <Heading as="h3" size="md" mb={4}>Step 1: Bulk Import from CSV</Heading>
+          <VStack spacing={4} align="stretch">
+            <FormControl>
+              <FormLabel>Select Monthly PMP CSV File</FormLabel>
+              <Input type="file" accept=".csv" onChange={handleFileChange} p={1} />
+            </FormControl>
+            {fileName && <Text fontSize="sm" color="gray.500">Selected: {fileName}</Text>}
+            
+            {stagedJobs.length > 0 && (
+                <Box mt={4}>
+                    <HStack justify="space-between" mb={2}>
+                        <Text fontWeight="bold">Preview ({stagedJobs.length} rows)</Text>
+                        <Button leftIcon={<Save />} colorScheme="blue" size="sm" onClick={handleSaveToPending} isLoading={isUploading}>
+                            Save to Database
+                        </Button>
+                    </HStack>
+                    <Box maxHeight="200px" overflowY="auto" border="1px solid #eee">
+                        <Table size="sm" variant="simple">
+                            <Thead><Tr><Th>WO Number</Th><Th>Machine</Th><Th>Asset</Th></Tr></Thead>
+                            <Tbody>
+                                {stagedJobs.slice(0, 10).map((job, i) => (
+                                    <Tr key={i}><Td>{job.wo_number}</Td><Td>{job.machine_name}</Td><Td>{job.asset_number}</Td></Tr>
+                                ))}
+                            </Tbody>
+                        </Table>
+                    </Box>
+                </Box>
+            )}
+          </VStack>
         </Box>
 
         <Divider />
 
-        {/* --- PART 2: PENDING JOBS CRUD MANAGER --- */}
-        <Heading as="h2" size="lg">
-          Manage Pending Jobs (Holding Pen)
-        </Heading>
-
-        {/* --- CREATE Form (Manual) --- */}
-        <Box 
-          p={6} borderWidth={1} borderRadius="lg" boxShadow="lg" 
-          as="form" onSubmit={handleCreateJob}
-        >
-          <Heading as="h3" size="md" mb={4}>Add Single Job</Heading>
-          <HStack spacing={4}>
-            <FormControl isRequired>
+        {/* --- PART 2: MANUAL ADD --- */}
+        <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="md" bg="white" as="form" onSubmit={handleCreateJob}>
+          <Heading as="h3" size="md" mb={4}>Step 2: Add Single Job Manually</Heading>
+          <HStack spacing={4} align="flex-end">
+            <FormControl>
               <FormLabel>Machine</FormLabel>
-              <Select 
-                placeholder="Select machine" 
-                value={newJobMachineId}
-                onChange={(e) => setNewJobMachineId(e.target.value)}
-              >
-                {machineList.map(m => (
-                  <option key={m.machine_id} value={m.machine_id}>{m.machine_name}</option>
-                ))}
+              <Select placeholder="Select machine" value={newJobMachineId} onChange={(e) => setNewJobMachineId(e.target.value)}>
+                {machineList.map(m => <option key={m.machine_id} value={m.machine_id}>{m.machine_name} ({m.asset_number})</option>)}
               </Select>
             </FormControl>
-            <FormControl isRequired>
+            <FormControl>
               <FormLabel>WO Number</FormLabel>
-              <Input 
-                placeholder="e.g., PWO-296XXX"
-                value={newJobWoNumber}
-                onChange={(e) => setNewJobWoNumber(e.target.value)}
-              />
+              <Input placeholder="PWO-..." value={newJobWoNumber} onChange={(e) => setNewJobWoNumber(e.target.value)} />
             </FormControl>
-            <Button type="submit" colorScheme="green" alignSelf="flex-end" isLoading={isLoading}>
-              Add
-            </Button>
+            <Button type="submit" colorScheme="green" minW="100px">Add</Button>
           </HStack>
         </Box>
 
-        {/* --- READ/DELETE Table --- */}
-        <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="lg">
-          <Heading as="h3" size="md" mb={4}>Current Pending Jobs</Heading>
-          <Box overflowX="auto">
-            <Table variant="simple">
-              <Thead>
-                <Tr>
-                  <Th>Machine Name</Th>
-                  <Th>Asset Number</Th>
-                  <Th>WO Number</Th>
-                  <Th>Status</Th>
-                  <Th isNumeric>Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {pendingJobs.map((job) => (
-                  <Tr key={job.pending_id}>
-                    <Td>{job.machine_name}</Td>
-                    <Td>{job.asset_number}</Td>
-                    <Td>{job.wo_number}</Td>
-                    <Td>{job.status}</Td>
-                    <Td isNumeric>
-                      <HStack spacing={2} justify="flex-end">
-                        <IconButton
-                          colorScheme="blue"
-                          icon={<Refresh />}
-                          size="sm"
-                          onClick={() => openEditModal(job)}
-                        />
-                        <IconButton
-                          colorScheme="red"
-                          icon={<Delete />}
-                          size="sm"
-                          onClick={() => handleDeleteJob(job.pending_id)}
-                        />
-                      </HStack>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          </Box>
+        <Divider />
+
+        {/* --- PART 3: MANAGE PENDING LIST (With Filters) --- */}
+        <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="md" bg="white">
+            <HStack justify="space-between" mb={4} align="flex-end">
+                <Heading as="h3" size="md">Current Pending Jobs</Heading>
+                
+                {/* --- FILTERS --- */}
+                <HStack spacing={2}>
+                    <FormControl w="140px">
+                        <FormLabel fontSize="xs" mb={0} color="gray.500">Month</FormLabel>
+                        <Select 
+                            size="sm" 
+                            value={filterMonth} 
+                            onChange={(e) => setFilterMonth(e.target.value)}
+                        >
+                            <option value="">All Months</option>
+                            {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                        </Select>
+                    </FormControl>
+                    <FormControl w="100px">
+                        <FormLabel fontSize="xs" mb={0} color="gray.500">Year</FormLabel>
+                        <Select 
+                            size="sm" 
+                            value={filterYear} 
+                            onChange={(e) => setFilterYear(e.target.value)}
+                        >
+                            {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                        </Select>
+                    </FormControl>
+                </HStack>
+            </HStack>
+            
+            <Box overflowX="auto" maxHeight="500px">
+                <Table variant="simple">
+                    <Thead position="sticky" top={0} zIndex={1} bg="gray.50">
+                        <Tr>
+                            <Th>WO Number</Th>
+                            <Th>Machine Name</Th>
+                            <Th>Asset Number</Th>
+                            <Th>Created Date</Th>
+                            <Th isNumeric>Actions</Th>
+                        </Tr>
+                    </Thead>
+                    <Tbody>
+                        {filteredPendingJobs.length === 0 ? (
+                            <Tr><Td colSpan={5} textAlign="center" color="gray.500">
+                                {pendingJobs.length === 0 
+                                    ? "Database empty." 
+                                    : `No jobs found for ${filterMonth !== "" ? MONTH_NAMES[filterMonth] : "selected month"} ${filterYear}.`}
+                            </Td></Tr>
+                        ) : (
+                            filteredPendingJobs.map((job) => (
+                                <Tr key={job.pending_id}>
+                                    <Td fontWeight="bold">{job.wo_number}</Td>
+                                    <Td>{job.machine_name}</Td>
+                                    <Td>{job.asset_number}</Td>
+                                    <Td>{job.created_at ? new Date(job.created_at).toLocaleDateString() : '-'}</Td>
+                                    <Td isNumeric>
+                                        <HStack justify="flex-end" spacing={2}>
+                                            <IconButton icon={<Edit />} size="sm" onClick={() => openEditModal(job)} aria-label="Edit" />
+                                            <IconButton icon={<Delete />} colorScheme="red" size="sm" onClick={() => handleDeleteJob(job.pending_id)} aria-label="Delete" />
+                                        </HStack>
+                                    </Td>
+                                </Tr>
+                            ))
+                        )}
+                    </Tbody>
+                </Table>
+            </Box>
         </Box>
+
+        {/* Edit Modal */}
+        <Modal isOpen={isOpen} onClose={onClose}>
+            <ModalOverlay />
+            <ModalContent as="form" onSubmit={handleUpdateJob}>
+                <ModalHeader>Edit Pending Job</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody pb={6}>
+                    <VStack spacing={4}>
+                        <FormControl isRequired>
+                            <FormLabel>Machine</FormLabel>
+                            <Select 
+                                value={editingJob?.machine_id} 
+                                onChange={(e) => setEditingJob({...editingJob, machine_id: e.target.value})}
+                            >
+                                {machineList.map(m => <option key={m.machine_id} value={m.machine_id}>{m.machine_name}</option>)}
+                            </Select>
+                        </FormControl>
+                        <FormControl isRequired>
+                            <FormLabel>WO Number</FormLabel>
+                            <Input value={editingJob?.wo_number} onChange={(e) => setEditingJob({...editingJob, wo_number: e.target.value})} />
+                        </FormControl>
+                    </VStack>
+                </ModalBody>
+                <ModalFooter>
+                    <Button onClick={onClose} mr={3}>Cancel</Button>
+                    <Button colorScheme="blue" type="submit">Save Update</Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
+
       </VStack>
-
-      {/* --- EDIT Modal --- */}
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalOverlay />
-        <ModalContent as="form" onSubmit={handleUpdateJob}>
-          <ModalHeader>Edit Pending Job</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <VStack spacing={4}>
-              <FormControl isRequired>
-                <FormLabel>Machine</FormLabel>
-                <Select
-                  placeholder="Select machine"
-                  value={editingJob?.machine_id}
-                  onChange={(e) => setEditingJob({...editingJob, machine_id: e.target.value})}
-                >
-                  {machineList.map(m => (
-                    <option key={m.machine_id} value={m.machine_id}>{m.machine_name}</option>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl isRequired>
-                <FormLabel>WO Number</FormLabel>
-                <Input
-                  value={editingJob?.wo_number}
-                  onChange={(e) => setEditingJob({...editingJob, wo_number: e.target.value})}
-                />
-              </FormControl>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button onClick={onClose} mr={3}>Cancel</Button>
-            <Button colorScheme="blue" type="submit" isLoading={isLoading}>
-              Save Update
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
     </Container>
   );
 }

@@ -3,7 +3,7 @@ import {
   Box, Heading, Button, VStack, Container, useToast, Table, Thead, Tbody,
   Tr, Th, Td, Text, useDisclosure, Modal, ModalOverlay, ModalContent,
   ModalHeader, ModalFooter, ModalBody, ModalCloseButton, FormControl,
-  FormLabel, Select, Divider, HStack, Badge // Added Badge for styling
+  FormLabel, Select, Divider, HStack, Badge, Input // Added Badge for styling
 } from '@chakra-ui/react';
 
 const formatDateTime = (dateTimeStr) => {
@@ -38,22 +38,27 @@ function CompletedJobsPage() {
   // Note: getMonth() returns 0 for Jan, so we add +1 to match your 'months' array values
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1); 
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+  const [filterDate, setFilterDate] = useState(''); // <--- NEW: Specific Date Filter
 
   const [selectedJob, setSelectedJob] = useState(null);
   const [jobOperations, setJobOperations] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  useEffect(() => {
+useEffect(() => {
     fetchJobs();
-  }, []);
+  }, [filterMonth, filterYear, filterDate]);
 
   const fetchJobs = async () => {
     setIsLoading(true);
     const params = new URLSearchParams();
     
-    // Always append current filters if they exist
-    if (filterMonth) params.append('month', filterMonth);
-    if (filterYear) params.append('year', filterYear);
+// Logic: If Date is set, send Date. Otherwise send Month/Year.
+    if (filterDate) {
+        params.append('date', filterDate);
+    } else {
+        if (filterMonth) params.append('month', filterMonth);
+        if (filterYear) params.append('year', filterYear);
+    }
 
     try {
       const response = await fetch(`http://10.126.15.197:8002/part/completed-jobs?${params.toString()}`);
@@ -79,16 +84,28 @@ function CompletedJobsPage() {
     }
   };
 
+  // UX Handler: When user picks a Specific Date, clear Month/Year to avoid confusion
+  const handleDateChange = (e) => {
+      setFilterDate(e.target.value);
+      if(e.target.value) {
+          setFilterMonth('');
+          setFilterYear('');
+      }
+  };
+
+  // UX Handler: When user picks Month/Year, clear Specific Date
+  const handleMonthYearChange = (type, val) => {
+      setFilterDate(''); // Clear specific date
+      if(type === 'month') setFilterMonth(val);
+      if(type === 'year') setFilterYear(val);
+  };
+
   const handleFilterClick = () => { fetchJobs(); };
   
-  const handleClearFilters = () => {
+const handleClearFilters = () => {
     setFilterMonth('');
     setFilterYear('');
-    // We need to manually call fetch with empty params to clear the view immediately
-    // or just trigger a reload. For now, calling fetchJobs works because state updates are async 
-    // but in this specific flow, passing empty params explicitly is safer:
-    // Ideally: fetchJobs(true) where true forces no params, but for now:
-    setTimeout(fetchJobs, 100); 
+    setFilterDate('');
   };
   
   const handleViewDetails = (job) => {
@@ -105,21 +122,48 @@ function CompletedJobsPage() {
         {/* --- Filter Controls --- */}
         <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="lg">
           <Heading as="h3" size="md" mb={4}>Filter by Date Completed</Heading>
-          <HStack spacing={4}>
-            <FormControl>
+          <HStack spacing={4} align="flex-end" flexWrap="wrap">
+            
+            {/* 1. Month Dropdown */}
+            <FormControl w="150px">
               <FormLabel>Month</FormLabel>
-              <Select placeholder="All Months" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}>
+              <Select 
+                placeholder="Select Month" 
+                value={filterMonth} 
+                onChange={(e) => handleMonthYearChange('month', e.target.value)}
+              >
                 {months.map((m) => <option key={m.num} value={m.num}>{m.name}</option>)}
               </Select>
             </FormControl>
-            <FormControl>
+
+            {/* 2. Year Dropdown */}
+            <FormControl w="100px">
               <FormLabel>Year</FormLabel>
-              <Select placeholder="All Years" value={filterYear} onChange={(e) => setFilterYear(e.target.value)}>
+              <Select 
+                placeholder="Year" 
+                value={filterYear} 
+                onChange={(e) => handleMonthYearChange('year', e.target.value)}
+              >
                 {years.map((y) => <option key={y} value={y}>{y}</option>)}
               </Select>
             </FormControl>
-            <Button colorScheme="blue" onClick={handleFilterClick} mt={8}>Filter</Button>
-            <Button variant="ghost" onClick={handleClearFilters} mt={8}>Clear</Button>
+
+            <Text fontWeight="bold" pb={2}>OR</Text>
+
+            {/* 3. NEW: Specific Date Filter */}
+            <FormControl w="180px">
+              <FormLabel>Specific Date</FormLabel>
+              <Input 
+                type="date" 
+                value={filterDate} 
+                onChange={handleDateChange} 
+              />
+            </FormControl>
+
+            <Button variant="ghost" onClick={handleClearFilters} colorScheme="red">
+              Clear Filters
+            </Button>
+
           </HStack>
         </Box>
 
@@ -134,7 +178,7 @@ function CompletedJobsPage() {
                   <Th>WO Number</Th>
                   <Th>Machine</Th>
                   <Th>Technician</Th>
-                  <Th>Approved By</Th> {/* Added Column */}
+                  <Th>Approved By</Th>
                   <Th isNumeric>Actions</Th>
                 </Tr>
               </Thead>
@@ -149,7 +193,6 @@ function CompletedJobsPage() {
                     <Td>{job.machine_name}</Td>
                     <Td>{job.technician_name}</Td>
                     <Td>
-                        {/* Display Approved By or a Pending Badge */}
                         {job.approved_by ? (
                             <Text fontWeight="bold" color="green.600">{job.approved_by}</Text>
                         ) : (
@@ -169,7 +212,7 @@ function CompletedJobsPage() {
         </Box>
       </VStack>
 
-      {/* --- Details Modal --- */}
+      {/* --- Details Modal (Unchanged) --- */}
       <Modal isOpen={isOpen} onClose={onClose} isCentered size="3xl">
         <ModalOverlay />
         <ModalContent>
@@ -186,7 +229,6 @@ function CompletedJobsPage() {
                     <Text><strong>Completed:</strong> {formatDateTime(selectedJob?.completed_time)}</Text>
                 </Box>
                 
-                {/* ADDED: Approval Info Section */}
                 <Box bg="green.50" p={3} borderRadius="md" border="1px dashed" borderColor="green.200">
                     <Heading size="xs" mb={2} color="green.800">APPROVAL STATUS</Heading>
                     <Text><strong>Approved By:</strong> {selectedJob?.approved_by || 'Not yet approved'}</Text>

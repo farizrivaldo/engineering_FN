@@ -1,6 +1,6 @@
 // src/pages/TechnicianPage.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Heading, Button, VStack, Container, useToast, Table, Thead, Tbody,
   Tr, Th, Td, useDisclosure, Modal, ModalOverlay, ModalContent,
@@ -23,6 +23,11 @@ const formatDateTimeForTable = (dateTimeStr) => {
   catch (e) { return 'Invalid Date'; }
 };
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
 function TechnicianPage() {
   const [workOrders, setWorkOrders] = useState([]);
   const [selectedWorkOrder, setSelectedWorkOrder] = useState(null);
@@ -30,8 +35,11 @@ function TechnicianPage() {
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- 1. NEW STATE: Default is 'Open' ---
+// --- FILTERS ---
   const [statusFilter, setStatusFilter] = useState('Open');
+  // Default to Current Month (0-11) and Year
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth()); 
+  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
   const statusColors = {
     'Finished': 'green',
@@ -76,10 +84,45 @@ function TechnicianPage() {
     }
   };
 
-  // --- 2. FILTER LOGIC ---
+// --- 1. Compute Available Years dynamically ---
+  const availableYears = useMemo(() => {
+    const years = new Set([new Date().getFullYear()]);
+    workOrders.forEach(wo => {
+      if (wo.scheduled_date) {
+        years.add(new Date(wo.scheduled_date).getFullYear());
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [workOrders]);
+
+  // --- 2. THE FILTER LOGIC (Status + Month + Year) ---
   const filteredWorkOrders = workOrders.filter((wo) => {
-    if (statusFilter === 'All') return true;
-    return wo.status === statusFilter;
+    // A. Status Filter
+    let matchStatus = false;
+    if (statusFilter === 'All') {
+      matchStatus = true;
+    } else if (statusFilter === 'Open') {
+      // "Open" usually means available to work on (Open or Assigned)
+      matchStatus = wo.status === 'Open' || wo.status === 'Assigned';
+    } else {
+      matchStatus = wo.status === statusFilter;
+    }
+
+    // B. Date Filter
+    // If no date is scheduled, decide if you want to show it. 
+    // Usually PMP jobs have dates. Here we exclude them if filter is active.
+    if (!wo.scheduled_date) return false; 
+    
+    const date = new Date(wo.scheduled_date);
+    if (isNaN(date.getTime())) return false;
+
+    // Check Month (allow "All" if filter is empty string)
+    const matchMonth = filterMonth === "" || date.getMonth() === parseInt(filterMonth);
+    
+    // Check Year
+    const matchYear = date.getFullYear() === parseInt(filterYear);
+
+    return matchStatus && matchMonth && matchYear;
   });
 
   const handleOpenModal = (workOrder) => {
@@ -152,21 +195,50 @@ function TechnicianPage() {
       <VStack spacing={8} align="stretch">
         <Heading as="h2" size="lg">Technician Work Orders</Heading>
 
-        {/* --- 3. FILTER UI --- */}
+        {/* --- 3. FILTER UI (Updated with Month/Year) --- */}
         <Box p={6} borderWidth={1} borderRadius="lg" bg="gray.50" boxShadow="sm">
-            <HStack spacing={4} align="center">
-                <Heading as="h4" size="sm">Filter List:</Heading>
-                <Select 
-                    maxW="300px" 
-                    bg="white" 
-                    value={statusFilter} 
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                    <option value="Open">Show Only Open (Default)</option>
-                    <option value="In Progress">Show In Progress</option>
-                    <option value="Pending Approval">Show Pending Approval</option>
-                    <option value="All">Show All Active Jobs</option>
-                </Select>
+            <HStack spacing={4} align="end" wrap="wrap">
+                
+                {/* Status Filter */}
+                <FormControl maxW="250px">
+                    <FormLabel fontSize="xs" mb={1} color="gray.500">Status</FormLabel>
+                    <Select 
+                        bg="white" 
+                        value={statusFilter} 
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                        <option value="Open">Show Only Open (Default)</option>
+                        <option value="In Progress">Show In Progress</option>
+                        <option value="Pending Approval">Show Pending Approval</option>
+                        <option value="All">Show All Active Jobs</option>
+                    </Select>
+                </FormControl>
+
+                {/* Month Filter */}
+                <FormControl maxW="160px">
+                    <FormLabel fontSize="xs" mb={1} color="gray.500">Month</FormLabel>
+                    <Select 
+                        bg="white" 
+                        value={filterMonth} 
+                        onChange={(e) => setFilterMonth(e.target.value)}
+                    >
+                        <option value="">All Months</option>
+                        {MONTH_NAMES.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                    </Select>
+                </FormControl>
+
+                {/* Year Filter */}
+                <FormControl maxW="100px">
+                    <FormLabel fontSize="xs" mb={1} color="gray.500">Year</FormLabel>
+                    <Select 
+                        bg="white" 
+                        value={filterYear} 
+                        onChange={(e) => setFilterYear(e.target.value)}
+                    >
+                        {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                    </Select>
+                </FormControl>
+
             </HStack>
         </Box>
 
@@ -186,17 +258,21 @@ function TechnicianPage() {
                 </Tr>
               </Thead>
               <Tbody>
-                {/* Check if filtered list is empty */}
+                {/* Empty State */}
                 {filteredWorkOrders.length === 0 && (
-                  <Tr><Td colSpan={7} textAlign="center">No {statusFilter} work orders found.</Td></Tr>
+                  <Tr>
+                      <Td colSpan={7} textAlign="center" py={6} color="gray.500">
+                          No {statusFilter === 'All' ? '' : statusFilter} jobs found for {filterMonth !== "" ? MONTH_NAMES[filterMonth] : "selected month"} {filterYear}.
+                      </Td>
+                  </Tr>
                 )}
 
-                {/* Map through FILTERED list instead of main list */}
+                {/* Filtered List */}
                 {filteredWorkOrders.map((wo) => (
                   <Tr key={wo.work_order_id}>
-                    <Td>{wo.wo_number}</Td>
+                    <Td fontWeight="medium">{wo.wo_number}</Td>
                     <Td>{wo.machine_name || 'N/A'}</Td> 
-                    <Td>{new Date(wo.scheduled_date).toLocaleDateString()}</Td>
+                    <Td>{new Date(wo.scheduled_date).toLocaleDateString('en-GB')}</Td>
                     <Td>
                       <Badge colorScheme={statusColors[wo.status] || 'gray'}>
                         {wo.status}
@@ -217,6 +293,7 @@ function TechnicianPage() {
         </Box>
       </VStack>
 
+      {/* --- UPDATE MODAL --- */}
       <Modal isOpen={isOpen} onClose={handleCloseModal} isCentered size="4xl">
         <ModalOverlay />
         <ModalContent as="form" onSubmit={handleSaveTechnicianData}>
@@ -278,18 +355,6 @@ function TechnicianPage() {
                     <Input type="datetime-local" value={completedTime} onChange={(e) => setCompletedTime(e.target.value)} />
                   </FormControl>
                 </HStack>
-                
-                {/* Overall Technician Note 
-                <FormControl>
-                  <FormLabel>Main Technician Note (Overall)</FormLabel>
-                  <Textarea
-                    value={mainTechnicianNote}
-                    onChange={(e) => setMainTechnicianNote(e.target.value)}
-                    placeholder="Add overall job notes here..."
-                  />
-                </FormControl>
-                */}
-
               </Box>
             </VStack>
           </ModalBody>
