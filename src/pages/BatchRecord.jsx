@@ -214,7 +214,7 @@ function formatTimestampUTC(uniqueTimestamp) {
       line1: {
         PMA: "/SearchPMARecord1",
         Binder: "/SearchBinderRecord1",
-        Wetmill: "/SearchWetMillRecord1",
+        Wetmill: "/WetmillRecord1",
         FBD: "/SearchFBDRecord1",
         EPH: "/SearchEPHRecord1",
         Tumbler: "/SearchTumblerRecord1",
@@ -222,7 +222,7 @@ function formatTimestampUTC(uniqueTimestamp) {
       },
       line3: {
         PMA: "/SearchPMARecord3",
-        Wetmill: "/SearchWetmillRecord3",
+        Wetmill: "/WetmillRecord3",
         FBD: "/SearchFBDRecord3",
         EPH: "/SearchEPHRecord3",
         HM: "/SearchHMRecord3",
@@ -267,7 +267,13 @@ function formatTimestampUTC(uniqueTimestamp) {
       let allResults = [];
       // Loop jika batchList > 1 (All Batch), atau hanya 1 batch
       for (const batch of batchList) {
-        const response = await axios.get(endpoint, { params: { data: batch } });
+        const response = await axios.get(endpoint, { 
+          params: { 
+            data: batch,
+            start: startDate,
+            finish: finishDate
+          } 
+        });
         const processedData = response.data.map(item => {
           const newItem = { ...item };
           // Convert Buffer objects to strings

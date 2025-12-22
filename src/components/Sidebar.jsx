@@ -281,6 +281,7 @@ function Sidebar() {
         subMenu: [
           { name: "Technician", path: "/TechnicianPage"  },
           { name: "Completed PWO", path: "/CompletedJobs"},
+          { name: "Technician Dashboard", path: "/TechnicianDashboard"},
         ],        
       }
     
@@ -379,6 +380,8 @@ function Sidebar() {
           { name: "Technician", path: "/TechnicianPage", visible: userGlobal.level <= 5 },
           { name: "Supervisor Approval", path: "/supervisor-approval", visible: userGlobal.level > 4 },
           { name: "Completed PWO", path: "/CompletedJobs",visible: userGlobal.level > 4 },
+          { name: "Technician Dashboard", path: "/TechnicianDashboard",visible: userGlobal.level > 4 },
+          { name: "Profile Manager", path: "/ProfileManager", visible: userGlobal.level > 4 },
           // { name: "PWO List", path: "/ReadPWO" },
         ],
         

@@ -314,19 +314,26 @@ module.exports = {
   },
   login: async (req, res) => {
     try {
+      console.log('========== LOGIN REQUEST ==========');
       const { email, password } = req.body;
-      console.log(req.body);
+      console.log('Request Body:', req.body);
+      
       const isEmailExist = await query(
         `SELECT * FROM users WHERE email = ${db.escape(email)}`
       );
 
+      console.log('Email found:', isEmailExist.length > 0);
+
       if (isEmailExist.length == 0) {
+        console.log('❌ Login failed: Email not found');
         return res.status(400).send({ message: "email & password infailid1" });
       }
 
       const isValid = await bcrypt.compare(password, isEmailExist[0].password);
+      console.log('Password valid:', isValid);
 
       if (!isValid) {
+        console.log('❌ Login failed: Invalid password');
         return res.status(400).send({ message: "email & password infailid2" });
       }
 
@@ -337,20 +344,28 @@ module.exports = {
         level: isEmailExist[0].level,
         imagePath: isEmailExist[0].imagePath,
       };
+      
+      console.log('Creating token with payload:', payload);
       const token = jwt.sign(payload, "khaerul", { expiresIn: "1h" });
       // const token = jwt.sign(payload, "khaerul");
       //const token = jwt.sign(payload, "khaerul", { expiresIn: 600 }); // 5 menit
 
-      console.log(token);
+      console.log('✅ Token created successfully');
       delete isEmailExist[0].password;
+      console.log('====================================\n');
+      
       return res.status(200).send({
         token,
         message: "email & password sucess",
         data: isEmailExist[0],
       });
     } catch (error) {
-      res.status(error.status || 500).send(error);
-      console.log(error);
+      console.error('❌ LOGIN ERROR:', error);
+      console.error('Error stack:', error.stack);
+      res.status(error.status || 500).send({ 
+        message: 'Login error', 
+        error: error.message 
+      });
     }
   },
   fetchAlluser: async (req, res) => {
@@ -378,6 +393,95 @@ module.exports = {
       });
     } catch (error) {
       res.status(error.statusCode || 500).send(error);
+    }
+  },
+
+  loginData: async (req, res) => {
+    try {
+      console.log('\n========== LOGIN TRACKING ==========');
+      console.log('📥 Received request at loginData endpoint');
+      console.log('📥 Received token in header:', req.headers.authorization ? 'Yes' : 'No');
+      console.log('🔓 Decoded user from token:', req.user);
+      
+      const userId = req.user.id; // Extract user_id from token
+      const userName = req.user.name; // Extract user name from token
+      const loginTime = new Date();
+      
+      console.log('👤 User ID:', userId);
+      console.log('📛 User Name:', userName);
+      console.log('🕐 Login Time:', loginTime.toLocaleString());
+      console.log('====================================\n');
+      
+      // Log the login activity to database or perform any tracking needed
+      // You can create a login_logs table if needed
+      
+      return res.status(200).send({
+        message: "Login activity tracked successfully",
+        data: {
+          userId: userId,
+          userName: userName,
+          loginTime: loginTime
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error tracking login:', error);
+      res.status(error.statusCode || 500).send({message: 'Error tracking login', error: error.message});
+    }
+  },
+
+  logoutData: async (req, res) => {
+    try {
+      console.log('\n========== LOGOUT TRACKING ==========');
+      console.log('📥 Received token in header:', req.headers.authorization ? 'Yes' : 'No');
+      console.log('🔓 Decoded user from token:', req.user);
+      
+      const userId = req.user.id; // Extract user_id from token
+      const userName = req.user.name; // Extract user name from token
+      const logoutTime = new Date();
+      
+      console.log('👤 User ID:', userId);
+      console.log('📛 User Name:', userName);
+      console.log('🕐 Logout Time:', logoutTime.toLocaleString());
+      console.log('=====================================\n');
+      
+      // Log the logout activity to database or perform any tracking needed
+      
+      return res.status(200).send({
+        message: "Logout activity tracked successfully",
+        data: {
+          userId: userId,
+          userName: userName,
+          logoutTime: logoutTime
+        }
+      });
+    } catch (error) {
+      console.error("❌ Error tracking logout:", error);
+      res.status(error.statusCode || 500).send(error);
+    }
+  },
+
+  getTechnicians: async (req, res) => {
+    try {
+      console.log('\n========== GET TECHNICIANS ==========');
+      console.log('Fetching all users with level 4 (technicians)');
+      
+      const getTechniciansQuery = `SELECT id_users, name, email, username, level, imagePath FROM users WHERE level = 4`;
+      
+      const technicians = await query(getTechniciansQuery);
+      
+      console.log(`Found ${technicians.length} technicians`);
+      console.log('====================================\n');
+      
+      return res.status(200).send({
+        message: "Technicians fetched successfully",
+        data: technicians
+      });
+    } catch (error) {
+      console.error('❌ Error fetching technicians:', error);
+      res.status(error.statusCode || 500).send({
+        message: 'Error fetching technicians',
+        error: error.message
+      });
     }
   },
 
@@ -3163,4 +3267,910 @@ WHERE REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(data_format_0 USING utf8), '\0', '
       return response.status(200).send(result);
     });
   },
+
+     liveWorkOrders: async (request, response) => {
+      // 1. Get User Info from the Token
+      const currentUser = request.user;
+
+      if (!currentUser) {
+        return response.status(401).send({ error: "Unauthorized. No token found." });
+      }
+
+      // 2. Ensure DB connection is alive
+      if (db4.state === 'disconnected' || db4.state === 'protocol_error') {
+        console.log("⚠️ DB4 was closed. Reconnecting...");
+        db4.connect();
+      }
+
+      console.log(`🔍 Fetching ALL incomplete PWO (user context: ${currentUser.id})`);
+
+      try {
+        const sqlAll = `
+          SELECT 
+            wo.work_order_id,
+            wo.wo_number,
+            wo.status,
+            wo.category,
+            wo.scheduled_date,
+            wo.technician_id,
+            m.machine_name,
+            m.asset_number
+          FROM pmp_work_orders AS wo
+          LEFT JOIN pmp_machines AS m ON wo.machine_id = m.machine_id
+          WHERE wo.status != 'Completed'
+          AND wo.wo_number LIKE 'PWO%'
+          ORDER BY wo.scheduled_date ASC
+        `;
+
+        db4.query(sqlAll, [], (err, rows) => {
+          if (err) {
+            console.error("❌ Error fetching all incomplete PWO:", err);
+            return response.status(500).send({ error: err.message });
+          }
+
+          console.log(`✅ Successfully fetched ${rows.length} incomplete PWO tasks`);
+          return response.status(200).json(rows);
+        });
+
+      } catch (error) {
+        console.error("❌ Unexpected error in liveWorkOrders:", error);
+        return response.status(500).send({ error: error.message });
+      }
+    },
+
+    // NEW: Only PWO assigned to the logged-in user
+    liveWorkOrdersAssigned: async (request, response) => {
+      const currentUser = request.user;
+
+      if (!currentUser) {
+        return response.status(401).send({ error: "Unauthorized. No token found." });
+      }
+
+      if (db4.state === 'disconnected' || db4.state === 'protocol_error') {
+        console.log("⚠️ DB4 was closed. Reconnecting...");
+        db4.connect();
+      }
+
+      console.log(`🔍 Fetching ASSIGNED incomplete PWO for user ${currentUser.id}`);
+
+      try {
+        const sqlMyPwo = `
+          SELECT 
+            wo.work_order_id,
+            wo.wo_number,
+            wo.status,
+            wo.category,
+            wo.scheduled_date,
+            wo.technician_id,
+            m.machine_name,
+            m.asset_number
+          FROM pmp_work_orders AS wo
+          LEFT JOIN pmp_machines AS m ON wo.machine_id = m.machine_id
+          WHERE wo.status != 'Completed'
+          AND wo.wo_number LIKE 'PWO%'
+          AND wo.technician_id = ?
+          ORDER BY wo.scheduled_date ASC
+        `;
+
+        db4.query(sqlMyPwo, [currentUser.id], (err, rows) => {
+          if (err) {
+            console.error("❌ Error fetching assigned PWO:", err);
+            return response.status(500).send({ error: err.message });
+          }
+
+          console.log(`✅ Assigned PWO for user ${currentUser.id}: ${rows.length}`);
+          return response.status(200).json(rows);
+        });
+
+      } catch (error) {
+        console.error("❌ Unexpected error in liveWorkOrdersAssigned:", error);
+        return response.status(500).send({ error: error.message });
+      }
+    },
+
+
+     PMARecord3: async (request, response) => {
+    const { start, finish } = request.query;
+    const queryGet = `
+        SELECT DISTINCT
+            data_index AS x, 
+            CAST(data_format_0 AS CHAR) AS BATCH,
+            DATE(FROM_UNIXTIME(\`time@timestamp\`) + INTERVAL 4 HOUR) AS label
+        FROM 
+            \`parammachine_saka\`.\`cMT-GEA-L3_EBR_PMA_L3_data\`
+        WHERE 
+            DATE(FROM_UNIXTIME(\`time@timestamp\`)) BETWEEN '${start}' AND '${finish}'
+        ORDER BY
+            label DESC;
+    `;
+    try {
+      const result = await new Promise((resolve, reject) => {
+        db.query(queryGet, (err, result) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(result);
+        });
+      });
+      return response.status(200).send(result);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).send("Database query failed");
+    }
+  },
+
+   WetmillRecord3: async (request, response) => {
+    const { start, finish } = request.query;
+    const queryGet = `
+        SELECT DISTINCT
+            data_index AS x, 
+            CAST(data_format_0 AS CHAR) AS BATCH,
+            DATE(FROM_UNIXTIME(\`time@timestamp\`) + INTERVAL 4 HOUR) AS label
+        FROM 
+            \`parammachine_saka\`.\`cMT-GEA-L3_EBR_WETMILL_data\`
+        WHERE 
+            DATE(FROM_UNIXTIME(\`time@timestamp\`)) BETWEEN '${start}' AND '${finish}'
+        ORDER BY
+            label DESC;
+    `;
+    try {
+      const result = await new Promise((resolve, reject) => {
+        db3.query(queryGet, (err, result) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(result);
+        });
+      });
+      return response.status(200).send(result);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).send("Database query failed");
+    }
+  },
+
+    FBDRecord3: async (request, response) => {
+      const { start, finish } = request.query;
+      const queryGet = `
+          SELECT DISTINCT
+              data_index AS x, 
+              CAST(data_format_0 AS CHAR) AS BATCH,
+              DATE(FROM_UNIXTIME(\`time@timestamp\`) + INTERVAL 4 HOUR) AS label
+          FROM 
+              \`parammachine_saka\`.\`cMT-GEA-L3_EBR_FBD_L3_data\`
+          WHERE 
+              DATE(FROM_UNIXTIME(\`time@timestamp\`)) BETWEEN '${start}' AND '${finish}'
+          ORDER BY
+              label DESC;
+      `;
+      try {
+        const result = await new Promise((resolve, reject) => {
+          db3.query(queryGet, (err, result) => {
+            if (err) {
+              return reject(err);
+            }
+            resolve(result);
+          });
+        });
+        return response.status(200).send(result);
+      } catch (error) {
+        console.error(error);
+        return response.status(500).send("Database query failed");
+      }
+    },
+
+  EPHRecord3: async (request, response) => {
+    const { start, finish } = request.query;
+    const queryGet = `
+        SELECT DISTINCT
+            data_index AS x, 
+            CAST(data_format_0 AS CHAR) AS BATCH,
+            DATE(FROM_UNIXTIME(\`time@timestamp\`) + INTERVAL 4 HOUR) AS label
+        FROM 
+            \`parammachine_saka\`.\`cMT-GEA-L3_EBR_EPH_L3_data\`
+        WHERE 
+            DATE(FROM_UNIXTIME(\`time@timestamp\`)) BETWEEN '${start}' AND '${finish}'
+        ORDER BY
+            label DESC;
+    `;
+    try {
+      const result = await new Promise((resolve, reject) => {
+        db.query(queryGet, (err, result) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(result);
+        });
+      });
+      return response.status(200).send(result);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).send("Database query failed");
+    }
+  },
+
+  // Search endpoints for Line 3 - PMA only (separated)
+  SearchPMARecord3: async (request, response) => {
+    const { data, start, finish } = request.query;
+    if (!data) {
+      return response.status(400).send({ error: "Batch data is required" });
+    }
+
+    const pmaArea = "cMT-GEA-L3_EBR_PMA_L3_data";
+
+    const getMappedColumns = (area, excludeCols = []) => {
+      return new Promise((resolve, reject) => {
+        const queryCols = `
+          SELECT COLUMN_NAME
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = 'parammachine_saka'
+            AND TABLE_NAME = ?
+            AND COLUMN_NAME NOT IN (${excludeCols.map(() => "?").join(", ")})
+        `;
+        const queryMap = `
+          SELECT data_format_index, comment FROM \`${area}_format\`
+        `;
+        db3.query(queryCols, [area, ...excludeCols], (err, colResults) => {
+          if (err) return reject(err);
+          db3.query(queryMap, (err2, mapResults) => {
+            if (err2) return reject(err2);
+
+            const columns = colResults.map(({ COLUMN_NAME }) => {
+              const match = COLUMN_NAME.match(/data_format_(\d+)/);
+              if (match) {
+                const index = parseInt(match[1], 10);
+                const mapping = mapResults.find((m) => m.data_format_index === index);
+                if (mapping) {
+                  return `\`${area}\`.\`${COLUMN_NAME}\` AS \`${mapping.comment}\``;
+                }
+              }
+              return `\`${area}\`.\`${COLUMN_NAME}\``;
+            });
+
+            resolve(columns);
+          });
+        });
+      });
+    };
+
+    try {
+      const pmaColumns = await getMappedColumns(pmaArea, [
+        "data_format_0",
+        "data_format_1",
+        "time@timestamp",
+        "data_index",
+      ]);
+
+      const query = `
+        SELECT 
+          DATE_FORMAT(FROM_UNIXTIME(FLOOR(\`${pmaArea}\`.\`time@timestamp\`)), '%Y-%m-%d %H:%i') AS PMA_time,
+          ${pmaColumns.join(", ")},
+          CAST(\`${pmaArea}\`.\`data_format_0\` AS CHAR) AS PMA_BATCH,
+          CAST(\`${pmaArea}\`.\`data_format_1\` AS CHAR) AS PMA_PROCESS
+        FROM \`parammachine_saka\`.\`${pmaArea}\`
+        WHERE
+          CAST(\`${pmaArea}\`.\`data_format_0\` AS CHAR) LIKE ?
+          AND DATE(FROM_UNIXTIME(\`${pmaArea}\`.\`time@timestamp\`)) BETWEEN ? AND ?
+        ORDER BY \`${pmaArea}\`.\`time@timestamp\` ASC;
+      `;
+
+      const result = await new Promise((resolve, reject) => {
+        db3.query(query, [`%${data}%`, start, finish], (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+      return response.status(200).send(result);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).send("Database query failed: " + error.message);
+    }
+  },
+
+  SearchWetmillRecord3: async (request, response) => {
+    const { data, start, finish } = request.query;
+    if (!data) {
+      return response.status(400).send({ error: "Batch data is required" });
+    }
+    
+    const wetArea = "cMT-GEA-L3_EBR_WETMILL_data";
+
+    const getMappedColumns = (area, excludeCols = []) => {
+      return new Promise((resolve, reject) => {
+        const queryCols = `
+          SELECT COLUMN_NAME
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = 'parammachine_saka'
+            AND TABLE_NAME = ?
+            AND COLUMN_NAME NOT IN (${excludeCols.map(() => "?").join(", ")})
+        `;
+        const queryMap = `
+          SELECT data_format_index, comment FROM \`${area}_format\`
+        `;
+        db3.query(queryCols, [area, ...excludeCols], (err, colResults) => {
+          if (err) return reject(err);
+          db3.query(queryMap, (err2, mapResults) => {
+            if (err2) return reject(err2);
+
+            const columns = colResults.map(({ COLUMN_NAME }) => {
+              const match = COLUMN_NAME.match(/data_format_(\d+)/);
+              if (match) {
+                const index = parseInt(match[1], 10);
+                const mapping = mapResults.find(
+                  (m) => m.data_format_index === index
+                );
+                if (mapping) {
+                  return `\`${COLUMN_NAME}\` AS \`${mapping.comment}\``;
+                }
+              }
+              return `\`${COLUMN_NAME}\``;
+            });
+
+            resolve(columns);
+          });
+        });
+      });
+    };
+
+    try {
+      const wetColumns = await getMappedColumns(wetArea, [
+        "data_format_0",
+        "time@timestamp",
+        "data_index",
+      ]);
+
+      const query = `
+        SELECT 
+          DATE_FORMAT(FROM_UNIXTIME(FLOOR(\`time@timestamp\`)), '%Y-%m-%d %H:%i') AS WET_time,
+          ${wetColumns.join(", ")},
+          CAST(\`data_format_0\` AS CHAR) AS WET_BATCH
+        FROM \`parammachine_saka\`.\`${wetArea}\`
+        WHERE
+          CAST(\`data_format_0\` AS CHAR) LIKE ?
+          AND DATE(FROM_UNIXTIME(\`time@timestamp\`)) BETWEEN ? AND ?
+        ORDER BY \`time@timestamp\` ASC;
+      `;
+
+      const result = await new Promise((resolve, reject) => {
+        db3.query(query, [`%${data}%`, start, finish], (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+      return response.status(200).send(result);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).send("Database query failed: " + error.message);
+    }
+  },
+
+  SearchFBDRecord3: async (request, response) => {
+    const { data, start, finish } = request.query;
+    if (!data) {
+      return response.status(400).send({ error: "Batch data is required" });
+    }
+    
+    const fbdArea = "cMT-GEA-L3_EBR_FBD_L3_data";
+
+    const getMappedColumns = (area, excludeCols = []) => {
+      return new Promise((resolve, reject) => {
+        const queryCols = `
+          SELECT COLUMN_NAME
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = 'parammachine_saka'
+            AND TABLE_NAME = ?
+            AND COLUMN_NAME NOT IN (${excludeCols.map(() => "?").join(", ")})
+        `;
+        const queryMap = `
+          SELECT data_format_index, comment FROM \`${area}_format\`
+        `;
+        db3.query(queryCols, [area, ...excludeCols], (err, colResults) => {
+          if (err) return reject(err);
+          db3.query(queryMap, (err2, mapResults) => {
+            if (err2) return reject(err2);
+
+            const columns = colResults.map(({ COLUMN_NAME }) => {
+              const match = COLUMN_NAME.match(/data_format_(\d+)/);
+              if (match) {
+                const index = parseInt(match[1], 10);
+                const mapping = mapResults.find(
+                  (m) => m.data_format_index === index
+                );
+                if (mapping) {
+                  return `\`${COLUMN_NAME}\` AS \`${mapping.comment}\``;
+                }
+              }
+              return `\`${COLUMN_NAME}\``;
+            });
+
+            resolve(columns);
+          });
+        });
+      });
+    };
+
+    try {
+      const fbdColumns = await getMappedColumns(fbdArea, [
+        "data_format_0",
+        "time@timestamp",
+        "data_index",
+      ]);
+
+      const query = `
+        SELECT 
+          DATE_FORMAT(FROM_UNIXTIME(FLOOR(\`time@timestamp\`)), '%Y-%m-%d %H:%i') AS FBD_time,
+          ${fbdColumns.join(", ")},
+          CAST(\`data_format_0\` AS CHAR) AS FBD_BATCH
+        FROM \`parammachine_saka\`.\`${fbdArea}\`
+        WHERE
+          CAST(\`data_format_0\` AS CHAR) LIKE ?
+          AND DATE(FROM_UNIXTIME(\`time@timestamp\`)) BETWEEN ? AND ?
+        ORDER BY \`time@timestamp\` ASC;
+      `;
+
+      const result = await new Promise((resolve, reject) => {
+        db3.query(query, [`%${data}%`, start, finish], (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+      return response.status(200).send(result);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).send("Database query failed: " + error.message);
+    }
+  },
+
+  SearchEPHRecord3: async (request, response) => {
+    const { data, start, finish } = request.query;
+    if (!data) {
+      return response.status(400).send({ error: "Batch data is required" });
+    }
+    
+    const ephArea = "cMT-GEA-L3_EBR_EPH_L3_data";
+
+    const getMappedColumns = (area, excludeCols = []) => {
+      return new Promise((resolve, reject) => {
+        const queryCols = `
+          SELECT COLUMN_NAME
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = 'parammachine_saka'
+            AND TABLE_NAME = ?
+            AND COLUMN_NAME NOT IN (${excludeCols.map(() => "?").join(", ")})
+        `;
+        const queryMap = `
+          SELECT data_format_index, comment FROM \`${area}_format\`
+        `;
+        db3.query(queryCols, [area, ...excludeCols], (err, colResults) => {
+          if (err) return reject(err);
+          db3.query(queryMap, (err2, mapResults) => {
+            if (err2) return reject(err2);
+
+            const columns = colResults.map(({ COLUMN_NAME }) => {
+              const match = COLUMN_NAME.match(/data_format_(\d+)/);
+              if (match) {
+                const index = parseInt(match[1], 10);
+                const mapping = mapResults.find(
+                  (m) => m.data_format_index === index
+                );
+                if (mapping) {
+                  return `\`${COLUMN_NAME}\` AS \`${mapping.comment}\``;
+                }
+              }
+              return `\`${COLUMN_NAME}\``;
+            });
+
+            resolve(columns);
+          });
+        });
+      });
+    };
+
+    try {
+      const ephColumns = await getMappedColumns(ephArea, [
+        "data_format_0",
+        "time@timestamp",
+        "data_index",
+      ]);
+
+      const query = `
+        SELECT 
+          DATE_FORMAT(FROM_UNIXTIME(FLOOR(\`time@timestamp\`)), '%Y-%m-%d %H:%i') AS EPH_time,
+          ${ephColumns.join(", ")},
+          CAST(\`data_format_0\` AS CHAR) AS EPH_BATCH
+        FROM \`parammachine_saka\`.\`${ephArea}\`
+        WHERE
+          CAST(\`data_format_0\` AS CHAR) LIKE ?
+          AND DATE(FROM_UNIXTIME(\`time@timestamp\`)) BETWEEN ? AND ?
+        ORDER BY \`time@timestamp\` ASC;
+      `;
+
+      const result = await new Promise((resolve, reject) => {
+        db3.query(query, [`%${data}%`, start, finish], (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+      return response.status(200).send(result);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).send("Database query failed: " + error.message);
+    }
+  },
+
+SearchPMARecord1: async (request, response) => {
+    const { data, start, finish } = request.query;
+    const pmaArea = "cMT-FHDGEA1_EBR_PMA_new_data";
+
+    const getMappedColumns = (area, excludeCols = []) => {
+      return new Promise((resolve, reject) => {
+        const queryCols = `
+          SELECT COLUMN_NAME
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = 'ems_saka'
+            AND TABLE_NAME = ?
+            AND COLUMN_NAME NOT IN (${excludeCols.map(() => "?").join(", ")})
+        `;
+        const queryMap = `
+          SELECT data_format_index, comment FROM \`${area}_format\`
+        `;
+        db4.query(queryCols, [area, ...excludeCols], (err, colResults) => {
+          if (err) return reject(err);
+          db4.query(queryMap, (err2, mapResults) => {
+            if (err2) return reject(err2);
+
+            const columns = colResults.map(({ COLUMN_NAME }) => {
+              const match = COLUMN_NAME.match(/data_format_(\d+)/);
+              if (match) {
+                const index = parseInt(match[1], 10);
+                const mapping = mapResults.find((m) => m.data_format_index === index);
+                if (mapping) {
+                  return `\`${area}\`.\`${COLUMN_NAME}\` AS \`${mapping.comment}\``;
+                }
+              }
+              return `\`${area}\`.\`${COLUMN_NAME}\``;
+            });
+
+            resolve(columns);
+          });
+        });
+      });
+    };
+
+    try {
+      const pmaColumns = await getMappedColumns(pmaArea, [
+        "data_format_0",
+        "data_format_1",
+        "time@timestamp",
+        "data_index",
+      ]);
+
+      let where = `CONVERT(\`${pmaArea}\`.\`data_format_0\` USING utf8) LIKE ?`;
+      const params = [`%${data}%`];
+      if (start && finish) {
+        where += ` AND DATE(FROM_UNIXTIME(\`${pmaArea}\`.\`time@timestamp\`)) BETWEEN ? AND ?`;
+        params.push(start, finish);
+      }
+
+      const query = `
+        SELECT
+          DATE_FORMAT(FROM_UNIXTIME(FLOOR(\`${pmaArea}\`.\`time@timestamp\`)), '%Y-%m-%d %H:%i') AS PMA_time,
+          ${pmaColumns.join(",")},
+          CONVERT(\`${pmaArea}\`.\`data_format_0\` USING utf8) AS PMA_BATCH,
+          CONVERT(\`${pmaArea}\`.\`data_format_1\` USING utf8) AS PMA_PROCESS
+        FROM \`ems_saka\`.\`${pmaArea}\`
+        WHERE ${where}
+        ORDER BY \`${pmaArea}\`.\`time@timestamp\` ASC;
+      `;
+
+      db4.query(query, params, (err, result) => {
+        if (err) {
+          console.error(err);
+          return response.status(500).send("Database query failed");
+        }
+        return response.status(200).send(result);
+      });
+    } catch (err) {
+      console.error(err);
+      return response.status(500).send("Error fetching PMA data");
+    }
+  },
+
+  // NEW: Line 1 - Wetmill only (separated)
+  SearchWetMillRecord1: async (request, response) => {
+    const { data, start, finish } = request.query;
+    const wetArea = "cMT-FHDGEA1_EBR_Wetmill_new_data";
+
+    const getMappedColumns = (area, excludeCols = []) => {
+      return new Promise((resolve, reject) => {
+        const queryCols = `
+          SELECT COLUMN_NAME
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = 'ems_saka'
+            AND TABLE_NAME = ?
+            AND COLUMN_NAME NOT IN (${excludeCols.map(() => "?").join(", ")})
+        `;
+        const queryMap = `
+          SELECT data_format_index, comment FROM \`${area}_format\`
+        `;
+        db4.query(queryCols, [area, ...excludeCols], (err, colResults) => {
+          if (err) return reject(err);
+          db4.query(queryMap, (err2, mapResults) => {
+            if (err2) return reject(err2);
+
+            const columns = colResults.map(({ COLUMN_NAME }) => {
+              const match = COLUMN_NAME.match(/data_format_(\d+)/);
+              if (match) {
+                const index = parseInt(match[1], 10);
+                const mapping = mapResults.find((m) => m.data_format_index === index);
+                if (mapping) {
+                  return `\`${area}\`.\`${COLUMN_NAME}\` AS \`${mapping.comment}\``;
+                }
+              }
+              return `\`${area}\`.\`${COLUMN_NAME}\``;
+            });
+
+            resolve(columns);
+          });
+        });
+      });
+    };
+
+    try {
+      const wetColumns = await getMappedColumns(wetArea, [
+        "data_format_0",
+        "time@timestamp",
+        "data_index",
+      ]);
+
+      let where = `CONVERT(\`${wetArea}\`.\`data_format_0\` USING utf8) LIKE ?`;
+      const params = [`%${data}%`];
+      if (start && finish) {
+        where += ` AND DATE(FROM_UNIXTIME(\`${wetArea}\`.\`time@timestamp\`)) BETWEEN ? AND ?`;
+        params.push(start, finish);
+      }
+
+      const query = `
+        SELECT 
+          DATE_FORMAT(FROM_UNIXTIME(FLOOR(\`${wetArea}\`.\`time@timestamp\`)), '%Y-%m-%d %H:%i') AS WET_time,
+          ${wetColumns.join(", ")},
+          CONVERT(\`${wetArea}\`.\`data_format_0\` USING utf8) AS WET_BATCH
+        FROM \`ems_saka\`.\`${wetArea}\`
+        WHERE ${where}
+        ORDER BY \`${wetArea}\`.\`time@timestamp\` ASC;
+      `;
+
+      db4.query(query, params, (err, result) => {
+        if (err) {
+          console.error(err);
+          return response.status(500).send("Database query failed");
+        }
+        return response.status(200).send(result);
+      });
+    } catch (err) {
+      console.error(err);
+      return response.status(500).send("Error fetching Wetmill data");
+    }
+  },
+
+  WetmillRecord1: async (request, response) => {
+    const { start, finish, data } = request.query;
+    const wetArea = "cMT-FHDGEA1_EBR_Wetmill_new_data";
+
+    // If no batch provided, return list of batches (existing behavior)
+    if (!data) {
+      console.log("[WetmillRecord1] List mode | start:", start, "finish:", finish);
+      const queryGet = `
+        SELECT 
+            data_index AS x, 
+            CONVERT(data_format_0 USING utf8) AS BATCH,
+            DATE(FROM_UNIXTIME(\`time@timestamp\`) + INTERVAL 4 HOUR) AS label
+        FROM 
+            \`ems_saka\`.\`${wetArea}\`
+        WHERE 
+            DATE(FROM_UNIXTIME(\`time@timestamp\`)) BETWEEN '${start}' AND '${finish}'
+        GROUP BY 
+            data_format_0
+        ORDER BY
+            label;
+      `;
+      try {
+        const result = await new Promise((resolve, reject) => {
+          db4.query(queryGet, (err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+          });
+        });
+        return response.status(200).send(result);
+      } catch (error) {
+        console.error(error);
+        return response.status(500).send("Database query failed");
+      }
+    }
+
+    // Batch provided: return detailed rows for that batch
+    console.log("[WetmillRecord1] Batch mode | data:", data, "start:", start, "finish:", finish);
+    const getMappedColumns = (area, excludeCols = []) => {
+      return new Promise((resolve, reject) => {
+        const queryCols = `
+          SELECT COLUMN_NAME
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = 'ems_saka'
+            AND TABLE_NAME = ?
+            AND COLUMN_NAME NOT IN (${excludeCols.map(() => "?").join(", ")})
+        `;
+        const queryMap = `
+          SELECT data_format_index, comment FROM \`${area}_format\`
+        `;
+        db4.query(queryCols, [area, ...excludeCols], (err, colResults) => {
+          if (err) return reject(err);
+          db4.query(queryMap, (err2, mapResults) => {
+            if (err2) return reject(err2);
+
+            const columns = colResults.map(({ COLUMN_NAME }) => {
+              const match = COLUMN_NAME.match(/data_format_(\d+)/);
+              if (match) {
+                const index = parseInt(match[1], 10);
+                const mapping = mapResults.find((m) => m.data_format_index === index);
+                if (mapping) {
+                  return `\`${COLUMN_NAME}\` AS \`${mapping.comment}\``;
+                }
+              }
+              return `\`${COLUMN_NAME}\``;
+            });
+
+            resolve(columns);
+          });
+        });
+      });
+    };
+
+    try {
+      const wetColumns = await getMappedColumns(wetArea, [
+        "data_format_0",
+        "time@timestamp",
+        "data_index",
+      ]);
+
+      let where = `CONVERT(\`${wetArea}\`.\`data_format_0\` USING utf8) LIKE ?`;
+      const params = [`%${data}%`];
+      if (start && finish) {
+        where += ` AND DATE(FROM_UNIXTIME(\`${wetArea}\`.\`time@timestamp\`)) BETWEEN ? AND ?`;
+        params.push(start, finish);
+      }
+
+      const query = `
+        SELECT 
+          DATE_FORMAT(FROM_UNIXTIME(FLOOR(\`time@timestamp\`)), '%Y-%m-%d %H:%i') AS WET_time,
+          ${wetColumns.join(", ")},
+          CONVERT(\`data_format_0\` USING utf8) AS WET_BATCH
+        FROM \`ems_saka\`.\`${wetArea}\`
+        WHERE ${where}
+        ORDER BY \`time@timestamp\` ASC;
+      `;
+      console.log("[WetmillRecord1] Query:\n", query);
+      console.log("[WetmillRecord1] Params:", params);
+
+      const result = await new Promise((resolve, reject) => {
+        db4.query(query, params, (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+      console.log("[WetmillRecord1] Rows:", result?.length || 0);
+      return response.status(200).send(result);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).send("Database query failed");
+    }
+  },    
+
+   WetmillRecord3: async (request, response) => {
+    const { start, finish, data } = request.query;
+    const wetArea = "cMT-GEA-L3_EBR_WETMILL_data";
+
+    // If no batch provided, return list of batches (existing behavior)
+    if (!data) {
+      console.log("[WetmillRecord3] List mode | start:", start, "finish:", finish);
+      const queryGet = `
+        SELECT DISTINCT
+            data_index AS x, 
+            CAST(data_format_0 AS CHAR) AS BATCH,
+            DATE(FROM_UNIXTIME(\`time@timestamp\`) + INTERVAL 4 HOUR) AS label
+        FROM 
+            \`parammachine_saka\`.\`${wetArea}\`
+        WHERE 
+            DATE(FROM_UNIXTIME(\`time@timestamp\`)) BETWEEN '${start}' AND '${finish}'
+        ORDER BY
+            label DESC;
+      `;
+      try {
+        const result = await new Promise((resolve, reject) => {
+          db3.query(queryGet, (err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+          });
+        });
+        return response.status(200).send(result);
+      } catch (error) {
+        console.error(error);
+        return response.status(500).send("Database query failed");
+      }
+    }
+
+    // Batch provided: return detailed rows for that batch
+    console.log("[WetmillRecord3] Batch mode | data:", data, "start:", start, "finish:", finish);
+    const getMappedColumns = (area, excludeCols = []) => {
+      return new Promise((resolve, reject) => {
+        const queryCols = `
+          SELECT COLUMN_NAME
+          FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = 'parammachine_saka'
+            AND TABLE_NAME = ?
+            AND COLUMN_NAME NOT IN (${excludeCols.map(() => "?").join(", ")})
+        `;
+        const queryMap = `
+          SELECT data_format_index, comment FROM \`${area}_format\`
+        `;
+        db3.query(queryCols, [area, ...excludeCols], (err, colResults) => {
+          if (err) return reject(err);
+          db3.query(queryMap, (err2, mapResults) => {
+            if (err2) return reject(err2);
+
+            const columns = colResults.map(({ COLUMN_NAME }) => {
+              const match = COLUMN_NAME.match(/data_format_(\d+)/);
+              if (match) {
+                const index = parseInt(match[1], 10);
+                const mapping = mapResults.find((m) => m.data_format_index === index);
+                if (mapping) {
+                  return `\`${COLUMN_NAME}\` AS \`${mapping.comment}\``;
+                }
+              }
+              return `\`${COLUMN_NAME}\``;
+            });
+
+            resolve(columns);
+          });
+        });
+      });
+    };
+
+    try {
+      const wetColumns = await getMappedColumns(wetArea, [
+        "data_format_0",
+        "time@timestamp",
+        "data_index",
+      ]);
+
+      const query = `
+        SELECT 
+          DATE_FORMAT(FROM_UNIXTIME(FLOOR(\`time@timestamp\`)), '%Y-%m-%d %H:%i') AS WET_time,
+          ${wetColumns.join(", ")},
+          CAST(\`data_format_0\` AS CHAR) AS WET_BATCH
+        FROM \`parammachine_saka\`.\`${wetArea}\`
+        WHERE
+          CAST(\`data_format_0\` AS CHAR) LIKE ?
+          AND DATE(FROM_UNIXTIME(\`time@timestamp\`)) BETWEEN ? AND ?
+        ORDER BY \`time@timestamp\` ASC;
+      `;
+      const params = [`%${data}%`, start, finish];
+      console.log("[WetmillRecord3] Query:\n", query);
+      console.log("[WetmillRecord3] Params:", params);
+
+      const result = await new Promise((resolve, reject) => {
+        db3.query(query, params, (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+      console.log("[WetmillRecord3] Rows:", result?.length || 0);
+      return response.status(200).send(result);
+    } catch (error) {
+      console.error(error);
+      return response.status(500).send("Database query failed");
+    }
+  },
+
+
 };
+

@@ -45,10 +45,14 @@ function DailyAssignmentPage() {
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth()); 
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
+  const [technicianList, setTechnicianList] = useState([]); // List from DB
+  const [selectedTech, setSelectedTech] = useState('');     // Selected Value
+
   const toast = useToast();
 
   useEffect(() => {
     fetchPendingJobs();
+    fetchTechnicians(); // <--- Fetch users on load
   }, []);
 
   const fetchPendingJobs = async () => {
@@ -59,6 +63,17 @@ function DailyAssignmentPage() {
       setPendingJobs(data);
     } catch (err) {
       toast({ title: 'Error fetching pending jobs', status: 'error' });
+    }
+  };
+
+  // 1. Fetch Users from Database
+  const fetchTechnicians = async () => {
+    try {
+      const response = await fetch('http://10.126.15.197:8002/part/users');
+      const data = await response.json();
+      setTechnicianList(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load technicians");
     }
   };
 
@@ -107,11 +122,11 @@ function DailyAssignmentPage() {
 
   const handleAssignJobs = async () => {
     if (selectedJobs.size === 0) {
-      toast({ title: 'No jobs selected', status: 'warning', isClosable: true });
+      toast({ title: 'No jobs selected', status: 'warning' });
       return;
     }
     if (!scheduledDate) {
-      toast({ title: 'Please select a scheduled date', status: 'warning', isClosable: true });
+      toast({ title: 'Please select a scheduled date', status: 'warning' });
       return;
     }
 
@@ -123,31 +138,23 @@ function DailyAssignmentPage() {
         body: JSON.stringify({
           jobIds: Array.from(selectedJobs),
           scheduled_date: scheduledDate,
+          technician_id: selectedTech // <--- SEND SELECTION
         }),
       });
 
       const result = await response.json();
       
       if (response.status === 201) {
-        toast({ title: 'Jobs Assigned', description: result.message, status: 'success', duration: 5000, isClosable: true });
-      } 
-      else if (response.status === 207) {
-        toast({ title: 'Partial Success', description: `${result.message}. See console.`, status: 'warning', duration: 9000, isClosable: true });
-        console.error('Assignment Errors:', result.errors);
-      }
-      else {
-        throw new Error(result.error || result.message || 'Failed to assign jobs');
-      }
-
-      if (response.ok) { 
+        toast({ title: 'Success', description: result.message, status: 'success' });
         setSelectedJobs(new Set());
         setScheduledDate('');
-        setSearchQuery(''); 
+        setSelectedTech(''); // Reset dropdown
         fetchPendingJobs(); 
+      } else {
+        throw new Error(result.message || 'Failed to assign');
       }
-    
     } catch (err) {
-      toast({ title: 'Error Assigning Jobs', description: err.message, status: 'error', duration: 9000, isClosable: true });
+      toast({ title: 'Error', description: err.message, status: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -160,23 +167,43 @@ function DailyAssignmentPage() {
           Assign Daily PMP Jobs
         </Heading>
 
-        {/* --- Assignment Controls --- */}
-        <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="lg">
+       {/* --- Assignment Controls --- */}
+        <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="lg" bg="blue.50">
           <Heading as="h3" size="md" mb={4}>Assignment Controls</Heading>
-          <HStack spacing={4}>
-            <FormControl isRequired>
-              <FormLabel>Scheduled Date for Selected Jobs</FormLabel>
+          <HStack spacing={4} align="flex-end">
+            
+            <FormControl w="200px" isRequired>
+              <FormLabel>Scheduled Date</FormLabel>
               <Input
+                bg="white"
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
               />
             </FormControl>
+
+            {/* --- NEW: Technician Dropdown --- */}
+<FormControl w="250px">
+                <FormLabel>Assign To (Optional)</FormLabel>
+                <Select 
+                    bg="white" 
+                    placeholder="Select Technician..." 
+                    value={selectedTech} // This will now hold the ID (e.g. 66)
+                    onChange={(e) => setSelectedTech(e.target.value)}
+                >
+                    {technicianList.map((user) => (
+                        // KEY CHANGE: Value is the ID, Label is the Name
+                        <option key={user.id_users} value={user.id_users}>
+                            {user.name}
+                        </option>
+                    ))}
+                </Select>
+            </FormControl>
+
             <Button
               colorScheme="blue"
               onClick={handleAssignJobs}
               isLoading={isLoading}
-              alignSelf="flex-end"
               minW="180px"
             >
               Assign {selectedJobs.size} Jobs

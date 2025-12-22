@@ -13,6 +13,9 @@ import "react-toastify/dist/ReactToastify.css";
 
 import store from '../app/store.js'; // pastikan ini mengarah ke redux store-mu
 
+// Guard flag to prevent endless 401 loops when token is expired
+let isHandling401 = false;
+
 function Header()  {
     const userGlobal = useSelector((state) => state.user.user);
     const navigate = useNavigate();
@@ -39,24 +42,38 @@ function Header()  {
 
   // ini gw nyoba kalau token abis tanpa menekan tombol logout 
   useEffect(() => {
-    axios.interceptors.response.use(
-    response => response,
-    async error => {
-      if (error.response && error.response.status === 401) {
-        // Token expired
-        const userGlobal = store.getState().user.user;
-        if (userGlobal && userGlobal.id) {
-          await axios.post('http://10.126.15.197:8002/part/LogoutData', {
-            id_char: userGlobal.id,
-            logout_time: new Date().toLocaleString(),
-          });
+    const interceptor = axios.interceptors.response.use(
+      response => response,
+      async error => {
+        if (error.response && error.response.status === 401) {
+          if (isHandling401) {
+            return Promise.reject(error);
+          }
+          isHandling401 = true;
+          try {
+            const token = localStorage.getItem("user_token");
+            if (token) {
+              await axios.post('http://localhost:8002/part/LogoutData', {}, {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                },
+                validateStatus: () => true // avoid interceptor loop on this call
+              });
+            }
+          } catch (err) {
+            console.log("Logout tracking failed:", err);
+          } finally {
+            localStorage.removeItem("user_token");
+            window.location.href = "/login";
+            isHandling401 = false;
+          }
         }
-        localStorage.removeItem("user_token");
-        window.location.href = "/login";
+        return Promise.reject(error);
       }
-      return Promise.reject(error);
-    }
-  )}, []);
+    );
+
+    return () => axios.interceptors.response.eject(interceptor);
+  }, []);
 
   let isLoggingOut = false;
 
@@ -64,16 +81,20 @@ function Header()  {
     if (isLoggingOut) return;
     isLoggingOut = true;
     try {
-      await axios.post('http://10.126.15.197:8002/part/LogoutData', {
-        id_char: userGlobal.id,
-        logout_time: new Date().toLocaleString(),
-      });
+      const token = localStorage.getItem("user_token");
+      if (token) {
+        await axios.post('http://localhost:8002/part/LogoutData', {}, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      }
       toast.success("You have successfully logged out!");
       localStorage.removeItem("user_token");
       navigate("/login");
       navigate(0);
     } catch (err) {
-      // handle error
+      console.log("Logout tracking failed:", err);
     } finally {
       isLoggingOut = false;
     }

@@ -66,22 +66,26 @@ export function loginData(data) {
       // Display success message
       toast.success("Login successful!");
 
-      // LOG LOGIN: langsung POST ke endpoint log login di sini
+      // LOG LOGIN: Send token in Authorization header to track login activity
       try {
-        const now = new Date().toLocaleString(); // atau sesuai format yang kamu mau
-        await Axios.post("http://10.126.15.197:8002/part/LoginData", {
-          name: userData.name,
-          id: userData.id_users,
-          email: userData.email,
-          isAdmin: userData.isAdmin,
-          level: userData.level,
-          imagePath: userData.imagePath ? userData.imagePath : "-",
-          loginAt: now,
+        const token = response.data.token;
+        // Decode token to show what's inside (for debugging)
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        console.log('📝 LOGIN TRACKING - Token payload:', tokenPayload);
+        console.log('👤 User ID from token:', tokenPayload.id);
+        console.log('🔑 Sending token to backend...');
+        
+        const trackingResponse = await Axios.post("http://10.126.15.197:8002/part/LoginData", {}, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         });
-        // Optional: console.log("Log login berhasil");
+        
+        console.log('✅ Backend response:', trackingResponse.data);
+        console.log('🎯 Backend extracted user_id:', trackingResponse.data.data.userId);
       } catch (logErr) {
-        // Boleh tampilkan pesan error log login, tapi tidak memblok login utama
-        // Optional: console.log("Log login gagal:", logErr);
+        console.error('❌ Login tracking failed:', logErr.response?.data || logErr.message);
+        // Don't block main login flow if tracking fails
       }
 
       // Optional: Redirect user if necessary

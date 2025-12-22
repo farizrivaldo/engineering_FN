@@ -18,9 +18,19 @@ routers.get("/line4", databaseControllers.fetchDataLine4);
 
 routers.post("/register", databaseControllers.register);
 routers.post("/login", databaseControllers.login);
+routers.post("/LoginData", veryfyToken, databaseControllers.loginData);
+routers.post("/LogoutData", veryfyToken, databaseControllers.logoutData);
+// CMMS PWO endpoints
+routers.get("/live-work-orders", veryfyToken, databaseControllers.liveWorkOrders);
+routers.get(
+  "/live-work-orders-assigned",
+  veryfyToken,
+  databaseControllers.liveWorkOrdersAssigned
+);
 routers.get("/user", veryfyToken, checkRole, databaseControllers.fetchAlluser);
 routers.get("/alluser", databaseControllers.fetchAlluser);
 routers.post("/check-Login", veryfyToken, databaseControllers.checkLogin);
+routers.get("/technicians", veryfyToken, databaseControllers.getTechnicians);
 routers.patch("/userupdate/:id", databaseControllers.updateUsers);
 routers.delete("/userdelete/:id", databaseControllers.deleteUseers);
 routers.patch("/useredit/:id", databaseControllers.editUsers);
@@ -131,6 +141,19 @@ routers.get("/138", databaseControllers.fetch138);
 
 //=====================EBR==========================================================
 routers.get("/PmaGetData", databaseControllers.GetDataEBR_PMA);
+routers.get("/PMARecord3", databaseControllers.PMARecord3);
+routers.get("/WetmillRecord3", databaseControllers.WetmillRecord3);
+routers.get("/WetmillRecord1", databaseControllers.WetmillRecord1);
+routers.get("/FBDRecord3", databaseControllers.FBDRecord3);
+routers.get("/EPHRecord3", databaseControllers.EPHRecord3);
+// Line 1 search endpoints (separated)
+routers.get("/SearchPMARecord1", databaseControllers.SearchPMARecord1);
+routers.get("/SearchWetMillRecord1", databaseControllers.SearchWetMillRecord1);
+// Line 3 search endpoints (separated)
+routers.get("/SearchPMARecord3", databaseControllers.SearchPMARecord3);
+routers.get("/SearchWetmillRecord3", databaseControllers.SearchWetmillRecord3);
+routers.get("/SearchFBDRecord3", databaseControllers.SearchFBDRecord3);
+routers.get("/SearchEPHRecord3", databaseControllers.SearchEPHRecord3);
 module.exports = routers;
 
 //==============INSTRUMENT IPC========================================INSTRUMENT IPC==========================================
