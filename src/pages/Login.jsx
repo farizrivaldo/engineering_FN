@@ -98,20 +98,26 @@ function Login () {
       password: password,
     };
 
-    const loginSuccess = await dispatch(loginData({ email, password }));
-    
+    const loginAction = await dispatch(loginData({ email, password }));
 
+    // Ambil level user dari payload aksi atau dari redux state sebagai fallback
+    const payload = loginAction?.payload ?? {};
+    const detectedLevel =
+      payload?.level ??
+      payload?.user?.level ??
+      userRedux?.level ??
+      userRedux?.user?.level;
 
-    // Pastikan loginResult.payload berisi data user (atau sesuaikan dengan return thunk-mu)
-    if (loginSuccess) {
-      loginTriggered.current = true; // tandai bahwa login barusan sukses
-
+    const isSuccess = !!loginAction;
+    if (isSuccess) {
+      loginTriggered.current = true;
+      const targetPath = detectedLevel === 4 ? '/TechnicianDashboard' : '/dashboard';
+      console.log('Login success. Detected level:', detectedLevel, '→ redirect to', targetPath);
       setTimeout(() => {
-        navigate('/dashboard'); // Redirect to Stopwatch after 2 seconds
+        navigate(targetPath);
       }, 2000);
     }
-    // console.log('Logging to backend:', user);
-    console.log('Login result:', loginSuccess);
+    console.log('Login action:', loginAction);
 
   };
 

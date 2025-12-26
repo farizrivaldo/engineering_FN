@@ -3318,7 +3318,7 @@ WHERE REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(data_format_0 USING utf8), '\0', '
       }
     },
 
-    // NEW: Only PWO assigned to the logged-in user
+    // NEW: Only PWO assigned to the logged-in user (enriched with operations + fallback by machine name)
     liveWorkOrdersAssigned: async (request, response) => {
       const currentUser = request.user;
 
@@ -3352,16 +3352,64 @@ WHERE REPLACE(REPLACE(REPLACE(REPLACE(CONVERT(data_format_0 USING utf8), '\0', '
           ORDER BY wo.scheduled_date ASC
         `;
 
-        db4.query(sqlMyPwo, [currentUser.id], (err, rows) => {
-          if (err) {
-            console.error("❌ Error fetching assigned PWO:", err);
-            return response.status(500).send({ error: err.message });
-          }
-
-          console.log(`✅ Assigned PWO for user ${currentUser.id}: ${rows.length}`);
-          return response.status(200).json(rows);
+        // Fetch assigned PWO rows
+        const rows = await new Promise((resolve, reject) => {
+          db4.query(sqlMyPwo, [currentUser.id], (err, rows) => {
+            if (err) return reject(err);
+            resolve(rows);
+          });
         });
 
+        console.log(`✅ Assigned PWO for user ${currentUser.id}: ${rows.length}`);
+
+        // Helper: fetch operations for a given work order id
+        const getOpsByWorkOrderId = (woId) => new Promise((resolve, reject) => {
+          const sql = `
+            SELECT operation_id, work_order_id, description, technician_note
+            FROM pmp_work_order_operations
+            WHERE work_order_id = ?
+            ORDER BY operation_id ASC
+          `;
+          db4.query(sql, [woId], (err, res) => {
+            if (err) return reject(err);
+            resolve(res || []);
+          });
+        });
+
+        // Helper: fallback operations by machine name (from any work order on same machine that has ops)
+        const getOpsByMachineName = (machineName) => new Promise((resolve, reject) => {
+          const sql = `
+            SELECT o.operation_id, o.work_order_id, o.description, o.technician_note
+            FROM pmp_work_order_operations o
+            JOIN pmp_work_orders w ON o.work_order_id = w.work_order_id
+            JOIN pmp_machines m ON w.machine_id = m.machine_id
+            WHERE m.machine_name = ?
+            ORDER BY w.scheduled_date DESC, o.operation_id ASC
+            LIMIT 100
+          `;
+          db4.query(sql, [machineName], (err, res) => {
+            if (err) return reject(err);
+            resolve(res || []);
+          });
+        });
+
+        // Enrich each row with operations and fallback if missing
+        const enriched = await Promise.all(rows.map(async (row) => {
+          try {
+            const ops = await getOpsByWorkOrderId(row.work_order_id);
+            if (ops && ops.length > 0) {
+              return { ...row, operations: ops };
+            }
+            // Fallback to machine-based operations if current WO has none
+            const fallbackOps = row.machine_name ? await getOpsByMachineName(row.machine_name) : [];
+            return { ...row, operations: fallbackOps };
+          } catch (e) {
+            console.warn(`⚠️ Ops fetch failed for WO ${row.work_order_id}:`, e.message);
+            return { ...row, operations: [] };
+          }
+        }));
+
+        return response.status(200).json(enriched);
       } catch (error) {
         console.error("❌ Unexpected error in liveWorkOrdersAssigned:", error);
         return response.status(500).send({ error: error.message });
@@ -4170,6 +4218,99 @@ SearchPMARecord1: async (request, response) => {
       return response.status(500).send("Database query failed");
     }
   },
+
+  // NEW: Only PWO assigned to the logged-in user
+    liveWorkOrdersAssigned: async (request, response) => {
+      const currentUser = request.user;
+
+      if (!currentUser) {
+        return response.status(401).send({ error: "Unauthorized. No token found." });
+      }
+
+      if (db4.state === 'disconnected' || db4.state === 'protocol_error') {
+        console.log("⚠️ DB4 was closed. Reconnecting...");
+        db4.connect();
+      }
+
+      console.log(`🔍 Fetching ASSIGNED incomplete PWO for user ${currentUser.id}`);
+
+      try {
+        const sqlMyPwo = `
+          SELECT 
+            wo.work_order_id,
+            wo.wo_number,
+            wo.status,
+            wo.category,
+            wo.scheduled_date,
+            wo.technician_id,
+            m.machine_name,
+            m.asset_number
+          FROM pmp_work_orders AS wo
+          LEFT JOIN pmp_machines AS m ON wo.machine_id = m.machine_id
+          WHERE wo.status != 'Completed'
+          AND wo.wo_number LIKE 'PWO%'
+          AND wo.technician_id = ?
+          ORDER BY wo.scheduled_date ASC
+        `;
+
+        db4.query(sqlMyPwo, [currentUser.id], (err, rows) => {
+          if (err) {
+            console.error("❌ Error fetching assigned PWO:", err);
+            return response.status(500).send({ error: err.message });
+          }
+
+          console.log(`✅ Assigned PWO for user ${currentUser.id}: ${rows.length}`);
+          return response.status(200).json(rows);
+        });
+
+      } catch (error) {
+        console.error("❌ Unexpected error in liveWorkOrdersAssigned:", error);
+        return response.status(500).send({ error: error.message });
+      }
+    },
+
+     getVortexData: async (req, res) => {
+    try {
+      console.log('\n========== GET VORTEX DATA ==========');
+      console.log('Fetching all records from vortex_flowmeter');
+
+      // We format the date here so the frontend receives a clean string
+      const sql = `
+        SELECT 
+          id, 
+          totalizer, 
+          flowmeter, 
+          suhu, 
+          tekanan, 
+          DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as formatted_date
+        FROM vortex_flowmeter 
+        ORDER BY created_at ASC
+      `;
+
+      const data = await new Promise((resolve, reject) => {
+        db4.query(sql, (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+
+      console.log(`Found ${data.length} records`);
+      console.log('====================================\n');
+
+      return res.status(200).send({
+        message: "Vortex data fetched successfully",
+        data: data
+      });
+
+    } catch (error) {
+      console.error('❌ Error fetching vortex data:', error);
+      res.status(error.statusCode || 500).send({
+        message: 'Error fetching vortex data',
+        error: error.message
+      });
+    }
+  },
+
 
 
 };

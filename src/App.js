@@ -47,6 +47,7 @@ import ServiceRequestForm from "./pages/CMMS/WorkOrderPages";
 import SupervisorApproval from "./pages/CMMS/ApprovalPage";
 import TechnicianDashboard from "./pages/CMMS/TechnicianDashboard";
 import ProfileManager from "./pages/CMMS/ProfileManager";
+import VortexChart from "./pages/SteamControl";
 
 function App() {
   const dispatch = useDispatch();
@@ -157,6 +158,7 @@ function App() {
               <Route path="/supervisor-approval" element={<SupervisorApproval />} />
               <Route path="/TechnicianDashboard" element={<TechnicianDashboard />} />
               <Route path="/ProfileManager" element={<ProfileManager />} />
+              <Route path="/SteamControl" element={<VortexChart />} />
 
               
             </Routes>
