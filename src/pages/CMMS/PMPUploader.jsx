@@ -3,13 +3,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Heading, FormControl, FormLabel, Input, Button, VStack,
-  Container, useToast, Text, Table, Thead, Tbody, Tr, Th, Td,
-  IconButton, Divider, HStack, Select,
+  Container, useToast, Table, Thead, Tbody, Tr, Th, Td,
+  IconButton, Divider, HStack, Select, Badge, Radio, RadioGroup, Stack,
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalFooter,
-  ModalBody, ModalCloseButton, useDisclosure,
+  ModalBody, ModalCloseButton, useDisclosure, Text
 } from '@chakra-ui/react';
 import { Delete, Edit, Save } from "@mui/icons-material";
 import Papa from 'papaparse'; // Import the CSV parser
+
 
 // Helper for month names
 const MONTH_NAMES = [
@@ -23,6 +24,9 @@ function PMPUploader() {
   const [fileName, setFileName] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const toast = useToast();
+  const [uploadCategory, setUploadCategory] = useState('Maintenance'); // Default
+  const [importCategory, setImportCategory] = useState('Maintenance');
+
 
   // --- State for CRUD Manager ---
   const [pendingJobs, setPendingJobs] = useState([]); // Holds the list from the DB
@@ -46,13 +50,16 @@ function PMPUploader() {
   }, []);
 
   // --- 1. Parse the CSV file in the browser ---
-const handleFileChange = (e) => {
+// --- 2. CSV Parser (Smart Header Search + PM Number) ---
+  // --- 2. CSV Parser (Smart Header Search + Category Detection) ---
+  // --- 2. CSV Parser (Auto-Selects Category) ---
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setFileName(file.name);
       
       Papa.parse(file, {
-        header: false, // <--- STEP 1: Read as raw arrays first
+        header: false,
         skipEmptyLines: true,
         
         complete: (results) => {
@@ -61,61 +68,71 @@ const handleFileChange = (e) => {
           let woIndex = -1;
           let assetIndex = -1;
           let machineIndex = -1;
+          let pmIndex = -1;
 
-          // --- STEP 2: Find the Real Header Row ---
-          // Scan the first 10 rows to find where the actual headers are
+          // 1. Find the Real Header Row
           for (let i = 0; i < Math.min(rows.length, 10); i++) {
             const row = rows[i].map(cell => cell ? cell.toString().toLowerCase().trim() : '');
             
-            // Look for keywords in this row
             const wIdx = row.findIndex(cell => cell.includes('no') && cell.includes('wo'));
             const aIdx = row.findIndex(cell => cell.includes('asset') && cell.includes('number'));
             
-            // If we found both "WO" and "Asset" in this row, IT'S THE HEADER!
             if (wIdx !== -1 && aIdx !== -1) {
                 headerRowIndex = i;
                 woIndex = wIdx;
                 assetIndex = aIdx;
-                // Try to find machine name (usually "Nama Mesin" or "Machine")
                 machineIndex = row.findIndex(cell => cell.includes('nama') || cell.includes('machine'));
-                break; // Stop searching
+                
+                // Check if "No. PM" column exists
+                pmIndex = row.findIndex(cell => cell.includes('no') && cell.includes('pm'));
+                break;
             }
           }
 
-          // Safety Check
           if (headerRowIndex === -1) {
-             toast({ 
-                 title: "Header Detection Failed", 
-                 description: "Could not find a row containing 'No. WO' and 'Asset Number'. Please check the CSV.", 
-                 status: "error", 
-                 duration: 9000, 
-                 isClosable: true 
-             });
+             toast({ title: "Header Detection Failed", status: "error" });
              return;
           }
 
-          // --- STEP 3: Map Data using the Indices we found ---
-          // Start loop from the row AFTER the header
-          const jobs = rows.slice(headerRowIndex + 1)
+          // 2. AUTO-DETECT CATEGORY
+          // If we found the PM column, switch the radio button to 'Utility'
+          const detectedCategory = pmIndex !== -1 ? 'Utility' : 'Maintenance';
+          setUploadCategory(detectedCategory); // <--- THIS IS THE FIX
+
+          // 3. Map Data - Skip A rows (metadata rows that have 'A' in wo_number column)
+          const rawJobs = rows.slice(headerRowIndex + 1)
             .map((row) => ({
-              // Use the indices we discovered dynamically
               machine_name: machineIndex !== -1 ? row[machineIndex] : 'Unknown', 
               asset_number: row[assetIndex],
               wo_number: row[woIndex],
             }))
+            // Filter: Remove A-rows and rows without wo_number
             .filter(job => {
-                // Filter out garbage/empty rows
-                return job.wo_number && 
-                       typeof job.wo_number === 'string' && 
-                       job.wo_number.toUpperCase().includes('PWO');
+              const wo = job.wo_number ? job.wo_number.toString().trim() : '';
+              // Skip if wo_number is empty, 'A', or doesn't contain 'PWO'
+              return wo && wo !== 'A' && wo.toUpperCase().includes('PWO') && job.machine_name && job.machine_name !== 'Unknown';
             });
 
-          setStagedJobs(jobs);
-          
-          if (jobs.length === 0) {
-             toast({ title: "No valid PWO rows found", status: "warning" });
-          } else {
-             toast({ title: "File Parsed", description: `Found ${jobs.length} valid jobs (Headers on row ${headerRowIndex + 1}).`, status: "success" });
+          // 4. Deduplication - Filter out PWOs already in database
+          const existingWOs = new Set(pendingJobs.map(j => j.wo_number));
+          const newJobs = rawJobs.filter(job => !existingWOs.has(job.wo_number));
+          const duplicateCount = rawJobs.length - newJobs.length;
+
+          setStagedJobs(newJobs);
+
+          // Show detailed feedback
+          if (rawJobs.length > 0) {
+            let message = `Found ${rawJobs.length} total PWOs. `;
+            if (duplicateCount > 0) {
+              message += `${duplicateCount} already exist in database (skipped). `;
+            }
+            message += `${newJobs.length} new PWOs ready to upload.`;
+            
+            toast({
+              title: "File Parsed",
+              description: message,
+              status: duplicateCount > 0 ? "warning" : "success"
+            });
           }
         },
         error: (err) => {
@@ -133,57 +150,66 @@ const handleFileChange = (e) => {
   };
 
   // --- 3. Send the FINAL JSON list to the backend ---
+  // --- SAVE HANDLER (Sends Category) ---
   const handleSaveToPending = async () => {
-    if (stagedJobs.length === 0) {
-      toast({
-        title: 'No data to save',
-        description: 'Please upload a file and review the rows.',
-        status: 'warning',
-        duration: 5000,
-        isClosable: true,
-      });
-      return;
-    }
+        if (stagedJobs.length === 0) {
+            toast({
+                title: 'No data to save',
+                description: 'Please upload a file and review the rows.',
+                status: 'warning',
+                duration: 5000,
+                isClosable: true,
+            });
+            return;
+        }
 
-    setIsLoading(true);
+        setIsLoading(true);
 
-    try {
-      // This route now expects a JSON array, NOT FormData
-      const response = await fetch('http://10.126.15.197:8002/api/bulk-import-pending', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(stagedJobs), // Send the staged jobs array
-      });
+        try {
+            // ✅ UPDATED: We now send an object containing both 'jobs' and 'category'
+            const payload = {
+                jobs: stagedJobs,
+                category: importCategory
+            };
 
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to import');
-      }
+            console.log("Sending Payload:", payload);
 
-      toast({
-        title: 'Import Successful',
-        description: `Successfully created ${result.createdCount} pending jobs.`,
-        status: 'success',
-        duration: 9000,
-        isClosable: true,
-      });
-      
-      // Clear the form
-      setStagedJobs([]);
-      setFileName('');
+            const response = await fetch('http://localhost:8002/api/bulk-import-pending', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload), 
+            });
 
-    } catch (err) {
-      toast({
-        title: 'Import Error',
-        description: err.message,
-        status: 'error',
-        duration: 9000,
-        isClosable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to import');
+            }
+
+            toast({
+                title: 'Import Successful',
+                description: `Successfully created ${result.createdCount} pending jobs in category: ${importCategory}.`,
+                status: 'success',
+                duration: 9000,
+                isClosable: true,
+            });
+
+            // Clear the form and reset category
+            setStagedJobs([]);
+            setFileName('');
+            setImportCategory('Maintenance'); // Optional: Reset to default
+
+        } catch (err) {
+            toast({
+                title: 'Import Error',
+                description: err.message,
+                status: 'error',
+                duration: 9000,
+                isClosable: true,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
   // --- CRUD Functions ---
 
@@ -315,6 +341,24 @@ return (
         <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="md" bg="white">
           <Heading as="h3" size="md" mb={4}>Step 1: Bulk Import from CSV</Heading>
           <VStack spacing={4} align="stretch">
+            
+            {/* NEW: Category Selector */}
+            {stagedJobs.length > 0 && (
+                <Box mb={4} mt={4}>
+                    <label style={{ fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>
+                        Select Category for Import:
+                    </label>
+                    <Select 
+                        value={importCategory} 
+                        onChange={(e) => setImportCategory(e.target.value)}
+                        width="300px"
+                    >
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Utility">Utility</option>
+                    </Select>
+                </Box>
+            )}
+
             <FormControl>
               <FormLabel>Select Monthly PMP CSV File</FormLabel>
               <Input type="file" accept=".csv" onChange={handleFileChange} p={1} />
@@ -322,6 +366,7 @@ return (
             {fileName && <Text fontSize="sm" color="gray.500">Selected: {fileName}</Text>}
             
             {stagedJobs.length > 0 && (
+              
                 <Box mt={4}>
                     <HStack justify="space-between" mb={2}>
                         <Text fontWeight="bold">Preview ({stagedJobs.length} rows)</Text>

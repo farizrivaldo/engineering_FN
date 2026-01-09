@@ -154,6 +154,14 @@ routers.get("/SearchPMARecord3", databaseControllers.SearchPMARecord3);
 routers.get("/SearchWetmillRecord3", databaseControllers.SearchWetmillRecord3);
 routers.get("/SearchFBDRecord3", databaseControllers.SearchFBDRecord3);
 routers.get("/SearchEPHRecord3", databaseControllers.SearchEPHRecord3);
+
+// PMP Pending Jobs - Bulk Import from JSON
+routers.post("/bulk-import-pending", databaseControllers.bulkImportJsonPending);
+
+// PMP Assigned Jobs - Fetch and Update
+routers.get("/assigned-jobs", databaseControllers.getAssignedJobs);
+routers.put("/update-assigned-job", databaseControllers.updateAssignedJob);
+
 module.exports = routers;
 
 //==============INSTRUMENT IPC========================================INSTRUMENT IPC==========================================

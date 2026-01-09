@@ -13,7 +13,38 @@ const mqtt = require("mqtt");
 const WebSocket = require("ws");
 
 app.use(cors());
-app.use(express.json());
+// Enhance JSON parsing to capture raw body for debugging and increase size limit
+app.use(
+  express.json({
+    limit: '2mb',
+    verify: (req, res, buf) => {
+      try {
+        req.rawBody = buf.toString();
+      } catch (e) {
+        req.rawBody = undefined;
+      }
+    },
+  })
+);
+
+// Debug middleware: log payload reaching the route
+app.use((req, res, next) => {
+  if (req.method === 'POST' && req.path === '/part/bulk-import-pending') {
+    console.log('🛰️ Incoming POST /part/bulk-import-pending');
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('Raw body length:', req.rawBody ? req.rawBody.length : 0);
+    if (req.rawBody) {
+      try {
+        const parsedRaw = JSON.parse(req.rawBody);
+        console.log('Raw body JSON keys:', Object.keys(parsedRaw));
+      } catch (e) {
+        console.log('Raw body not JSON, first 200 chars:', req.rawBody.slice(0, 200));
+      }
+    }
+    console.log('Parsed body type:', typeof req.body, 'keys:', req.body && Object.keys(req.body));
+  }
+  next();
+});
 app.use(express.static("public"));
 
 app.post(
