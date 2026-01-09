@@ -116,7 +116,7 @@ function LandingPage () {
                 {/* "tadi nambahin xl:text-left ntah siapa tadi yg nambahin skrg dah dihapus alonami" */}
                     <div className="text-center"> 
                         <h1 className="text-5xl lg:text-6xl xl:text-7xl xl:ml-8 font-bold leading-tight text-white font-jakarta mb-8">
-                            Computerized Maintenance Management System
+                            Computerized Engineering Management System
                         </h1>
                         <div className="flex items-center justify-center xl:justify-start">
                             <div className="hidden xl:block w-0.5 h-28 bg-[#D9DBE1] mr-4 self-center"></div>

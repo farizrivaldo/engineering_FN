@@ -48,6 +48,9 @@ import SupervisorApproval from "./pages/CMMS/ApprovalPage";
 import TechnicianDashboard from "./pages/CMMS/TechnicianDashboard";
 import ProfileManager from "./pages/CMMS/ProfileManager";
 import VortexChart from "./pages/SteamControl";
+import Dashboard2 from "./pages/Dashboard2";
+import Dashboard3 from "./pages/Dashboard3";
+import OeeDashboard from "./pages/OEETest";
 
 function App() {
   const dispatch = useDispatch();
@@ -127,6 +130,8 @@ function App() {
           <div className="overflow-x-auto">
             <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/Dashboard2" element={<Dashboard2 />} />
+              <Route path="/Dashboard3" element={<Dashboard3 />} />
               <Route path="/maintenance" element={<Maintenance />} />
               <Route path="/Instrument" element={<Instrument />} />
               <Route path="/pareto" element={<Pareto />} />
@@ -159,6 +164,7 @@ function App() {
               <Route path="/TechnicianDashboard" element={<TechnicianDashboard />} />
               <Route path="/ProfileManager" element={<ProfileManager />} />
               <Route path="/SteamControl" element={<VortexChart />} />
+              <Route path="/OeeDashboard" element={<OeeDashboard />} />
 
               
             </Routes>
@@ -207,7 +213,8 @@ function App() {
               <Route path="/TechnicianPage" element={<TechnicianPage />} />
               <Route path="/CompletedJobs" element={<CompletedJobsPage />} />
               <Route path="/TechnicianDashboard" element={<TechnicianDashboard />} />
-
+              <Route path="/Dashboard2" element={<Dashboard2 />} />
+              <Route path="/Dashboard3" element={<Dashboard3 />} />
             </Routes>
           </div>
         </div>

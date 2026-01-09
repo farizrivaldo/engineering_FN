@@ -203,7 +203,7 @@ function Sidebar() {
       navigation.push({
         name: "Dashboard",
         icon: <DashboardOutlinedIcon sx={{ fontSize: 21 }} className="flex-shrink-0 m-1 " />,
-        path: "/dashboard",
+        path: "/TechnicianDashboard",
       },{
         name: "Maintenance",
         icon: <EngineeringIcon />,
@@ -371,17 +371,17 @@ function Sidebar() {
         icon: <AssignmentInd size={21}/>,
         path: "/PWOInput",
         subMenu: [
-          { name: "Machine Manager", path: "/MachineManager", visible: userGlobal.level > 4 },
+          // { name: "Machine Manager", path: "/MachineManager", visible: userGlobal.level > 4 },
           { name: "PMP Uploader", path: "/PMPUploader", visible: userGlobal.level > 4 },
           { name: "Assign PMP", path: "/assign-jobs", visible: userGlobal.level > 4 },
-          { name: "Operations", path: "/MasterPMP", visible: userGlobal.level > 4 },
+          // { name: "Operations", path: "/MasterPMP", visible: userGlobal.level > 4 },
           // { name: "Input PWO Data", path: "/PWOInput", visible: userGlobal.level > 4 },
           // { name: "Assign PWO", path: "/AssignPWO" },
           { name: "Technician", path: "/TechnicianPage", visible: userGlobal.level <= 5 },
           { name: "Supervisor Approval", path: "/supervisor-approval", visible: userGlobal.level > 4 },
           { name: "Completed PWO", path: "/CompletedJobs",visible: userGlobal.level > 4 },
-          { name: "Technician Dashboard", path: "/TechnicianDashboard",visible: userGlobal.level > 4 },
-          { name: "Profile Manager", path: "/ProfileManager", visible: userGlobal.level > 4 },
+          // { name: "Technician Dashboard", path: "/TechnicianDashboard",visible: userGlobal.level > 4 },
+          // { name: "Profile Manager", path: "/ProfileManager", visible: userGlobal.level > 4 },
           // { name: "PWO List", path: "/ReadPWO" },
         ],
         

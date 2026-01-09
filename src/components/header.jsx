@@ -53,7 +53,7 @@ function Header()  {
           try {
             const token = localStorage.getItem("user_token");
             if (token) {
-              await axios.post('http://localhost:8002/part/LogoutData', {}, {
+              await axios.post('http://10.126.15.197:8002/part/LogoutData', {}, {
                 headers: {
                   Authorization: `Bearer ${token}`
                 },
@@ -83,7 +83,7 @@ function Header()  {
     try {
       const token = localStorage.getItem("user_token");
       if (token) {
-        await axios.post('http://localhost:8002/part/LogoutData', {}, {
+        await axios.post('http://10.126.15.197:8002/part/LogoutData', {}, {
           headers: {
             Authorization: `Bearer ${token}`
           }

@@ -210,7 +210,7 @@ var localeOptions = {
 const options = {
   zoomEnabled: true,
   theme: isDarkMode ? "dark2" : "light2",
-  backgroundColor: isDarkMode ? "#171717" : "#ffffff",
+  backgroundColor: "transparent",
   title: {
     text: "HVAC Chiller (UTC)",  // Added UTC indicator
     fontColor: isDarkMode ? "white" : "black"
@@ -570,7 +570,7 @@ useEffect(()=>{
         <div key={index}>
           <div className=" grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 justify-center mb-4">
             <div>
-              <h5 className="mb-1">Area</h5>
+              <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Area</h5>
               <Select value = {list.area} name="area" placeholder="Select Area" sx={{border: "1px solid", borderColor: borderColor, borderRadius: "0.332rem", background: "var(--color-background)", _hover: {borderColor: hoverBorderColor},}}
                 onChange={(e) => handleListChange(e, index)}>
                 <option value="R-ActiSetpoiCH">Active Setpoint</option>
@@ -622,7 +622,7 @@ useEffect(()=>{
               </Select>
             </div>
             <div>
-              <h5 className="mb-1">Chiller</h5>
+              <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Chiller</h5>
               <Select value = {list.chiller} name="chiller" placeholder="Select Chiller" sx={{border: "1px solid", borderColor: borderColor, borderRadius: "0.332rem", background: "var(--color-background)", _hover: {borderColor: hoverBorderColor},}}
                 onChange={(e) => handleListChange(e, index)}>
                 <option value="1">Chiller 1</option>
@@ -631,7 +631,7 @@ useEffect(()=>{
               </Select>
             </div>
             <div>
-              <h5 className="mb-1">Kompresor</h5>
+              <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Kompresor</h5>
               <Select value = {list.komp} name="komp" placeholder="Full Chiller" sx={{border: "1px solid", borderColor: borderColor, borderRadius: "0.332rem", background: "var(--color-background)", _hover: {borderColor: hoverBorderColor},}}
                 onChange={(e) => handleListChange(e, index)}>
                 <option value="K1CH">Kompresor 1</option>
@@ -639,7 +639,7 @@ useEffect(()=>{
               </Select>
             </div>
             <div>
-              <h5 className="mb-1">Start Time</h5>
+              <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Start Time</h5>
               <Input
                 onChange={(e) => handleListChange(e, index)}
                 placeholder="Select Date and Time"
@@ -664,7 +664,7 @@ useEffect(()=>{
                 }}/> 
             </div>
             <div>
-              <h5 className="mb-1">Finish Time</h5>
+              <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Finish Time</h5>
               <Input
                 onChange={(e) => handleListChange(e, index)}
                 placeholder="Select Date and Time"
@@ -721,7 +721,7 @@ useEffect(()=>{
           </Button>
         </div>
       </Stack>
-      <div className="flex flex-row justify-center mx-8 bg-card rounded-md p-1 "> 
+      <div className="flex flex-row justify-center mx-8 bg-transparent rounded-md p-1" style={{ backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff' }}> 
       {loading ? (
       <div className="flex flex-col items-center">
         <Spinner
@@ -748,7 +748,7 @@ useEffect(()=>{
           alignItems="flex-end"
           flexWrap="nowrap">
           <Box flex="1">
-            <h5 className="mb-1">Chiller</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Chiller</h5>
             <Select placeholder="Select Chiller" onChange={chillerData} width="100%">
               <option value="1">Chiller 1</option>
               <option value="2">Chiller 2</option>
@@ -756,14 +756,14 @@ useEffect(()=>{
             </Select>
           </Box>
           <Box flex="1">
-            <h5 className="mb-1">Kompresor</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Kompresor</h5>
             <Select placeholder="Select Kompresor" onChange={KompData} width="100%">
               <option value="K1CH">Kompresor 1</option>
               <option value="K2CH">Kompresor 2</option>
             </Select>
           </Box>
           <Box flex="1">
-            <h5 className="mb-1">Start Time</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Start Time</h5>
             <Input
               onChange={dateStart}
               placeholder="Select Date and Time"
@@ -779,7 +779,7 @@ useEffect(()=>{
               sx={{border: "1px solid", borderColor: borderColor, borderRadius: "0.332rem", background: "var(--color-background)", _hover: {borderColor: hoverBorderColor},}}/> 
           </Box>
           <Box flex="1">
-            <h5 className="mb-1">Finish Time</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Finish Time</h5>
             <Input
               onChange={dateFinish}
               placeholder="Select Date and Time"
@@ -813,7 +813,7 @@ useEffect(()=>{
       <Box display={{ base: 'none', md: 'block', xl: 'none' }}>
         <SimpleGrid columns={4} spacing="3" mb="3">
           <Box>
-            <h5 className="mb-1">Chiller</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Chiller</h5>
             <Select placeholder="Select Chiller" onChange={chillerData} width="100%" sx={{border: "1px solid", borderColor: borderColor, borderRadius: "0.332rem", background: "var(--color-background)", _hover: {borderColor: hoverBorderColor},}}>
               <option value="1">Chiller 1</option>
               <option value="2">Chiller 2</option>
@@ -821,14 +821,14 @@ useEffect(()=>{
             </Select>
           </Box>
           <Box>
-            <h5 className="mb-1 truncate">Kompresor</h5>
+            <h5 className="mb-1 truncate" style={{ color: isDarkMode ? 'white' : 'black' }}>Kompresor</h5>
             <Select placeholder="Select Kompresor" onChange={KompData} width="100%" sx={{border: "1px solid", borderColor: borderColor, borderRadius: "0.332rem", background: "var(--color-background)", _hover: {borderColor: hoverBorderColor},}}>
               <option value="K1CH">Kompresor 1</option>
               <option value="K2CH">Kompresor 2</option>
             </Select>
           </Box>
           <Box>
-            <h5 className="mb-1">Start Time</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Start Time</h5>
             <Input
               onChange={dateStart}
               placeholder="Select Date and Time"
@@ -844,7 +844,7 @@ useEffect(()=>{
               sx={{border: "1px solid", borderColor: borderColor, borderRadius: "0.332rem", background: "var(--color-background)", _hover: {borderColor: hoverBorderColor},}}/> 
           </Box>
           <Box>
-            <h5 className="mb-1">Finish Time</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Finish Time</h5>
             <Input
               onChange={dateFinish}
               placeholder="Select Date and Time"
@@ -881,7 +881,7 @@ useEffect(()=>{
       <Box display={{ base: 'block', md: 'none' }}>
         <SimpleGrid columns={[1, 2]} spacing="3" mb="3">
           <Box>
-            <h5 className="mb-1">Chiller</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Chiller</h5>
             <Select placeholder="Select Chiller" onChange={chillerData} width="100%">
               <option value="1">Chiller 1</option>
               <option value="2">Chiller 2</option>
@@ -889,14 +889,14 @@ useEffect(()=>{
             </Select>
           </Box>
           <Box>
-            <h5 className="mb-1">Kompresor</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Kompresor</h5>
             <Select placeholder="Select Kompresor" onChange={KompData} width="100%">
               <option value="K1CH">Kompresor 1</option>
               <option value="K2CH">Kompresor 2</option>
             </Select>
           </Box>
           <Box>
-            <h5 className="mb-1">Start Time</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Start Time</h5>
             <Input
               onChange={dateStart}
               placeholder="Select Date and Time"
@@ -912,7 +912,7 @@ useEffect(()=>{
             /> 
           </Box>
           <Box>
-            <h5 className="mb-1">Finish Time</h5>
+            <h5 className="mb-1" style={{ color: isDarkMode ? 'white' : 'black' }}>Finish Time</h5>
             <Input
               onChange={dateFinish}
               placeholder="Select Date and Time"

@@ -40,6 +40,21 @@ const ProfileManager = () => {
   const borderCol = useColorModeValue('gray.200', 'gray.700');
   const searchBg = useColorModeValue('white', 'gray.700');
 
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.getAttribute('data-theme') === 'dark'
+  );
+
+  useEffect(() => {
+    const handleThemeChange = () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      setIsDarkMode(currentTheme === 'dark');
+    };
+    const observer = new MutationObserver(handleThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     fetchTechnicians();
   }, []);
@@ -109,7 +124,7 @@ const ProfileManager = () => {
 
   return (
     
-    <Container maxW="container.xl" py={8} bg={pageBg} minH="100vh">
+    <Container maxW="container.xl" py={8} bg="transparent" minH="100vh" color={textCol}>
       <VStack spacing={6} align="stretch">
         {/* Header */}
         <Box>
@@ -165,7 +180,7 @@ const ProfileManager = () => {
             {filteredTechnicians.map((tech) => (
               <Card
                 key={tech.id_users}
-                bg={cardBg}
+                bg="transparent"
                 borderWidth="1px"
                 borderColor={borderCol}
                 _hover={{
@@ -180,13 +195,13 @@ const ProfileManager = () => {
                     <Avatar
                       size="xl"
                       name={tech.name}
-                      src={tech.imagePath}
+                      src={tech.imagePath ? `http://10.126.15.197:8002${tech.imagePath}` : null}
                       bg="blue.500"
                     />
 
                     {/* Name */}
                     <VStack spacing={1} align="center">
-                      <Text fontSize="xl" fontWeight="bold" color={textCol}>
+                      <Text fontSize="xl" fontWeight="bold" color={isDarkMode ? 'white' : 'gray.800'}>
                         {tech.name}
                       </Text>
                       <Badge colorScheme="blue" fontSize="xs">
@@ -197,20 +212,20 @@ const ProfileManager = () => {
                     {/* Details */}
                     <VStack spacing={2} align="stretch" w="full" pt={2}>
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color={subCol}>User ID:</Text>
-                        <Text fontSize="sm" fontWeight="medium" color={textCol}>
+                        <Text fontSize="sm" color={isDarkMode ? 'gray.400' : 'gray.600'}>User ID:</Text>
+                        <Text fontSize="sm" fontWeight="medium" color={isDarkMode ? 'white' : 'gray.800'}>
                           {tech.id_users}
                         </Text>
                       </HStack>
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color={subCol}>Username:</Text>
-                        <Text fontSize="sm" fontWeight="medium" color={textCol}>
+                        <Text fontSize="sm" color={isDarkMode ? 'gray.400' : 'gray.600'}>Username:</Text>
+                        <Text fontSize="sm" fontWeight="medium" color={isDarkMode ? 'white' : 'gray.800'}>
                           {tech.username}
                         </Text>
                       </HStack>
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color={subCol}>Email:</Text>
-                        <Text fontSize="sm" fontWeight="medium" color={textCol} isTruncated>
+                        <Text fontSize="sm" color={isDarkMode ? 'gray.400' : 'gray.600'}>Email:</Text>
+                        <Text fontSize="sm" fontWeight="medium" color={isDarkMode ? 'white' : 'gray.800'} isTruncated>
                           {tech.email}
                         </Text>
                       </HStack>

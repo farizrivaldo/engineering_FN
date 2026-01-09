@@ -5,7 +5,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation } from "react-router-dom";
 import { loginData } from "../features/part/userSlice";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -93,31 +93,25 @@ function Login () {
       return;
     }
      
-    let tempData = {
-      email: email,
-      password: password,
-    };
+    const loginResult = await dispatch(loginData({ email, password }));
 
-    const loginAction = await dispatch(loginData({ email, password }));
-
-    // Ambil level user dari payload aksi atau dari redux state sebagai fallback
-    const payload = loginAction?.payload ?? {};
+    // Ambil level user dari hasil login atau dari redux state sebagai fallback
     const detectedLevel =
-      payload?.level ??
-      payload?.user?.level ??
-      userRedux?.level ??
+      loginResult?.level ??
+      loginResult?.user?.level ??
       userRedux?.user?.level;
 
-    const isSuccess = !!loginAction;
+    const isSuccess = !!loginResult;
     if (isSuccess) {
       loginTriggered.current = true;
-      const targetPath = detectedLevel === 4 ? '/TechnicianDashboard' : '/dashboard';
+      const levelNum = Number(detectedLevel);
+      const targetPath = levelNum === 4 ? '/TechnicianDashboard' : '/dashboard';
       console.log('Login success. Detected level:', detectedLevel, '→ redirect to', targetPath);
       setTimeout(() => {
         navigate(targetPath);
       }, 2000);
     }
-    console.log('Login action:', loginAction);
+    console.log('Login action result:', loginResult);
 
   };
 

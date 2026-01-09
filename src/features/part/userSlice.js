@@ -88,12 +88,12 @@ export function loginData(data) {
         // Don't block main login flow if tracking fails
       }
 
-      // Optional: Redirect user if necessary
-      return true; // Indicate success
+      // Return user data so caller can use level for routing
+      return userData;
     } catch (error) {
       // Handle login failure and show error message
       toast.error("Login failed. Please check your credentials.");
-      return false; // Indicate failure
+      return null; // Indicate failure
     }
   };
 }
