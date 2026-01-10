@@ -232,7 +232,7 @@ function TechnicianDashboard() {
 
   const fetchAllPwo = async (token) => {
     console.log("📡 Request: /live-work-orders (ALL)");
-    const response = await fetch('http://localhost:8002/part/live-work-orders', {
+    const response = await fetch('http://10.126.15.197:8002/part/live-work-orders', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     console.log("📥 ALL PWO Status:", response.status);
@@ -244,7 +244,7 @@ function TechnicianDashboard() {
 
   const fetchAssignedPwo = async (token) => {
     console.log("📡 Request: /live-work-orders-assigned (MY)");
-    const response = await fetch('http://localhost:8002/part/live-work-orders-assigned', {
+    const response = await fetch('http://10.126.15.197:8002/part/live-work-orders-assigned', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     console.log("📥 MY PWO Status:", response.status);
@@ -256,7 +256,7 @@ function TechnicianDashboard() {
 
   const fetchOperations = async (workOrderId) => {
     try {
-      const response = await fetch(`http://localhost:8002/part/work-order-operations/${workOrderId}`);
+      const response = await fetch(`http://10.126.15.197:8002/part/work-order-operations/${workOrderId}`);
       if (!response.ok) throw new Error('Could not fetch operations');
       const data = await response.json();
       console.log('🔍 Operations API Response:', data);
@@ -296,7 +296,7 @@ function TechnicianDashboard() {
     setOperations(updatedOperations);
 
     try {
-      await fetch(`http://localhost:8002/part/work-order-operation/${operationId}`, {
+      await fetch(`http://10.126.15.197:8002/part/work-order-operation/${operationId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ technician_note: newNote }),
@@ -310,7 +310,7 @@ function TechnicianDashboard() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:8002/part/pmp-data-tech/${selectedWorkOrder.work_order_id}`, {
+      const response = await fetch(`http://10.126.15.197:8002/part/pmp-data-tech/${selectedWorkOrder.work_order_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
