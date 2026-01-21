@@ -340,6 +340,7 @@ function Sidebar() {
             visible: userGlobal.level < 5, // Conditional visibility
           },
           { name: "Overview", path: "/production?tab=Prod" },
+          { name: "OEE Fette", path: "/OeeDashboard" },
         ],
       },{
         name: "Building",

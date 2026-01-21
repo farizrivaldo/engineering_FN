@@ -1,6 +1,6 @@
 // src/pages/OperationsManager.jsx
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Heading,
@@ -33,12 +33,12 @@ function OperationsManager() {
   const [machineList, setMachineList] = useState([]);
   const [selectedMachineId, setSelectedMachineId] = useState('');
   
-  // NEW: State for the machine name typed by the user
+  // State for the machine name typed by the user
   const [machineNameInput, setMachineNameInput] = useState('');
 
   const [currentOperations, setCurrentOperations] = useState([]);
   
-  // NEW: States for the batch list builder
+  // States for the batch list builder
   const [currentOperationInput, setCurrentOperationInput] = useState(''); // Text in the "add" input
   const [operationsList, setOperationsList] = useState([]); // The list of operations to be added
   const [allOperationsList, setAllOperationsList] = useState([]);
@@ -46,17 +46,8 @@ function OperationsManager() {
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
 
-  // --- Create Lookup Map for Machine Autofill ---
-  const nameToIdMap = useMemo(() => {
-    const map = new Map();
-    machineList.forEach(machine => {
-      map.set(machine.machine_name, machine.machine_id);
-    });
-    return map;
-  }, [machineList]);
-
   // --- Data Fetching ---
-useEffect(() => {
+  useEffect(() => {
     fetchMachineList();
     fetchAllOperationsList();
   }, []);
@@ -80,7 +71,6 @@ useEffect(() => {
     }
   };
 
-  // 2. Add the new fetch function
   const fetchAllOperationsList = async () => {
     try {
       const response = await fetch('http://10.126.15.197:8002/part/all-operations-list');
@@ -106,26 +96,32 @@ useEffect(() => {
 
   // --- Handlers ---
 
-  // NEW: Handler for the machine autofill input
+  // REVISED: Handler for the machine autofill input
+  // Searches by the unique combined string: "Machine Name [Asset Number]"
   const handleMachineNameChange = (value) => {
     setMachineNameInput(value);
-    // Check if the typed name is a valid machine
-    const matchingId = nameToIdMap.get(value);
-    if (matchingId) {
-      setSelectedMachineId(matchingId); // Set the ID
+    
+    // Find the machine where the COMBINED string matches the input value
+    const selectedMachine = machineList.find(machine => {
+        const uniqueString = `${machine.machine_name} [${machine.asset_number}]`;
+        return uniqueString === value;
+    });
+
+    if (selectedMachine) {
+      setSelectedMachineId(selectedMachine.machine_id); // Set the correct unique ID
     } else {
-      setSelectedMachineId(''); // Clear the ID if no match
+      setSelectedMachineId(''); // Clear the ID if no exact match found yet
     }
   };
 
-  // NEW: Handler to add an operation to the temporary list
+  // Handler to add an operation to the temporary list
   const handleAddToList = () => {
     if (currentOperationInput.trim() === '') return;
     setOperationsList([...operationsList, currentOperationInput.trim()]);
     setCurrentOperationInput(''); // Clear the input
   };
 
-  // NEW: Handler to save the entire batch to the DB
+  // Handler to save the entire batch to the DB
   const handleSaveBatch = async (e) => {
     e.preventDefault();
     if (!selectedMachineId || operationsList.length === 0) {
@@ -160,7 +156,7 @@ useEffect(() => {
   const handleDelete = async (operationId) => {
     if (!window.confirm('Are you sure?')) return;
     try {
-      // Calls the new delete endpoint
+      // Calls the delete endpoint
       await fetch(`http://10.126.15.197:8002/part/default-operations/${operationId}`, {
         method: 'DELETE',
       });
@@ -178,7 +174,7 @@ useEffect(() => {
           Manage Preset Operations
         </Heading>
 
-        {/* --- 1. Machine Selector (Your "Autofill") --- */}
+        {/* --- 1. Machine Selector (Updated for Unique Selection) --- */}
         <FormControl>
           <FormLabel>Select a Machine to Edit</FormLabel>
           <Input
@@ -186,11 +182,17 @@ useEffect(() => {
             value={machineNameInput}
             onChange={(e) => handleMachineNameChange(e.target.value)}
             list="machine-list"
+            autoComplete="off"
           />
           <datalist id="machine-list">
             {machineList.map((machine) => (
-              <option key={machine.machine_id} value={machine.machine_name}>
-                {machine.asset_number}
+              // KEY CHANGE: The 'value' must be the full unique string so the input matches exactly.
+              <option 
+                key={machine.machine_id} 
+                value={`${machine.machine_name} [${machine.asset_number}]`}
+              >
+                {/* Optional helper text depending on browser implementation */}
+                Asset: {machine.asset_number}
               </option>
             ))}
           </datalist>
@@ -211,16 +213,15 @@ useEffect(() => {
             Add New Operations (Batch)
           </Heading>
           <HStack>
-           <FormControl> {/* 3. Update this FormControl */}
+           <FormControl> 
               <FormLabel>Operation Description</FormLabel>
               <Input
                 placeholder="Type or select an operation..."
                 value={currentOperationInput}
                 onChange={(e) => setCurrentOperationInput(e.target.value)}
                 isDisabled={!selectedMachineId}
-                list="operations-datalist" // <-- 4. Add list prop
+                list="operations-datalist" 
               />
-              {/* 5. Add the datalist */}
               <datalist id="operations-datalist">
                 {allOperationsList.map((op, index) => (
                   <option key={index} value={op} />

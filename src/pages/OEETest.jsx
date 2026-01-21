@@ -6,15 +6,31 @@ import {
 } from 'recharts';
 
 const OeeDashboard = () => {
-  const [selectedDate, setSelectedDate] = useState('2025-12-22');
+// --- 1. GET TODAY'S DATE AS 'YYYY-MM-DD' ---
+  const getTodayStr = () => {
+    const today = new Date();
+    // This handles timezone offset so you don't get yesterday's date by mistake
+    const offset = today.getTimezoneOffset() * 60000;
+    const localDate = new Date(today.getTime() - offset);
+    return localDate.toISOString().split('T')[0];
+  };
+
+  // --- 2. INITIALIZE STATE WITH TODAY ---
+  const [selectedDate, setSelectedDate] = useState(getTodayStr());
+  const [selectedShift, setSelectedShift] = useState(1);
+  const [oeeData, setOeeData] = useState(null);
   const [activeShift, setActiveShift] = useState(1);
   const [showMath, setShowMath] = useState(false);
+  const [showDailyMath, setShowDailyMath] = useState(false); // <--- ADD THIS (for Daily)
   
   // --- HISTORY TABLE STATE ---
-  const [historyStart, setHistoryStart] = useState('2025-12-01');
-  const [historyEnd, setHistoryEnd] = useState('2025-12-31');
-  const [historyData, setHistoryData] = useState([]);
+// 1. DATA variable: Must start as an empty ARRAY []
+const [historyData, setHistoryData] = useState([]);
+// 2. DATE inputs: These should use getTodayStr()
+const [historyStart, setHistoryStart] = useState(getTodayStr());
+const [historyEnd, setHistoryEnd] = useState(getTodayStr());
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [viewMode, setViewMode] = useState('daily');
 
   // Dashboard Data State
   const [data, setData] = useState({
@@ -36,59 +52,129 @@ const OeeDashboard = () => {
   };
 
   // 1. Fetch Dashboard Data
-  const fetchData = async () => {
+const fetchData = async () => {
     setLoading(true);
     try {
-      const [dailyRes, s1Res, s2Res, s3Res, trendRes] = await Promise.all([
-        axios.get(`http://localhost:8002/part/getDailyOEE`, { params: { date: selectedDate } }),
-        axios.get(`http://localhost:8002/part/getUniversalOEE`, { params: { shift: 1, date: selectedDate } }),
-        axios.get(`http://localhost:8002/part/getUniversalOEE`, { params: { shift: 2, date: selectedDate } }),
-        axios.get(`http://localhost:8002/part/getUniversalOEE`, { params: { shift: 3, date: selectedDate } }),
-        axios.get(`http://localhost:8002/part/getWeeklyTrend`)
+      const [unifiedRes, trendRes] = await Promise.all([
+        axios.get(`http://10.126.15.197:8002/part/getUnifiedOEE`, { params: { date: selectedDate } }),
+        axios.get(`http://10.126.15.197:8002/part/getWeeklyTrend`)
       ]);
 
+      console.log("Unified Data:", unifiedRes.data);
+      const d = unifiedRes.data;
+
+      // ⚠️ HELPER: Handles both 'raw' (Daily) and 'stats' (Shift) properties
+      const formatData = (sourceData) => {
+        if (!sourceData) return null;
+
+        // STEP 1: Find where the numbers are hiding.
+        // Daily data uses '.raw', Shifts use '.stats'
+        const raw = sourceData.raw || sourceData.stats || {};
+
+        return {
+           oee: sourceData.oee, // "27.30%" (String)
+           
+           availability: {
+               availability: sourceData.availability, // "60.80%"
+               value: sourceData.availability,        // For Pie Chart
+               
+               // Map RAW numbers to the keys the UI expects
+               numerator: raw.tRun,
+               denominator: raw.tTime - raw.tPlan,
+               runtime: raw.tRun,
+               unplanned_downtime: raw.tUnplan,
+               planned_downtime: raw.tPlan,
+               
+               // Specific keys for "Daily Logic" section
+               total_runtime: raw.tRun,
+               total_unplanned: raw.tUnplan,
+               total_planned: raw.tPlan,
+               total_shift_time: raw.tTime
+           },
+           
+           performance: {
+               performance: sourceData.performance, // "45.02%"
+               value: sourceData.performance,
+               
+               actual_output: raw.tOut,
+               target_rate: 5833, 
+               actual_runtime: raw.tRun,
+               // Fix for potential output
+               potential_output: raw.tRun ? (raw.tRun * 5833) : 0, 
+               
+               // Specific key for "Daily Logic"
+               total_output: raw.tOut
+           },
+           
+           quality: {
+               quality: sourceData.quality, // "99.72%"
+               value: sourceData.quality,
+               
+               total_product: raw.tOut,
+               total_rejects: raw.tRej,
+               good_product: raw.tGood
+           }
+        };
+      };
+
       setData({
-        daily: dailyRes.data.data,
-        shift1: s1Res.data.data,
-        shift2: s2Res.data.data,
-        shift3: s3Res.data.data,
-        info1: s1Res.data.shift_info,
-        info2: s2Res.data.shift_info,
-        info3: s3Res.data.shift_info
+        // Apply the smarter helper to all sets
+        daily: formatData(d.daily),
+        shift1: formatData(d.shifts[1]),
+        shift2: formatData(d.shifts[2]),
+        shift3: formatData(d.shifts[3])
       });
 
-      if (trendRes.data.data) {
-        const formattedTrend = trendRes.data.data.map(item => ({
-          date: new Date(item.production_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-          oee: parseFloat(item.oee_score),
-          availability: parseFloat(item.availability),
-          performance: parseFloat(item.performance),
-          quality: parseFloat(item.quality)
-        }));
-        setTrendData(formattedTrend);
+      // --- TREND LOGIC (Unchanged) ---
+      const rawTrend = trendRes.data || [];
+      const last7Days = [];
+      for (let i = 6; i >= 0; i--) {
+          const dateObj = new Date();
+          dateObj.setDate(dateObj.getDate() - i);
+          const offset = dateObj.getTimezoneOffset() * 60000;
+          const dateStr = new Date(dateObj.getTime() - offset).toISOString().split('T')[0];
+          last7Days.push(dateStr);
       }
-      setLoading(false);
+
+      const formattedTrend = last7Days.map(dateStr => {
+          const match = rawTrend.find(item => item.production_date && item.production_date.startsWith(dateStr));
+          return {
+            date: new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+            oee: match ? parseFloat(match.oee_value_daily) : 0,
+            availability: match ? parseFloat(match.availability_value_daily) : 0,
+            performance: match ? parseFloat(match.performance_value_daily) : 0,
+            quality: match ? parseFloat(match.quality_value_daily) : 0
+          };
+      });
+
+      setTrendData(formattedTrend);
+      
     } catch (error) {
-      console.error(error);
+      console.error("Dashboard Fetch Error:", error);
+    } finally {
       setLoading(false);
     }
   };
 
   // 2. Fetch History Log
   const fetchHistory = async () => {
-      setLoadingHistory(true);
-      try {
-          const res = await axios.get('http://localhost:8002/part/getHistoryLog', {
-              params: { startDate: historyStart, endDate: historyEnd }
-          });
-          setHistoryData(res.data.data);
-      } catch (error) {
-          console.error(error);
-          alert("Error fetching history");
-      } finally {
-          setLoadingHistory(false);
-      }
-  };
+    setLoadingHistory(true);
+    try {
+        const res = await axios.get('http://10.126.15.197:8002/part/getHistoryLog', {
+             params: { startDate: historyStart, endDate: historyEnd }
+        });
+        
+        // ✅ SAFETY CHECK: If result is missing, force it to be []
+        const safeData = Array.isArray(res.data) ? res.data : [];
+        setHistoryData(safeData);
+
+    } catch (error) {
+        console.error("History Error:", error);
+        setHistoryData([]); // ✅ Fallback to empty list on error
+    } finally {
+        setLoadingHistory(false);
+    }
+};
 
   useEffect(() => { 
       fetchData(); 
@@ -99,20 +185,48 @@ const OeeDashboard = () => {
     if (!window.confirm("Overwrite data?")) return;
     setGenerating(true);
     try {
-      await axios.get('http://localhost:8002/part/generateDummyDataWeekly');
+      await axios.get('http://10.126.15.197:8002/part/generateDummyDataWeekly');
       alert("✅ Data Generated!");
       fetchData(); 
     } catch (error) { alert("❌ Error"); } finally { setGenerating(false); }
   };
 
-  const handleArchiveAll = async () => {
-      if (!window.confirm("Archive ALL data? This calculates OEE for every day present in the raw database.")) return;
-      setArchiving(true);
-      try {
-          const res = await axios.get('http://localhost:8002/part/archiveAll');
-          alert(`✅ ${res.data.message}`);
-          fetchData(); fetchHistory();
-      } catch (error) { alert("❌ Archive Failed"); } finally { setArchiving(false); }
+// ✅ NEW ARCHIVE LOGIC: 
+  // We simply call 'getUniversalOEE' for all 3 shifts.
+  // The backend now automatically saves (archives) the result every time we call this.
+  // ✅ UPDATED ARCHIVE LOGIC (Uses selectedDate)
+  // ✅ UPDATED ARCHIVE FUNCTION
+  const handleArchive = async () => {
+    // 1. Safety Checks
+    if (!selectedDate) return alert("Please select a date first.");
+    
+    const confirm = window.confirm(`Sync & Archive data for ${selectedDate}?`);
+    if (!confirm) return;
+
+    setLoadingHistory(true); 
+
+    try {
+      // 2. CALL THE API WITH "ARCHIVE: TRUE"
+      // This tells the backend: "Yes, please WRITE this to the database."
+      await axios.get('http://10.126.15.197:8002/part/getUnifiedOEE', {
+        params: { 
+            date: selectedDate,
+            archive: 'true' // <--- THIS IS THE MISSING KEY
+        }
+      });
+
+      // 3. Refresh the UI
+      await fetchData();     
+      await fetchHistory(); 
+
+      alert(`✅ Successfully Synced & Archived ${selectedDate}!`);
+
+    } catch (error) {
+      console.error("❌ Archive Failed:", error);
+      alert("Failed to sync data.");
+    } finally {
+      setLoadingHistory(false);
+    }
   };
 
   const activeData = activeShift === 1 ? { metrics: data.shift1 } : activeShift === 2 ? { metrics: data.shift2 } : { metrics: data.shift3 };
@@ -128,6 +242,10 @@ const OeeDashboard = () => {
       return "text-red-500";
   };
 
+  const activeMetrics = activeShift === 1 ? data.shift1 : activeShift === 2 ? data.shift2 : data.shift3;
+
+  
+
   return (
     <div className="p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
       
@@ -140,92 +258,96 @@ const OeeDashboard = () => {
         <div className="flex flex-wrap items-center gap-3">
             <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="border p-2 rounded-lg font-bold text-slate-700 text-sm"/>
             
-            <button onClick={handleArchiveAll} disabled={archiving} className="px-4 py-2 bg-emerald-600 text-white font-bold text-sm rounded-lg shadow-sm hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2">
-                {archiving ? 'Processing...' : (
-                    <>
-                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                         Archive All
-                    </>
-                )}
-            </button>
-
+            <button 
+    onClick={handleArchive}
+    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow flex items-center gap-2"
+>
+    {/* You can keep your existing Icon here */}
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+    </svg>
+    Sync & Archive Day
+</button>
+            {/*
             <button onClick={handleGenerateData} disabled={generating} className="px-4 py-2 bg-indigo-600 text-white font-bold text-sm rounded-lg shadow-sm hover:bg-indigo-700 disabled:opacity-50">
                 {generating ? '...' : '⚡ New Data'}
-            </button>
-        </div>
+            </button> */}
+
+        </div> 
       </header>
 
       {loading ? <div className="p-12 text-center text-slate-400 italic">Loading Dashboard...</div> : (
         <>
-            {/* --- DAILY OEE SECTION --- */}
-            <div className="bg-white rounded-3xl p-8 mb-8 shadow-sm border border-indigo-100">
-                {/* 1. Daily Score (Centered) */}
-                <div className="text-center mb-10 border-b border-slate-100 pb-8">
-                    <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Daily Aggregated OEE Score</h2>
-                    <div className={`text-7xl font-black ${getOeeColor(data.daily?.oee)}`}>{data.daily?.oee || "0.00%"}</div>
-                    <p className="text-xs text-slate-400 mt-2">(Shift 1 + Shift 2 + Shift 3)</p>
-                </div>
+            {/* --- DAILY AGGREGATE SECTION --- */}
+<div className="bg-white rounded-3xl p-8 mb-8 shadow-sm border border-indigo-50">
+  
+  {/* Existing Daily Score & Pie Charts Code... */}
+  <div className="text-center mb-10 border-b border-slate-100 pb-8">
+      <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Daily Aggregated OEE</h2>
+      <div className={`text-7xl font-black ${getOeeColor(data.daily?.oee)}`}>{data.daily?.oee || "0.00%"}</div>
+  </div>
 
-                {/* 2. Daily Pie Charts (New Layout) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10 justify-items-center">
-                    {/* Daily Availability */}
-                    <div className="flex flex-col items-center">
-                        <h4 className="text-sm font-bold text-slate-500 uppercase mb-4">Daily Availability</h4>
-                        <div className="relative w-64 h-64">
-                            <ResponsiveContainer>
-                                <PieChart>
-                                    <Pie data={getPieData(data.daily?.availability?.value)} innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
-                                        {getPieData(data.daily?.availability?.value).map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS.avail[index % COLORS.avail.length]} />
-                                        ))}
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="absolute inset-0 flex items-center justify-center text-3xl font-black text-blue-600">
-                                {data.daily?.availability?.value}
-                            </div>
-                        </div>
-                    </div>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center">
+      <PieCard title="Daily Availability" value={data.daily?.availability?.value} color={COLORS.avail} textColor="text-blue-600" />
+      <PieCard title="Daily Performance" value={data.daily?.performance?.value} color={COLORS.perf} textColor="text-emerald-600" />
+      <PieCard title="Daily Quality" value={data.daily?.quality?.value} color={COLORS.qual} textColor="text-amber-600" />
+  </div>
 
-                    {/* Daily Performance */}
-                    <div className="flex flex-col items-center">
-                        <h4 className="text-sm font-bold text-slate-500 uppercase mb-4">Daily Performance</h4>
-                        <div className="relative w-64 h-64">
-                            <ResponsiveContainer>
-                                <PieChart>
-                                    <Pie data={getPieData(data.daily?.performance?.value)} innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
-                                        {getPieData(data.daily?.performance?.value).map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS.perf[index % COLORS.perf.length]} />
-                                        ))}
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="absolute inset-0 flex items-center justify-center text-3xl font-black text-emerald-600">
-                                {data.daily?.performance?.value}
-                            </div>
-                        </div>
-                    </div>
+  {/* --- NEW: DAILY MATH VALIDATOR --- */}
+  <div className="mt-8 flex justify-center">
+      <button onClick={() => setShowDailyMath(!showDailyMath)} className="text-xs font-bold text-slate-400 hover:text-indigo-600 underline">
+          {showDailyMath ? 'Hide Daily Logic' : 'Show Daily Calculation Logic'}
+      </button>
+  </div>
 
-                    {/* Daily Quality */}
-                    <div className="flex flex-col items-center">
-                        <h4 className="text-sm font-bold text-slate-500 uppercase mb-4">Daily Quality</h4>
-                        <div className="relative w-64 h-64">
-                            <ResponsiveContainer>
-                                <PieChart>
-                                    <Pie data={getPieData(data.daily?.quality?.value)} innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
-                                        {getPieData(data.daily?.quality?.value).map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS.qual[index % COLORS.qual.length]} />
-                                        ))}
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="absolute inset-0 flex items-center justify-center text-3xl font-black text-amber-600">
-                                {data.daily?.quality?.value}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  {showDailyMath && data.daily && (
+      <div className="mt-6 bg-slate-50 p-6 rounded-xl border border-slate-200 text-left text-xs font-mono text-slate-600 grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* 1. DAILY AVAILABILITY */}
+          <div>
+              <h5 className="font-bold text-blue-600 mb-2 border-b border-blue-200 pb-1">DAILY AVAILABILITY</h5>
+              <div className="space-y-1 mt-2 pl-2 border-l-2 border-slate-200">
+                  <div className="flex justify-between"><span>Total Runtime:</span> <span>{data.daily.availability?.total_runtime} m</span></div>
+                  <div className="flex justify-between"><span>Total Unplanned:</span> <span>{data.daily.availability?.total_unplanned} m</span></div>
+                  <div className="flex justify-between"><span>Total Planned:</span> <span>{data.daily.availability?.total_planned} m</span></div>
+                  <div className="flex justify-between"><span>Total Shift Time:</span> <span>{data.daily.availability?.total_shift_time} m</span></div>
+                  <div className="flex justify-between font-bold text-slate-800 pt-1 border-t border-slate-200 mt-1">
+                      <span>Result:</span> 
+                      <span>{data.daily.availability?.value}</span>
+                  </div>
+              </div>
+          </div>
+
+          {/* 2. DAILY PERFORMANCE */}
+          <div>
+              <h5 className="font-bold text-emerald-600 mb-2 border-b border-emerald-200 pb-1">DAILY PERFORMANCE</h5>
+              <div className="space-y-1 mt-2 pl-2 border-l-2 border-slate-200">
+                  <div className="flex justify-between"><span>Total Output:</span> <span>{data.daily.performance?.total_output?.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-amber-600"><span>Potential Out:</span> <span>{Math.round(data.daily.performance?.potential_output)?.toLocaleString()}</span></div>
+                  <div className="flex justify-between font-bold text-slate-800 pt-1 border-t border-slate-200 mt-1">
+                      <span>Result:</span> 
+                      <span>{data.daily.performance?.value}</span>
+                  </div>
+              </div>
+          </div>
+
+          {/* 3. DAILY QUALITY */}
+          <div>
+              <h5 className="font-bold text-amber-600 mb-2 border-b border-amber-200 pb-1">DAILY QUALITY</h5>
+              <div className="space-y-1 mt-2 pl-2 border-l-2 border-slate-200">
+                  <div className="flex justify-between"><span>Total Output:</span> <span>{data.daily.quality?.total_output?.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-red-500"><span>Total Rejects:</span> <span>{data.daily.quality?.total_rejects}</span></div>
+                  <div className="flex justify-between text-emerald-600"><span>Good Product:</span> <span>{data.daily.quality?.good_product?.toLocaleString()}</span></div>
+                  <div className="flex justify-between font-bold text-slate-800 pt-1 border-t border-slate-200 mt-1">
+                      <span>Result:</span> 
+                      <span>{data.daily.quality?.value}</span>
+                  </div>
+              </div>
+          </div>
+
+      </div>
+  )}
+</div>
 
             {/* --- SHIFT BREAKDOWN SECTION --- */}
             <div className="mb-10 bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
@@ -313,12 +435,57 @@ const OeeDashboard = () => {
                                 {showMath ? 'Hide Logic' : 'Show Calculation Logic'}
                             </button>
                         </div>
-                        {showMath && (
-                             <div className="mt-4 bg-slate-50 text-slate-500 p-4 rounded-xl font-mono text-xs text-center border border-slate-200">
-                                <p className="font-bold mb-2 uppercase">Validation (Shift {activeShift})</p>
-                                <p>{activeData.metrics?.availability?.availability} × {activeData.metrics?.performance?.performance} × {activeData.metrics?.quality?.quality} = <span className="font-bold text-indigo-600">{activeData.metrics?.oee}</span></p>
-                            </div>
-                        )}
+                        {showMath && activeMetrics && (
+    <div className="mt-6 bg-slate-50 p-6 rounded-xl border border-slate-200 text-left text-xs font-mono text-slate-600 grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* 1. AVAILABILITY LOGIC */}
+        <div>
+            <h5 className="font-bold text-blue-600 mb-2 border-b border-blue-200 pb-1">AVAILABILITY</h5>
+            <p className="mb-1">Formula: <span className="bg-white px-1 rounded border">Run / (ShiftTime - PlannedStop)</span></p>
+            <div className="space-y-1 mt-2 pl-2 border-l-2 border-slate-200">
+                <div className="flex justify-between"><span>Runtime:</span> <span>{activeMetrics.availability?.runtime} min</span></div>
+                <div className="flex justify-between"><span>Unplanned Stop:</span> <span>{activeMetrics.availability?.unplanned_downtime} min</span></div>
+                <div className="flex justify-between"><span>Planned Stop:</span> <span>{activeMetrics.availability?.planned_downtime} min</span></div>
+                <div className="flex justify-between font-bold text-slate-800 pt-1">
+                    <span>Result:</span> 
+                    <span>{activeMetrics.availability?.numerator} / {activeMetrics.availability?.denominator} = {activeMetrics.availability?.availability}</span>
+                </div>
+            </div>
+        </div>
+
+        {/* 2. PERFORMANCE LOGIC (Here is your issue) */}
+        <div>
+            <h5 className="font-bold text-emerald-600 mb-2 border-b border-emerald-200 pb-1">PERFORMANCE</h5>
+            <p className="mb-1">Formula: <span className="bg-white px-1 rounded border">ActualOut / PotentialOut</span></p>
+            <div className="space-y-1 mt-2 pl-2 border-l-2 border-slate-200">
+                <div className="flex justify-between"><span>Actual Output:</span> <span>{activeMetrics.performance?.actual_output?.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span>Target Rate:</span> <span>{activeMetrics.performance?.target_rate} /min</span></div>
+                <div className="flex justify-between"><span>Runtime Used:</span> <span>{activeMetrics.performance?.actual_runtime} min</span></div>
+                <div className="flex justify-between text-amber-600"><span>Potential Out:</span> <span>{Math.round(activeMetrics.performance?.potential_output)?.toLocaleString()}</span></div>
+                <div className="flex justify-between font-bold text-slate-800 pt-1">
+                    <span>Result:</span> 
+                    <span>{activeMetrics.performance?.performance}</span>
+                </div>
+            </div>
+        </div>
+
+        {/* 3. QUALITY LOGIC */}
+        <div>
+            <h5 className="font-bold text-amber-600 mb-2 border-b border-amber-200 pb-1">QUALITY</h5>
+            <p className="mb-1">Formula: <span className="bg-white px-1 rounded border">Good / Total Output</span></p>
+            <div className="space-y-1 mt-2 pl-2 border-l-2 border-slate-200">
+                <div className="flex justify-between"><span>Total Output:</span> <span>{activeMetrics.quality?.total_product?.toLocaleString()}</span></div>
+                <div className="flex justify-between text-red-500"><span>Rejects:</span> <span>{activeMetrics.quality?.total_rejects}</span></div>
+                <div className="flex justify-between text-emerald-600"><span>Good Product:</span> <span>{activeMetrics.quality?.good_product?.toLocaleString()}</span></div>
+                <div className="flex justify-between font-bold text-slate-800 pt-1">
+                    <span>Result:</span> 
+                    <span>{activeMetrics.quality?.quality}</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+)}
                     </>
                   )}
             </div>
@@ -344,60 +511,140 @@ const OeeDashboard = () => {
             </div>
 
             {/* --- HISTORICAL TABLE --- */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-                    <h3 className="text-lg font-black text-slate-700 uppercase tracking-widest">Historical Log</h3>
-                    <div className="flex gap-2 items-center mt-4 md:mt-0 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                        <input type="date" value={historyStart} onChange={e => setHistoryStart(e.target.value)} className="bg-transparent text-sm font-bold text-slate-600 outline-none"/>
-                        <span className="text-slate-400 font-bold">-</span>
-                        <input type="date" value={historyEnd} onChange={e => setHistoryEnd(e.target.value)} className="bg-transparent text-sm font-bold text-slate-600 outline-none"/>
-                        <button onClick={fetchHistory} className="ml-2 bg-indigo-600 text-white px-4 py-1.5 rounded-md text-sm font-bold hover:bg-indigo-700 shadow-sm transition-transform active:scale-95">
-                            Search
-                        </button>
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto rounded-lg border border-slate-200">
-                    <table className="w-full text-sm text-left text-slate-600">
-                        <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
-                            <tr>
-                                <th className="px-6 py-4 font-extrabold">Date</th>
-                                <th className="px-6 py-4 font-bold text-indigo-600">Daily OEE</th>
-                                <th className="px-6 py-4">Avail</th>
-                                <th className="px-6 py-4">Perf</th>
-                                <th className="px-6 py-4">Qual</th>
-                                <th className="px-6 py-4">Run Time</th>
-                                <th className="px-6 py-4">Stop Time</th>
-                                <th className="px-6 py-4">Total Output</th>
-                                <th className="px-6 py-4 text-red-500">Total Reject</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loadingHistory ? (
-                                <tr><td colSpan="9" className="text-center py-8 text-slate-400">Loading history...</td></tr>
-                            ) : historyData.length > 0 ? (
-                                historyData.map((row, idx) => (
-                                    <tr key={idx} className="bg-white border-b hover:bg-indigo-50/30 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-slate-800">
-                                            {new Date(row.date_str).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-                                        </td>
-                                        <td className="px-6 py-4 font-black text-indigo-600 text-lg">{row.daily_oee}%</td>
-                                        <td className="px-6 py-4 font-medium">{row.daily_avail}%</td>
-                                        <td className="px-6 py-4 font-medium">{row.daily_perf}%</td>
-                                        <td className="px-6 py-4 font-medium">{row.daily_qual}%</td>
-                                        <td className="px-6 py-4 font-mono text-slate-500">{row.total_run} m</td>
-                                        <td className="px-6 py-4 font-mono text-amber-600">{row.total_stop} m</td>
-                                        <td className="px-6 py-4 font-mono text-emerald-600 font-bold">{row.total_out?.toLocaleString()}</td>
-                                        <td className="px-6 py-4 font-mono text-red-500 font-bold">{row.total_reject?.toLocaleString()}</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr><td colSpan="9" className="text-center py-8 text-slate-400 italic">No logs found for this period. Try archiving data first.</td></tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 mt-8">
+        
+        {/* HEADER & CONTROLS */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+          <h3 className="text-lg font-black text-slate-700 uppercase tracking-widest">Historical Log</h3>
+          
+          <div className="flex gap-4 items-center mt-4 md:mt-0">
+            
+            {/* 1. VIEW MODE TOGGLE */}
+            <div className="bg-slate-100 p-1 rounded-lg flex text-sm font-bold border border-slate-200">
+              <button
+                onClick={() => setViewMode('daily')}
+                className={`px-4 py-1.5 rounded-md transition-all ${
+                  viewMode === 'daily' 
+                    ? 'bg-white text-indigo-600 shadow-sm' 
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                Daily
+              </button>
+              <button
+                onClick={() => setViewMode('shifts')}
+                className={`px-4 py-1.5 rounded-md transition-all ${
+                  viewMode === 'shifts' 
+                    ? 'bg-white text-indigo-600 shadow-sm' 
+                    : 'text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                Shifts
+              </button>
             </div>
+
+            {/* 2. DATE PICKER */}
+            <div className="flex gap-2 items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+              <input type="date" value={historyStart} onChange={e => setHistoryStart(e.target.value)} className="bg-transparent text-sm font-bold text-slate-600 outline-none"/>
+              <span className="text-slate-400 font-bold">-</span>
+              <input type="date" value={historyEnd} onChange={e => setHistoryEnd(e.target.value)} className="bg-transparent text-sm font-bold text-slate-600 outline-none"/>
+              <button onClick={fetchHistory} className="ml-2 bg-indigo-600 text-white px-4 py-1.5 rounded-md text-sm font-bold hover:bg-indigo-700 shadow-sm transition-transform active:scale-95">
+                Search
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* TABLE CONTENT */}
+        <div className="overflow-x-auto rounded-lg border border-slate-200">
+          <table className="w-full text-sm text-left text-slate-600">
+            <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-6 py-4 font-extrabold">Date</th>
+                <th className="px-6 py-4 font-bold text-indigo-600">OEE</th>
+                <th className="px-6 py-4">Avail</th>
+                <th className="px-6 py-4">Perf</th>
+                <th className="px-6 py-4">Qual</th>
+                <th className="px-6 py-4">Run Time</th>
+                <th className="px-6 py-4">Stop Time</th>
+                <th className="px-6 py-4">Total Output</th>
+                <th className="px-6 py-4 text-red-500">Total Reject</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loadingHistory ? (
+                <tr><td colSpan="9" className="text-center py-8 text-slate-400">Loading history...</td></tr>
+              ) : (historyData?.length || 0) > 0 ? (
+                historyData.map((dayItem) => (
+                  <React.Fragment key={dayItem.date}>
+                    
+                    {/* === VIEW MODE: DAILY === */}
+                    {viewMode === 'daily' && (
+                      <tr className="bg-white border-b hover:bg-indigo-50/30 transition-colors">
+                        <td className="px-6 py-4 font-bold text-slate-800">
+                          {new Date(dayItem.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                        </td>
+                        <td className="px-6 py-4 font-black text-indigo-600 text-lg">
+                          {/* Use optional chaining and parseFloat to be safe */}
+                          {parseFloat(dayItem.daily?.oee || 0).toFixed(2)}%
+                        </td>
+                        <td className="px-6 py-4 font-medium">{parseFloat(dayItem.daily?.availability || 0).toFixed(2)}%</td>
+                        <td className="px-6 py-4 font-medium">{parseFloat(dayItem.daily?.performance || 0).toFixed(2)}%</td>
+                        <td className="px-6 py-4 font-medium">{parseFloat(dayItem.daily?.quality || 0).toFixed(2)}%</td>
+                        
+                        <td className="px-6 py-4 font-mono text-slate-500">{dayItem.daily?.total_run} m</td>
+                        <td className="px-6 py-4 font-mono text-amber-600">{dayItem.daily?.total_stop} m</td>
+                        <td className="px-6 py-4 font-mono text-emerald-600 font-bold">{dayItem.daily?.total_output?.toLocaleString()}</td>
+                        <td className="px-6 py-4 font-mono text-red-500 font-bold">{dayItem.daily?.total_reject?.toLocaleString()}</td>
+                      </tr>
+                    )}
+
+                    {/* === VIEW MODE: SHIFTS === */}
+                    {viewMode === 'shifts' && [1, 2, 3].map(shiftId => {
+                        const shift = dayItem.shifts[shiftId];
+                        if (!shift) return null; // Skip if no data for this shift
+                        
+                        return (
+                          <tr key={`${dayItem.date}-${shiftId}`} className="bg-white border-b hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 text-slate-500">
+                              <div className="flex items-center gap-2">
+                                {/* Show Date only for Shift 1, hide for others to keep clean */}
+                                <span className={shiftId === 1 ? "font-bold text-slate-800" : "invisible"}>
+                                  {new Date(dayItem.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                                </span>
+                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
+                                  shiftId === 1 ? "bg-blue-100 text-blue-700" :
+                                  shiftId === 2 ? "bg-purple-100 text-purple-700" :
+                                  "bg-indigo-100 text-indigo-700"
+                                }`}>
+                                  Shift {shiftId}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Shift Specific Data (Use raw DB column names) */}
+                            <td className="px-6 py-4 font-bold text-slate-700">{parseFloat(shift.oee_value_daily || 0).toFixed(2)}%</td>
+                            <td className="px-6 py-4 text-slate-500">{parseFloat(shift.availability_value_daily || 0).toFixed(2)}%</td>
+                            <td className="px-6 py-4 text-slate-500">{parseFloat(shift.performance_value_daily || 0).toFixed(2)}%</td>
+                            <td className="px-6 py-4 text-slate-500">{parseFloat(shift.quality_value_daily || 0).toFixed(2)}%</td>
+                            
+                            <td className="px-6 py-4 font-mono text-slate-400">{shift.total_run} m</td>
+                            <td className="px-6 py-4 font-mono text-slate-400">{shift.total_stop} m</td>
+                            <td className="px-6 py-4 font-mono text-emerald-600/70">{shift.total_product?.toLocaleString()}</td>
+                            <td className="px-6 py-4 font-mono text-red-400">{shift.reject?.toLocaleString()}</td>
+                          </tr>
+                        );
+                    })}
+
+                  </React.Fragment>
+                ))
+              ) : (
+                <tr><td colSpan="9" className="text-center py-8 text-slate-400 italic">No logs found for this period. Try archiving data first.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
         </>
       )}
     </div>
@@ -405,3 +652,43 @@ const OeeDashboard = () => {
 };
 
 export default OeeDashboard;
+
+// --- SUB-COMPONENT FOR PIE CHARTS ---
+// Place this OUTSIDE your main OeeDashboard component (at the bottom of the file)
+const PieCard = ({ title, value, color, textColor }) => {
+    // Helper to format data for Recharts
+    const getPieData = (valString) => {
+        const val = parseFloat(valString) || 0;
+        return [{ name: 'Ok', value: val }, { name: 'Loss', value: 100 - val }];
+    };
+
+    const pieData = getPieData(value);
+
+    return (
+      <div className="flex flex-col items-center">
+        <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">{title}</h4>
+        <div className="relative w-48 h-48">
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie 
+                data={pieData} 
+                innerRadius={60} 
+                outerRadius={80} 
+                paddingAngle={5} 
+                dataKey="value"
+                stroke="none"
+              >
+                {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={color[index % color.length]} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+          {/* Centered Percentage Text */}
+          <div className={`absolute inset-0 flex items-center justify-center text-2xl font-black ${textColor}`}>
+            {value || "0%"}
+          </div>
+        </div>
+      </div>
+    );
+};
