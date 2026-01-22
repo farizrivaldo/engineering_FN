@@ -50,7 +50,7 @@ import ProfileManager from "./pages/CMMS/ProfileManager";
 import VortexChart from "./pages/SteamControl";
 // import Dashboard2 from "./pages/Dashboard2";
 // import Dashboard3 from "./pages/Dashboard3";
-import OeeDashboard from "./pages/OEETest";
+import OeeDashboard from "./pages/OEE/OEETest";
 
 function App() {
   const dispatch = useDispatch();

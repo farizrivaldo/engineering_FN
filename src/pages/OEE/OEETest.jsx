@@ -56,8 +56,8 @@ const fetchData = async () => {
     setLoading(true);
     try {
       const [unifiedRes, trendRes] = await Promise.all([
-        axios.get(`http://10.126.15.197:8002/part/getUnifiedOEE`, { params: { date: selectedDate } }),
-        axios.get(`http://10.126.15.197:8002/part/getWeeklyTrend`)
+        axios.get(`http://localhost:8002/part/getUnifiedOEE`, { params: { date: selectedDate } }),
+        axios.get(`http://localhost:8002/part/getWeeklyTrend`)
       ]);
 
       console.log("Unified Data:", unifiedRes.data);
@@ -160,7 +160,7 @@ const fetchData = async () => {
   const fetchHistory = async () => {
     setLoadingHistory(true);
     try {
-        const res = await axios.get('http://10.126.15.197:8002/part/getHistoryLog', {
+        const res = await axios.get('http://localhost:8002/part/getHistoryLog', {
              params: { startDate: historyStart, endDate: historyEnd }
         });
         
@@ -185,7 +185,7 @@ const fetchData = async () => {
     if (!window.confirm("Overwrite data?")) return;
     setGenerating(true);
     try {
-      await axios.get('http://10.126.15.197:8002/part/generateDummyDataWeekly');
+      await axios.get('http://localhost:8002/part/generateDummyDataWeekly');
       alert("✅ Data Generated!");
       fetchData(); 
     } catch (error) { alert("❌ Error"); } finally { setGenerating(false); }
@@ -208,7 +208,7 @@ const fetchData = async () => {
     try {
       // 2. CALL THE API WITH "ARCHIVE: TRUE"
       // This tells the backend: "Yes, please WRITE this to the database."
-      await axios.get('http://10.126.15.197:8002/part/getUnifiedOEE', {
+      await axios.get('http://localhost:8002/part/getUnifiedOEE', {
         params: { 
             date: selectedDate,
             archive: 'true' // <--- THIS IS THE MISSING KEY
@@ -602,13 +602,15 @@ const fetchData = async () => {
                     {/* === VIEW MODE: SHIFTS === */}
                     {viewMode === 'shifts' && [1, 2, 3].map(shiftId => {
                         const shift = dayItem.shifts[shiftId];
-                        if (!shift) return null; // Skip if no data for this shift
+                        
+                        // If the shift is missing (e.g., future shift), don't render it
+                        if (!shift) return null; 
                         
                         return (
                           <tr key={`${dayItem.date}-${shiftId}`} className="bg-white border-b hover:bg-slate-50 transition-colors">
                             <td className="px-6 py-4 text-slate-500">
                               <div className="flex items-center gap-2">
-                                {/* Show Date only for Shift 1, hide for others to keep clean */}
+                                {/* Only show date for Shift 1 for a cleaner look */}
                                 <span className={shiftId === 1 ? "font-bold text-slate-800" : "invisible"}>
                                   {new Date(dayItem.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
                                 </span>
@@ -622,12 +624,16 @@ const fetchData = async () => {
                               </div>
                             </td>
 
-                            {/* Shift Specific Data (Use raw DB column names) */}
-                            <td className="px-6 py-4 font-bold text-slate-700">{parseFloat(shift.oee_value_daily || 0).toFixed(2)}%</td>
-                            <td className="px-6 py-4 text-slate-500">{parseFloat(shift.availability_value_daily || 0).toFixed(2)}%</td>
-                            <td className="px-6 py-4 text-slate-500">{parseFloat(shift.performance_value_daily || 0).toFixed(2)}%</td>
-                            <td className="px-6 py-4 text-slate-500">{parseFloat(shift.quality_value_daily || 0).toFixed(2)}%</td>
+                            {/* ✅ THE FIX: Read the mapped 'shift' keys, NOT the DB 'daily' keys */}
+                            {/* Make sure your backend maps these to oee_value_shift, etc. */}
+                            <td className="px-6 py-4 font-bold text-slate-700">
+                                {parseFloat(shift.oee || 0).toFixed(2)}%
+                            </td>
+                            <td className="px-6 py-4 text-slate-500">{parseFloat(shift.avail || 0).toFixed(2)}%</td>
+                            <td className="px-6 py-4 text-slate-500">{parseFloat(shift.perf || 0).toFixed(2)}%</td>
+                            <td className="px-6 py-4 text-slate-500">{parseFloat(shift.qual || 0).toFixed(2)}%</td>
                             
+                            {/* Raw Counters */}
                             <td className="px-6 py-4 font-mono text-slate-400">{shift.total_run} m</td>
                             <td className="px-6 py-4 font-mono text-slate-400">{shift.total_stop} m</td>
                             <td className="px-6 py-4 font-mono text-emerald-600/70">{shift.total_product?.toLocaleString()}</td>
