@@ -56,8 +56,8 @@ const fetchData = async () => {
     setLoading(true);
     try {
       const [unifiedRes, trendRes] = await Promise.all([
-        axios.get(`http://localhost:8002/part/getUnifiedOEE`, { params: { date: selectedDate } }),
-        axios.get(`http://localhost:8002/part/getWeeklyTrend`)
+        axios.get(`http://10.126.15.197:8002/part/getUnifiedOEE`, { params: { date: selectedDate } }),
+        axios.get(`http://10.126.15.197:8002/part/getWeeklyTrend`)
       ]);
 
       console.log("Unified Data:", unifiedRes.data);
@@ -160,7 +160,7 @@ const fetchData = async () => {
   const fetchHistory = async () => {
     setLoadingHistory(true);
     try {
-        const res = await axios.get('http://localhost:8002/part/getHistoryLog', {
+        const res = await axios.get('http://10.126.15.197:8002/part/getHistoryLog', {
              params: { startDate: historyStart, endDate: historyEnd }
         });
         
@@ -185,7 +185,7 @@ const fetchData = async () => {
     if (!window.confirm("Overwrite data?")) return;
     setGenerating(true);
     try {
-      await axios.get('http://localhost:8002/part/generateDummyDataWeekly');
+      await axios.get('http://10.126.15.197:8002/part/generateDummyDataWeekly');
       alert("✅ Data Generated!");
       fetchData(); 
     } catch (error) { alert("❌ Error"); } finally { setGenerating(false); }
@@ -208,7 +208,7 @@ const fetchData = async () => {
     try {
       // 2. CALL THE API WITH "ARCHIVE: TRUE"
       // This tells the backend: "Yes, please WRITE this to the database."
-      await axios.get('http://localhost:8002/part/getUnifiedOEE', {
+      await axios.get('http://10.126.15.197:8002/part/getUnifiedOEE', {
         params: { 
             date: selectedDate,
             archive: 'true' // <--- THIS IS THE MISSING KEY
