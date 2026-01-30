@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import ParetoChart from './ParetoChartFette';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+
 
 const EtlManager = () => {
   const [events, setEvents] = useState([]);
@@ -308,6 +310,141 @@ const EtlManager = () => {
     </div>
   );
 
+const FrequencyChart = ({ data, title, color }) => {
+  const chartData = useMemo(() => {
+    const counts = data.reduce((acc, curr) => {
+      const label = curr.reason_name || curr.description || "Undefined";
+      acc[label] = (acc[label] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(counts)
+      .map(([name, freq]) => ({ name, freq }))
+      .sort((a, b) => b.freq - a.freq);
+  }, [data]);
+
+  return (
+    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 h-[400px] flex flex-col">
+      <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">{title}</h3>
+      <div className="flex-1">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart layout="vertical" data={chartData} margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+            <XAxis type="number" hide />
+            <YAxis 
+                type="category" 
+                dataKey="name" 
+                width={120} 
+                fontSize={9} 
+                fontWeight="bold" 
+                stroke="#64748b"
+                tickLine={false}
+                axisLine={false}
+            />
+            <Tooltip 
+                cursor={{fill: '#f8fafc'}}
+                contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '10px'}}
+            />
+            <Bar dataKey="freq" fill={color} radius={[0, 4, 4, 0]} barSize={20}>
+                {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.05)} />
+                ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+};
+
+const WrappedTick = ({ x, y, payload }) => {
+  const text = payload.value;
+  // Breaks labels at " + ", " (", or if too long
+  const words = text.split(/(?=[+(])/); 
+  
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text 
+        x={-10} 
+        y={0} 
+        dy={words.length > 1 ? -6 : 4} 
+        textAnchor="end" 
+        fill="#64748b" 
+        fontSize={10} 
+        fontWeight="bold"
+      >
+        {words.map((line, i) => (
+          <tspan x={-10} dy={i === 0 ? 0 : 12} key={i}>
+            {line.trim()}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  );
+};
+
+    const ComparisonChart = ({ data, title, color, type }) => {
+  const chartData = useMemo(() => {
+    const stats = data.reduce((acc, curr) => {
+      const label = curr.reason_name || curr.description || "Undefined";
+      if (!acc[label]) acc[label] = { name: label, freq: 0, dur: 0 };
+      acc[label].freq += 1;
+      acc[label].dur += parseFloat(curr.duration_minutes || 0);
+      return acc;
+    }, {});
+    return Object.values(stats).sort((a, b) => b[type] - a[type]);
+  }, [data, type]);
+
+  // DYNAMIC CALCULATIONS: Ensures long labels have space and don't overlap
+  const dynamicMargin = useMemo(() => {
+    const maxChars = Math.max(...chartData.map(d => d.name.length), 10);
+    return Math.min(maxChars * 6.5, 200); 
+  }, [chartData]);
+
+  // DYNAMIC HEIGHT: Increases chart height based on the number of items to prevent vertical clashing
+  const dynamicHeight = useMemo(() => {
+    const itemCount = chartData.length;
+    return Math.max(itemCount * 45, 400); // 45px per label ensures no overlap
+  }, [chartData]);
+
+  return (
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col min-h-[300px]">
+      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+        {title}
+      </h3>
+      
+      {/* --- NEW: CONDITIONAL "NO DATA" MESSAGE --- */}
+      {chartData.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+           <span className="text-2xl mb-2 opacity-30">📊</span>
+           <p className="text-xs font-bold text-slate-400 italic">No historical data found for this selection</p>
+        </div>
+      ) : (
+        <div style={{ height: `${dynamicHeight}px`, width: '100%' }}>
+          <ResponsiveContainer>
+            <BarChart layout="vertical" data={chartData} margin={{ top: 5, right: 30, left: 110, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+              <XAxis type="number" hide />
+              <YAxis dataKey="name" type="category" tick={<WrappedTick />} interval={0} axisLine={false} tickLine={false} />
+              <Tooltip 
+                cursor={{ fill: '#f8fafc' }}
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
+                formatter={(val) => type === 'dur' ? [`${Math.round(val)} m`, 'Total Duration'] : [val, 'Occurrences']}
+              />
+              <Bar dataKey={type} fill={color} radius={[0, 12, 12, 0]} barSize={24}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.05)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  );
+};
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* HEADER */}
@@ -342,28 +479,107 @@ const EtlManager = () => {
             <div className="flex items-center justify-center h-64 text-gray-400">Loading Smart Data...</div>
         ) : (
             <>
-                {/* TAB 1: SHIFT SUMMARY */}
-                {activeTab === 'shift' && (
-                    <div className="animate-fadeIn">
-                        <div className="flex gap-4 mb-6 bg-gray-50 p-4 rounded border border-gray-200 items-end">
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase">Target Date</label>
-                                <input type="date" className="border p-2 rounded text-sm outline-none focus:ring-1 focus:ring-blue-500" value={shiftFilter.date} onChange={e => setShiftFilter({...shiftFilter, date: e.target.value})} />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase">Shift Name</label>
-                                <select className="border p-2 rounded text-sm outline-none focus:ring-1 focus:ring-blue-500" value={shiftFilter.name} onChange={e => setShiftFilter({...shiftFilter, name: e.target.value})}>
-                                    <option>Shift 1</option><option>Shift 2</option><option>Shift 3</option>
-                                </select>
-                            </div>
-                            <button onClick={fetchShiftSummary} className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold shadow-sm hover:bg-blue-700">Audit Shift</button>
-                        </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[500px]">
-                            <DetailTable title="🔴 Unplanned Breakdown" data={shiftComparison.filter(e => e.category === 'Unplanned')} colorClass="border-red-500" headerColor="bg-red-50" showStatus={true} />
-                            <DetailTable title="🔵 Planned Breakdown" data={shiftComparison.filter(e => e.category === 'Planned')} colorClass="border-blue-500" headerColor="bg-blue-50" showStatus={true} />
-                        </div>
-                    </div>
-                )}
+                {/* TAB 1: SHIFT SUMMARY WITH ANALYTICS */}
+{activeTab === 'shift' && (
+    <div className="animate-fadeIn space-y-8">
+        {/* AUDIT CONTROL BAR */}
+        <div className="flex flex-wrap items-center gap-4 mb-6 bg-slate-50/50 p-4 rounded-xl border border-slate-100 shadow-inner">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-200 min-w-[140px]">
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-tight mb-1">Target Date</label>
+                    <input 
+                        type="date" 
+                        className="text-xs font-bold text-slate-700 outline-none bg-transparent w-full" 
+                        value={shiftFilter.date} 
+                        onChange={e => setShiftFilter({...shiftFilter, date: e.target.value})} 
+                    />
+                </div>
+                <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-200 min-w-[120px]">
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-tight mb-1">Shift Name</label>
+                    <select 
+                        className="text-xs font-bold text-slate-700 outline-none bg-transparent w-full appearance-none cursor-pointer" 
+                        value={shiftFilter.name} 
+                        onChange={e => setShiftFilter({...shiftFilter, name: e.target.value})}
+                    >
+                        <option>Shift 1</option><option>Shift 2</option><option>Shift 3</option>
+                    </select>
+                </div>
+            </div>
+            <button onClick={fetchShiftSummary} className="ml-auto bg-slate-900 text-white px-6 py-2.5 rounded-lg text-[10px] font-black shadow-lg hover:bg-black transition-all active:scale-95">
+                🔍 AUDIT SHIFT
+            </button>
+        </div>
+
+        {/* BREAKDOWN TABLES */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[400px]">
+            <DetailTable 
+                title="🔴 Unplanned Breakdown" 
+                data={shiftComparison.filter(e => e.category === 'Unplanned')} 
+                colorClass="border-red-500" 
+                headerColor="bg-red-50" 
+                showStatus={true} 
+            />
+            <DetailTable 
+                title="🔵 Planned Breakdown" 
+                data={shiftComparison.filter(e => e.category === 'Planned')} 
+                colorClass="border-blue-500" 
+                headerColor="bg-blue-50" 
+                showStatus={true} 
+            />
+        </div>
+
+        {/* NEW: SHIFT FREQUENCY CHARTS 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FrequencyChart 
+                title="📊 Shift Unplanned Frequency" 
+                data={shiftComparison.filter(e => e.category === 'Unplanned')} 
+                color="#ef4444" 
+            />
+            <FrequencyChart 
+                title="📊 Shift Planned Frequency" 
+                data={shiftComparison.filter(e => e.category === 'Planned')} 
+                color="#3b82f6" 
+            />
+        </div> */}
+
+
+        {/* BOTTOM ANALYTICS SECTION */}
+<div className="space-y-10 mt-10 border-t pt-10 border-slate-100">
+    
+    {/* UNPLANNED ANALYSIS: FREQUENCY VS DURATION */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ComparisonChart 
+            title="🔴 Unplanned: Frequency (Counts)" 
+            data={shiftComparison.filter(e => e.category === 'Unplanned')} 
+            color="#ef4444" 
+            type="freq"
+        />
+        <ComparisonChart 
+            title="🔴 Unplanned: Total Loss (Minutes)" 
+            data={shiftComparison.filter(e => e.category === 'Unplanned')} 
+            color="#b91c1c" 
+            type="dur"
+        />
+    </div>
+
+    {/* PLANNED ANALYSIS: FREQUENCY VS DURATION */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ComparisonChart 
+            title="🔵 Planned: Frequency (Counts)" 
+            data={shiftComparison.filter(e => e.category === 'Planned')} 
+            color="#3b82f6" 
+            type="freq"
+        />
+        <ComparisonChart 
+            title="🔵 Planned: Total Utilized (Minutes)" 
+            data={shiftComparison.filter(e => e.category === 'Planned')} 
+            color="#1d4ed8" 
+            type="dur"
+        />
+    </div>
+</div>
+    </div>
+)}
 
                 {/* TAB 2: REASON SUMMARY */}
                 {activeTab === 'summary' && (
@@ -387,13 +603,67 @@ const EtlManager = () => {
 
                 {/* TAB 4: DETAILED LOGS */}
                 {activeTab === 'logs' && (
-                    <div className="animate-fadeIn">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[500px]">
-                            <DetailTable title="🔴 All Unplanned Logs" data={detailedUnplanned} colorClass="border-red-500" headerColor="bg-red-50" />
-                            <DetailTable title="🔵 All Planned Logs" data={detailedPlanned} colorClass="border-blue-500" headerColor="bg-blue-50" />
-                        </div>
-                    </div>
-                )}
+    <div className="animate-fadeIn space-y-8">
+        
+        {/* 1. TOP RANGE PICKER BAR */}
+        <div className="flex items-center gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100 shadow-inner">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-200">
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-tight mb-1">Start Date</label>
+                    <input 
+                        type="date" 
+                        className="text-xs font-bold text-slate-700 outline-none bg-transparent" 
+                        value={detailFilter.start} 
+                        onChange={e => setDetailFilter({...detailFilter, start: e.target.value})} 
+                    />
+                </div>
+                <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-200">
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-tight mb-1">End Date</label>
+                    <input 
+                        type="date" 
+                        className="text-xs font-bold text-slate-700 outline-none bg-transparent" 
+                        value={detailFilter.end} 
+                        onChange={e => setDetailFilter({...detailFilter, end: e.target.value})} 
+                    />
+                </div>
+            </div>
+            <p className="ml-auto text-[10px] font-black text-slate-400 uppercase tracking-widest italic">
+                {events.length} Records Found In Range
+            </p>
+        </div>
+
+        {/* 2. MIDDLE SECTION: DETAILED TABLES */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[500px]">
+            <DetailTable 
+                title="🔴 Unplanned Logs" 
+                data={detailedUnplanned} 
+                colorClass="border-red-500" 
+                headerColor="bg-red-50" 
+            />
+            <DetailTable 
+                title="🔵 Planned Logs" 
+                data={detailedPlanned} 
+                colorClass="border-blue-500" 
+                headerColor="bg-blue-50" 
+            />
+        </div>
+
+        {/* 3. BOTTOM SECTION: FREQUENCY ANALYTICS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FrequencyChart 
+                title="🎯 Unplanned Frequency (Occurrence Count)" 
+                data={detailedUnplanned} 
+                color="#ef4444" 
+            />
+            <FrequencyChart 
+                title="🎯 Planned Frequency (Occurrence Count)" 
+                data={detailedPlanned} 
+                color="#3b82f6" 
+            />
+        </div>
+        
+    </div>
+)}
             </>
         )}
       </div>
