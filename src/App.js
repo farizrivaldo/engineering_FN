@@ -51,13 +51,22 @@ import VortexChart from "./pages/SteamControl";
 // import Dashboard2 from "./pages/Dashboard2";
 // import Dashboard3 from "./pages/Dashboard3";
 import OeeDashboard from "./pages/OEE/OEETest";
+import TestImport from "./pages/CMMS/testimport";
+import FetteLogs from "./pages/OEE/FetteLogs";
+import DowntimeDashboard from "./pages/OEE/DowntimeEvents";
+import ETLManager from "./pages/OEE/ETLManager";
+import ShiftStatsDisplay from "./pages/OEE/DowntimeDisplay";
+import EventDrillDownModal from "./pages/OEE/DowntimeDrillDown";
+import HybridDowntimeManager from "./pages/OEE/HybridDowntime";
+import ParetoChartFette from "./pages/OEE/ParetoChartFette";
+
 
 function App() {
   const dispatch = useDispatch();
   const location = useLocation();
   const userlocalStorage = localStorage.getItem("user_token");
-  const userGlobal = useSelector((state) => state.user.user.level);
-  const [levelData, setLevelData] = useState();
+const userGlobal = 5; // DEV MODE: Remove before production
+const [levelData, setLevelData] = useState();
 
   //KEEP LOGIN CHECKER
   const keepLogin = () => {
@@ -163,6 +172,12 @@ function App() {
               <Route path="/ProfileManager" element={<ProfileManager />} />
               <Route path="/SteamControl" element={<VortexChart />} />
               <Route path="/OeeDashboard" element={<OeeDashboard />} />
+              <Route path="/TestImport" element={<TestImport />} />
+              <Route path="/FetteLogs" element={<FetteLogs />} />
+              <Route path="/DowntimeDashboard" element={<DowntimeDashboard />} />
+              <Route path="/ETLManager" element={<ETLManager />} />
+              <Route path="/HybridDowntime" element={<HybridDowntimeManager />} />
+
 
               
             </Routes>
