@@ -34,7 +34,7 @@ const DayOverrideManager = () => {
     const [originalDayData, setOriginalDayData] = useState(null);
     const [showLogic, setShowLogic] = useState(false);
 
-    const API_BASE = "http://localhost:8002/part";
+    const API_BASE = "http://10.126.15.197:8002/part";
     const TARGET_RATE = 5333;
     const SHIFT_DURATIONS = { 1: 510, 2: 465, 3: 465 };
 

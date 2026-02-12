@@ -33,13 +33,13 @@ const FetteOeeDashboard = () => {
         setLoading(true);
         try {
             // 1. Fetch Today's Live Dashboard Data
-            const todayRes = await fetch(`http://localhost:8002/part/getUnifiedOEE2?date=${date}`);
+            const todayRes = await fetch(`http://10.126.15.197:8002/part/getUnifiedOEE2?date=${date}`);
             const todayResult = await todayRes.json();
             setData(todayResult);
 
             // 2. Fetch Historical Logs with Date Range
             // Pass the startDate and endDate states to the backend
-            const historyRes = await fetch(`http://localhost:8002/part/getHistoryLog?startDate=${startDate}&endDate=${endDate}`);
+            const historyRes = await fetch(`http://10.126.15.197:8002/part/getHistoryLog?startDate=${startDate}&endDate=${endDate}`);
             const historyResult = await historyRes.json();
             setHistoryData(historyResult);
 

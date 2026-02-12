@@ -9,7 +9,7 @@ const OverrideAuditViewer = () => {
     const [selectedLog, setSelectedLog] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const API_BASE = "http://localhost:8002/part";
+    const API_BASE = "http://10.126.15.197:8002/part";
 
     useEffect(() => { fetchLogs(); }, []);
 
