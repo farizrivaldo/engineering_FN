@@ -15,7 +15,7 @@ import TableViewIcon from '@mui/icons-material/TableView';
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import '../index.css'
-import { AssignmentInd, Description } from "@mui/icons-material";
+import { AssignmentInd, Description, Storage } from "@mui/icons-material";
 
 // --- NavItem moved OUTSIDE Sidebar to fix 'no-undef' errors ---
 const NavItem = ({ 
@@ -152,6 +152,27 @@ function Sidebar() {
         ],
       });
     }
+if (userGlobal.level == 2) {
+      navigation.push(
+      {
+        name: "Fette",
+        icon: <FactoryIcon sx={{ fontSize: 22 }} className="flex-shrink-0" />,
+        path: "/production",
+        subMenu: [
+          { name: "OEE Fette", path: "/FetteOeeDashboard" },
+          { name: "Fette Downtime", path: "/HybridDowntime" },
+          { name: "Fette Logs", path: "/ETLManager" },
+        ],
+      }
+    
+    
+    
+    
+    );
+
+      
+    }
+
     // ... Levels 2, 3, 4 shortened for brevity in this response but kept in your logic ...
     if (userGlobal.level == 5) {
       navigation.push({
@@ -196,21 +217,19 @@ function Sidebar() {
           { name: "Input Data", path: "/production?tab=Input", visible: userGlobal.level < 5 },
           { name: "OEE CM", path: "/production?tab=Prod" },
           {
-            name: "OEE",
+            name: "Fette",
             path: "#",
-            subMenu: [
-              {
-                name: "Fette",
-                path: "/fette-overview", 
                 subMenu: [
-                  { name: "OEE Fette", path: "/OeeDashboard" },
-                  { name: "Fette Downtime", path: "/HybridDowntime" },
-                  { name: "Fette Logs", path: "/ETLManager" },
+                  { name: "Live OEE", path: "/OeeDashboard" },
+                  { name: "OEE", path: "/FetteOeeDashboard" },
+                  { name: "Downtime", path: "/HybridDowntime" },
+                  { name: "Logs", path: "/ETLManager" },
+                  { name: "Override", path: "/DayOverrideManager" },
+                  { name: "Audit View", path: "/OverrideAuditView" },
                 ],
               },
             ],
-          },
-        ],
+          
       },{
         name: "Building",
         icon: <BsBuildingsFill size={20} />,
@@ -248,8 +267,16 @@ function Sidebar() {
         name: "Work Order",
         icon: <Description size={21} className="flex-shrink-0 m-1"/>,
         path: "/work-orders",
-      });
+      },{
+        name: "Database",
+        icon: <Storage size={21} className="flex-shrink-0 m-1 gap-y-4"/>,
+        path: "/DataMonitor",
+      }
+    
+    );
     }
+
+    
 
     return navigation;
   };

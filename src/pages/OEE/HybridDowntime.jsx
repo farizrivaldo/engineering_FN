@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
 import ShiftStatsDisplay from './DowntimeDisplay';
+import AuditNavigator from './AuditNavigator';
+
 
 // --- CONFIG ---
 const SHIFT_SCHEDULE = {
@@ -39,6 +41,8 @@ const formatTimeOnly = (isoString) => {
     if (isNaN(date.getTime())) return '--:--';
     return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
 };
+
+
 
 // --- BUDGET BAR ---
 const BudgetBar = ({ title, used, limit, barColor, type }) => {
@@ -85,7 +89,13 @@ const HybridDowntimeManager = () => {
   const [budgetLimits, setBudgetLimits] = useState({ unplanned: 124, planned: 110, total_downtime: 0 }); 
   const [reasonOptions, setReasonOptions] = useState({ Unplanned: [], Planned: [] });
   const [activeShiftId, setActiveShiftId] = useState(null);
-  
+
+  const [machineMeta, setMachineMeta] = useState({ 
+        operators: 'Fetching...', 
+        batches: [], 
+        isLoading: false 
+    });
+
 
   // Load Reasons
   useEffect(() => {
@@ -97,6 +107,7 @@ const HybridDowntimeManager = () => {
                 Planned: res.data.filter(r => r.default_category === 'Planned')
             });
         } catch (err) { console.error("Reasons Error", err); }
+        
     };
     fetchReasons();
   }, []);
@@ -118,67 +129,98 @@ const HybridDowntimeManager = () => {
       }
 
       try {
-          // CALL 4 APIs IN PARALLEL
-          const [plcRes, operatorRes, supervisorRes, shiftIdRes] = await Promise.all([
-             // 1. RAW PLC (For "Original Machine Timestamps" List & Totals)
-             axios.get(`http://10.126.15.197:8002/part/getDowntimeByUnix`, { params: { start_date: startIso, end_date: endIso } }),
-             
-             // 2. OPERATOR LABELED (For Comparison Baseline)
-             axios.get(`http://10.126.15.197:8002/part/getStoredShiftEvents`, { params: { start_date: startIso, end_date: endIso } }),
-             
-             // 3. SUPERVISOR SAVED (For Canvas)
-             axios.get(`http://10.126.15.197:8002/part/getStoredDowntime`, { params: { start_date: startIso, end_date: endIso } }),
-             
-             // 4. GET MASTER SHIFT ID (The "Golden Key" for saving)
-             axios.get('http://10.126.15.197:8002/part/getShiftId', { params: { date: selectedDate, shift: selectedShift } })
-          ]);
+    setLoading(true);
 
-          // --- 0. SAVE THE SHIFT ID ---
-          // This is critical. If this is null, we know no Master Log exists yet.
-          setActiveShiftId(shiftIdRes.data.shift_id); 
-          console.log("Active Master Log ID:", shiftIdRes.data.shift_id);
+    // CALL 5 APIs IN PARALLEL (Added Machine Metadata)
+    const [plcRes, operatorRes, supervisorRes, shiftIdRes, metaRes] = await Promise.all([
+        // 1. RAW PLC
+        axios.get(`http://10.126.15.197:8002/part/getDowntimeByUnix`, { params: { start_date: startIso, end_date: endIso } }),
+        
+        // 2. OPERATOR LABELED
+        axios.get(`http://10.126.15.197:8002/part/getStoredShiftEvents`, { params: { start_date: startIso, end_date: endIso } }),
+        
+        // 3. SUPERVISOR SAVED
+        axios.get(`http://10.126.15.197:8002/part/getStoredDowntime`, { params: { start_date: startIso, end_date: endIso } }),
+        
+        // 4. GET MASTER SHIFT ID
+        axios.get('http://10.126.15.197:8002/part/getShiftId', { params: { date: selectedDate, shift: selectedShift } }),
 
-          // --- 1. PLC DATA ---
-          setPlcEvents(plcRes.data.events || []);
-          const budgetData = plcRes.data.budget || {};
-          setBudgetLimits({
-              total_downtime: parseFloat(budgetData.total_downtime || 0), 
-              planned: parseFloat(budgetData.planned_limit || 0),         
-              unplanned: parseFloat(budgetData.unplanned_limit || 0)      
-          });
+        // 5. NEW: MACHINE METADATA (Operators & Batches)
+        axios.get('http://localhost:8002/part/getShiftMetadata', { 
+            params: { date: selectedDate, startTime: startTime, endTime: endTime } 
+        })
+    ]);
 
-          // --- 2. OPERATOR DATA ---
-          setMachineEvents(operatorRes.data.events || []);
+    // --- 0. SAVE THE SHIFT ID ---
+    setActiveShiftId(shiftIdRes.data.shift_id); 
 
-          // --- 3. SUPERVISOR DATA ---
-          const spvData = supervisorRes.data;
-          const { events, is_submitted, last_updated_by, last_updated_at } = spvData;
+    // --- 1. NEW: SAVE MACHINE CONTEXT ---
+    setMachineMeta({
+        operators: metaRes.data.operators || "None Found",
+        batches: metaRes.data.batches || [],
+        isLoading: false
+    });
 
-          if (is_submitted && events.length > 0) {
-              setSubmissionStatus({
-                  user: last_updated_by || "Unknown",
-                  time: last_updated_at ? new Date(last_updated_at).toLocaleString('en-GB') : "Unknown Date"
-              });
-              const formatted = events.map(e => ({
-                  id: e.id,
-                  startTime: new Date(e.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-                  endTime: new Date(e.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-                  duration: parseFloat(e.duration_minutes),
-                  reason: e.reason_name || '',
-                  category: e.category || 'Unplanned'
-              }));
-              setUserEntries(formatted);
-          } else {
-              setSubmissionStatus(null); 
-              setUserEntries([{ id: Date.now(), startTime: startTime, endTime: '', duration: 0, reason: '', category: 'Unplanned' }]);
-          }
+    // --- 2. PLC DATA ---
+    setPlcEvents(plcRes.data.events || []);
+    const budgetData = plcRes.data.budget || {};
+    setBudgetLimits({
+        total_downtime: parseFloat(budgetData.total_downtime || 0), 
+        planned: parseFloat(budgetData.planned_limit || 0),         
+        unplanned: parseFloat(budgetData.unplanned_limit || 0)      
+    });
 
-      } catch (err) {
-          console.error("Fetch error:", err);
-      } finally {
-          setLoading(false);
-      }
+    // --- 3. OPERATOR DATA ---
+    setMachineEvents(operatorRes.data.events || []);
+
+    // --- 4. SUPERVISOR DATA ---
+    const spvData = supervisorRes.data;
+    const { events, is_submitted, last_updated_by, last_updated_at } = spvData;
+
+    if (is_submitted && events.length > 0) {
+        setSubmissionStatus({
+            user: last_updated_by || "Unknown",
+            time: last_updated_at ? new Date(last_updated_at).toLocaleString('en-GB') : "Unknown Date"
+        });
+        const formatted = events.map(e => ({
+            id: e.id,
+            startTime: new Date(e.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+            endTime: new Date(e.end_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+            duration: parseFloat(e.duration_minutes),
+            reason: e.reason_name || '',
+            category: e.category || 'Unplanned'
+        }));
+        setUserEntries(formatted);
+    } else {
+        setSubmissionStatus(null); 
+        setUserEntries([{ id: Date.now(), startTime: startTime, endTime: '', duration: 0, reason: '', category: 'Unplanned' }]);
+    }
+
+} catch (err) {
+    console.error("Fetch error:", err);
+    setMachineMeta({ operators: 'Sync Error', batches: [], isLoading: false });
+} finally {
+    setLoading(false);
+}
   };
+
+  // 1. Keep your navigateDay exactly as it is. It only updates the state.
+const navigateDay = (amount) => {
+  const [year, month, day] = selectedDate.split('-').map(Number);
+  const current = new Date(year, month - 1, day);
+  current.setDate(current.getDate() + amount);
+  
+  const y = current.getFullYear();
+  const m = String(current.getMonth() + 1).padStart(2, '0');
+  const d = String(current.getDate()).padStart(2, '0');
+  
+  setSelectedDate(`${y}-${m}-${d}`); // This triggers the useEffect below
+};
+
+// 2. Ensure you have this useEffect to handle the actual data fetching
+useEffect(() => {
+  fetchHybridData();
+}, [selectedDate, selectedShift]); // Watches for both day and shift changes
 
   const handleSaveReport = async () => {
     setSaving(true);
@@ -241,7 +283,7 @@ const HybridDowntimeManager = () => {
 
       // 2. Track usage to know which Operator events are "taken"
       const machineUsage = {}; // counts how many times we matched a reason
-      const finalDisplayList = [];
+      const finalDisplayList = [];  
 
       // --- A. PROCESS USER ENTRIES (Your Input) ---
       userEntries.forEach(e => {
@@ -387,35 +429,85 @@ const HybridDowntimeManager = () => {
       setUserEntries([...userEntries, { id: Date.now(), startTime: nextStart, endTime: '', duration: 0, reason: '', category: 'Unplanned' }]);
   };
 
-  return (
-    <div className="flex flex-col gap-6 p-6 bg-gray-50 min-h-screen font-sans">
-      
-      {/* HEADER */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold text-gray-800">Fette Downtime Manager</h1>
-              <div className="bg-blue-50 text-blue-800 text-xs font-bold px-3 py-1 rounded border border-blue-200">
-                  {startTime} - {endTime}
-              </div>
+
+/* --- HybridDowntime.jsx --- */
+
+return (
+  <div className="flex flex-col gap-6 p-6 bg-gray-50 min-h-screen font-sans">
+    {/* HEADER: Restored to original non-sticky block */}
+    <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+        <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold text-gray-800">Fette Downtime Manager</h1>
+            
+            {/* TIMES BUBBLE */}
+            <div className="bg-blue-50 text-blue-800 text-xs font-bold px-3 py-1 rounded border border-blue-200">
+                {startTime} - {endTime}
+            </div>
+            
+            {/* STATUS BADGE */}
+            {submissionStatus ? (
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded border border-green-200 text-xs font-bold animate-in fade-in">
+                    <span>✅ Report Submitted</span>
+                    <span className="font-normal text-green-600 italic">by {submissionStatus.user} at {submissionStatus.time}</span>
+                </div>
+            ) : (
+                <div className="px-3 py-1 bg-gray-100 text-gray-500 rounded border border-gray-200 text-xs font-bold">
+                    ⚪ Pending Submission
+                </div>
+            )}
+        </div>
+
+        <div className="flex items-center gap-2 mt-0.5">
+    <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">
+      {/* FIX: Change metaData.operators to machineMeta.operators */}
+      Operator: <span className="text-blue-600">{machineMeta.operators || '---'}</span>
+    </span>
+    <span className="text-[12px] text-slate-300">|</span>
+    <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">
+      {/* FIX: Change metaData.batches to machineMeta.batches */}
+      Batch: <span className="text-emerald-600">
+  {machineMeta.batches && machineMeta.batches.length > 0 
+    ? machineMeta.batches.map(b => b.replace(/[^a-zA-Z0-9]/g, "")).join(", ")
+    : '---'}
+</span>
+    </span>
+  </div>
+
+        <div className="flex items-center gap-2">
+           {/* REFINED NAVIGATOR: Integrated into original control group */}
+           <div className="flex items-center bg-gray-50 p-1 rounded border border-gray-200">
+              <button 
+                onClick={() => navigateDay(-1)}
+                className="w-8 h-8 flex items-center justify-center bg-white border rounded shadow-sm hover:bg-gray-50 active:scale-90 transition-all text-blue-600 text-xs"
+              >
+                ◀
+              </button>
               
-              {submissionStatus ? (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded border border-green-200 text-xs font-bold animate-in fade-in">
-                      <span>✅ Report Submitted</span>
-                      <span className="font-normal text-green-600">by {submissionStatus.user} at {submissionStatus.time}</span>
-                  </div>
-              ) : (
-                  <div className="px-3 py-1 bg-gray-100 text-gray-500 rounded border border-gray-200 text-xs font-bold">
-                      ⚪ Pending Submission
-                  </div>
-              )}
-          </div>
-          <div className="flex gap-2">
-             <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="border rounded px-2 py-1 text-sm outline-none focus:ring-2 ring-blue-500" />
-             <select value={selectedShift} onChange={(e) => setSelectedShift(e.target.value)} className="border rounded px-3 py-1 text-sm font-bold bg-white outline-none focus:ring-2 ring-blue-500">
-                 {Object.keys(SHIFT_SCHEDULE).map(s => <option key={s} value={s}>{s}</option>)}
-             </select>
-          </div>
-      </div>
+              <input 
+                type="date" 
+                value={selectedDate} 
+                onChange={e => setSelectedDate(e.target.value)} 
+                className="bg-transparent px-3 text-sm font-bold text-gray-700 outline-none cursor-pointer" 
+              />
+              
+              <button 
+                onClick={() => navigateDay(1)}
+                className="w-8 h-8 flex items-center justify-center bg-white border rounded shadow-sm hover:bg-gray-50 active:scale-90 transition-all text-blue-600 text-xs"
+              >
+                ▶
+              </button>
+           </div>
+
+           <select 
+             value={selectedShift} 
+             onChange={(e) => setSelectedShift(e.target.value)} 
+             className="border rounded px-3 py-2 text-sm font-bold bg-white outline-none focus:ring-2 ring-blue-500 cursor-pointer"
+           >
+               {Object.keys(SHIFT_SCHEDULE).map(s => <option key={s} value={s}>{s}</option>)}
+           </select>
+        </div>
+    </div>
+
 
       {loading ? <div className="text-center py-20 text-gray-500">Loading Data...</div> : (
       <>
@@ -615,6 +707,8 @@ const HybridDowntimeManager = () => {
         </div>
       </>
       )}
+
+      
     </div>
   );
 };

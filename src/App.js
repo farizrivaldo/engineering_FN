@@ -59,6 +59,12 @@ import ETLManager from "./pages/OEE/ETLManager";
 import EventDrillDownModal from "./pages/OEE/DowntimeDrillDown";
 import HybridDowntimeManager from "./pages/OEE/HybridDowntime";
 import ParetoChartFette from "./pages/OEE/ParetoChartFette";
+import AuditNavigator from "./pages/OEE/AuditNavigator";
+import OverrideAuditView from "./pages/OEE/FetteAuditView";
+import DayOverrideManager from "./pages/OEE/FetteOverride2";
+import FetteOeeDashboard from "./pages/OEE/OEETest2";
+import MachineDashboard from "./pages/DataMonitor";
+ 
 
 
 function App() {
@@ -177,14 +183,19 @@ const [levelData, setLevelData] = useState();
               <Route path="/DowntimeDashboard" element={<DowntimeDashboard />} />
               <Route path="/ETLManager" element={<ETLManager />} />
               <Route path="/HybridDowntime" element={<HybridDowntimeManager />} />
+              <Route path="/OverrideAuditView" element={<OverrideAuditView />} />
+              <Route path="/DayOverrideManager" element={<DayOverrideManager />} />
 
-
+              <Route path="/FetteOeeDashboard" element={<FetteOeeDashboard />} />
+              <Route path="/DataMonitor" element={<MachineDashboard />} />
               
             </Routes>
           </div>
         </div>
         <>
+         {/* Disabled Chatbot Button, delete comment to enable
           <Chat />
+          */}
         </>
       </div>
     );
@@ -283,10 +294,11 @@ const [levelData, setLevelData] = useState();
           <div className="overflow-x-auto">
             <Routes>
               {/* <Route path="/" element={<Login />} /> */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/maintenance" element={<Maintenance />} />
-              <Route path="/Instrument" element={<Instrument />} />
-              <Route path="/production" element={<Production />} />
+              <Route path="/ETLManager" element={<ETLManager />} />
+              <Route path="/HybridDowntime" element={<HybridDowntimeManager />} />
+              <Route path="/FetteOeeDashboard" element={<FetteOeeDashboard />} />
+
+              
             </Routes>
           </div>
         </div>

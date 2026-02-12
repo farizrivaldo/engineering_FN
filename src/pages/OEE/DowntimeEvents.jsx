@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ShiftStatsDisplay from './DowntimeDisplay';
+import AuditNavigator from './AuditNavigator'; // Import the new component
 
 // --- COMPONENTS: Modals ---
 
@@ -195,7 +196,7 @@ const DowntimeManager = () => {
   useEffect(() => {
     const fetchReasons = async () => {
       try {
-        const res = await axios.get("http://localhost:8002/part/getDowntimeReasons");
+        const res = await axios.get("http://10.126.15.197:8002/part/getDowntimeReasons");
         setReasons(res.data || []);
       } catch (err) {
         console.error("Failed to load reasons", err);
@@ -211,7 +212,7 @@ const DowntimeManager = () => {
         // --- VIEW MODE: Fetch Raw Machine Data ---
         const startFull = `${selectedDate} ${startTime}:00`;
         const endFull = `${selectedDate} ${endTime}:00`;
-        const res = await axios.get(`http://localhost:8002/part/getDowntimeByUnix`, {
+        const res = await axios.get(`http://10.126.15.197:8002/part/getDowntimeByUnix`, {
           params: { start_date: startFull, end_date: endFull },
         });
         setData(prev => ({ ...prev, events: res.data.events || [], budget: res.data.budget || prev.budget }));
@@ -226,7 +227,7 @@ const DowntimeManager = () => {
     const startFull = `${selectedDate} ${startTime}:00`;
     const endFull = `${selectedDate} ${endTime}:00`;
 
-    const res = await axios.get(`http://localhost:8002/part/getStoredDowntime`, {
+    const res = await axios.get(`http://10.126.15.197:8002/part/getStoredDowntime`, {
         params: { start_date: startFull, end_date: endFull },
     });
     
@@ -249,7 +250,7 @@ const DowntimeManager = () => {
     if (data.events.length === 0) return;
     setIsSyncing(true);
     try {
-        await axios.post(`http://localhost:8002/part/storeDowntimeEvents`, { shift_id: 101, events: data.events });
+        await axios.post(`http://10.126.15.197:8002/part/storeDowntimeEvents`, { shift_id: 101, events: data.events });
         alert(`Synced! Switching to Edit Mode.`);
         setMode('edit'); // Auto-switch to Edit Mode after sync
     } catch (err) {
@@ -261,7 +262,7 @@ const DowntimeManager = () => {
 
   const handleAssign = async (id, category, reasonId) => {
     try {
-      await axios.put(`http://localhost:8002/part/updateDowntime`, { id, category, reason_id: reasonId });
+      await axios.put(`http://10.126.15.197:8002/part/updateDowntime`, { id, category, reason_id: reasonId });
       setAssignModal({ open: false, event: null });
       fetchData(); // Refresh list
     } catch (err) {
@@ -272,7 +273,7 @@ const DowntimeManager = () => {
 
   const handleSplit = async (id, splitMins) => {
     try {
-      await axios.post(`http://localhost:8002/part/splitDowntime`, { id, split_minutes: splitMins });
+      await axios.post(`http://10.126.15.197:8002/part/splitDowntime`, { id, split_minutes: splitMins });
       setSplitModal({ open: false, event: null });
       fetchData(); // Refresh list
     } catch (err) {
@@ -280,6 +281,8 @@ const DowntimeManager = () => {
       alert(err.response?.data?.error || "Split failed");
     }
   };
+
+  
 
   
   // --- HELPERS ---
@@ -649,7 +652,15 @@ const DowntimeManager = () => {
           limit={data.budget.planned_limit}
 />
       <SplitModal isOpen={splitModal.open} onClose={() => setSplitModal({ open: false, event: null })} onSplit={handleSplit} event={splitModal.event} />
+          
 
+          <AuditNavigator 
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        // Assuming you want the widget to also control the shift-based times:
+        onSync={fetchData} 
+      />
+      
     </div>
   );
 };

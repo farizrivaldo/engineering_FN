@@ -101,7 +101,10 @@ function Dashboard() {
     "rgba(var(--color-coba))"
   );
 
-  const [isDarkMode, setIsDarkMode] = useState(
+
+const cardGradient = "linear-gradient(0deg, #076535 0%, #87bd40 100%)";
+
+const [isDarkMode, setIsDarkMode] = useState(
     document.documentElement.getAttribute("data-theme") === "dark"
   );
 
@@ -728,7 +731,7 @@ function Dashboard() {
       <div className="min-h-screen bg-cobabg mx-auto p-4 md:p-6 2xl:p-10 relative">
         {/* Section Title */}
         <div className="text-text text-4xl font-sans font-bold mb-8 text-center">
-          Computerized Maintenance Monitoring System
+          Computerized Engineering Monitoring System
         </div>
         <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row-reverse justify-between">
           <div className="flex flex-wrap items-start justify-end gap-x-4 gap-y-2">
@@ -915,15 +918,18 @@ function Dashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 my-4">
           {/* TODAY COST / UNIT Card */}
-          <div className="bg-coba rounded-lg shadow-buatcard p-6 flex flex-col">
+          <div
+            className="rounded-lg shadow-buatcard p-6 flex flex-col"
+            style={{ backgroundImage: cardGradient, backgroundColor: "#87bd40" }}
+          >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-text">
+              <h3 className="text-2xl font-semibold text-white">
                 TODAY COST / UNIT
               </h3>
-              <div className="p-2 bg-blue-100 rounded-full">
+              <div className="p-3 bg-blue-100 rounded-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-blue-600"
+                  className="h-10 w-10 text-blue-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -938,21 +944,26 @@ function Dashboard() {
               </div>
             </div>
             <div className="mt-auto">
-              <p className="text-3xl font-bold text-text">
+              <p className="text-3xl font-bold text-white">
                 Rp {totalCostPerUnit.toFixed(2)}
               </p>
-              <p className="text-sm text-gray-500 mt-2">All Lines Combined</p>
+              <p className="text-sm mt-2" style={{ color: "#87bd40" }}>
+                All Lines Combined
+              </p>
             </div>
           </div>
 
           {/* Line 1 Card */}
-          <div className="bg-coba rounded-lg shadow-buatcard p-6 flex flex-col">
+          <div
+            className="rounded-lg shadow-buatcard p-6 flex flex-col"
+            style={{ backgroundImage: cardGradient, backgroundColor: "#87bd40" }}
+          >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-text">Line 1</h3>
-              <div className="p-2 bg-green-100 rounded-full">
+              <h3 className="text-2xl font-semibold text-white">Line 1</h3>
+              <div className="p-3 bg-green-100 rounded-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-green-600"
+                  className="h-10 w-10 text-green-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -967,21 +978,26 @@ function Dashboard() {
               </div>
             </div>
             <div className="mt-auto">
-              <p className="text-3xl font-bold text-text">
+              <p className="text-3xl font-bold text-white">
                 Rp {costPerUnitLine1.toFixed(2)}
               </p>
-              <p className="text-sm text-gray-500 mt-2">Line 1 Cost/Unit</p>
+              <p className="text-sm mt-2" style={{ color: "#87bd40" }}>
+                Line 1 Cost/Unit
+              </p>
             </div>
           </div>
 
           {/* Line 2 Card */}
-          <div className="bg-coba rounded-lg shadow-buatcard p-6 flex flex-col">
+          <div
+            className="rounded-lg shadow-buatcard p-6 flex flex-col"
+            style={{ backgroundImage: cardGradient, backgroundColor: "#87bd40" }}
+          >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-text">Line 2</h3>
-              <div className="p-2 bg-purple-100 rounded-full">
+              <h3 className="text-2xl font-semibold text-white">Line 2</h3>
+              <div className="p-3 bg-purple-100 rounded-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-purple-600"
+                  className="h-10 w-10 text-purple-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -996,21 +1012,26 @@ function Dashboard() {
               </div>
             </div>
             <div className="mt-auto">
-              <p className="text-3xl font-bold text-text">
+              <p className="text-3xl font-bold text-white">
                 Rp {costPerUnitLine2.toFixed(2)}
               </p>
-              <p className="text-sm text-gray-500 mt-2">Line 2 Cost/Unit</p>
+              <p className="text-sm mt-2" style={{ color: "#87bd40" }}>
+                Line 2 Cost/Unit
+              </p>
             </div>
           </div>
 
           {/* Line 3 Card */}
-          <div className="bg-coba rounded-lg shadow-buatcard p-6 flex flex-col">
+          <div
+            className="rounded-lg shadow-buatcard p-6 flex flex-col"
+            style={{ backgroundImage: cardGradient, backgroundColor: "#87bd40" }}
+          >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-text">Line 3</h3>
-              <div className="p-2 bg-yellow-100 rounded-full">
+              <h3 className="text-2xl font-semibold text-white">Line 3</h3>
+              <div className="p-3 bg-yellow-100 rounded-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-yellow-600"
+                  className="h-10 w-10 text-yellow-600"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -1025,10 +1046,12 @@ function Dashboard() {
               </div>
             </div>
             <div className="mt-auto">
-              <p className="text-3xl font-bold text-text">
+              <p className="text-3xl font-bold text-white">
                 Rp {costPerUnitLine3.toFixed(2)}
               </p>
-              <p className="text-sm text-gray-500 mt-2">Line 3 Cost/Unit</p>
+              <p className="text-sm mt-2" style={{ color: "#87bd40" }}>
+                Line 3 Cost/Unit
+              </p>
             </div>
           </div>
         </div>
@@ -1042,8 +1065,8 @@ function Dashboard() {
             onClick={() => handleCardClick("NVMDP")}
           >
             <div className="flex items-center mb-1">
-              <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-purple-600 bg-purple-200 rounded-full mr-6">
-                <GambarNvmdp width="70%" height="80%" />
+              <div className="inline-flex flex-shrink-0 items-center justify-center h-20 w-20 text-purple-600 bg-purple-200 rounded-full mr-6">
+                <GambarNvmdp width="90%" height="90%" />
               </div>
               <div>
                 <h1 className="text-2xl text-text font-bold font-DMSans mb-0">
@@ -1131,8 +1154,8 @@ function Dashboard() {
             onClick={() => handleCardClick("PDAM")}
           >
             <div className="flex items-center mb-1">
-              <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-green-600 bg-green-100 rounded-full mr-6">
-                <Gambarpdam width="80%" height="80%" />
+              <div className="inline-flex flex-shrink-0 items-center justify-center h-20 w-20 text-green-600 bg-green-100 rounded-full mr-6">
+                <Gambarpdam width="90%" height="90%" />
               </div>
               <div>
                 <h1 className="text-2xl text-text font-bold font-DMSans mb-0">
@@ -1218,10 +1241,12 @@ function Dashboard() {
               </div>
             </div> */}
 
-          <div className="p-8 shadow-buatcard bg-coba rounded-lg dark:border-strokedark cursor-pointer transform transition duration-300 hover:scale-105 active:scale-65">
+          <div
+            className="p-8 shadow-buatcard bg-coba rounded-lg dark:border-strokedark cursor-pointer transform transition duration-300 hover:scale-105 active:scale-65"
+          >
             <div className="flex items-center mb-1">
-              <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-red-600 bg-red-100 rounded-full mr-6">
-                <Gambarboiler width="80%" height="80%" />
+              <div className="inline-flex flex-shrink-0 items-center justify-center h-20 w-20 text-red-600 bg-red-100 rounded-full mr-6">
+                <Gambarboiler width="90%" height="90%" />
               </div>
               <div>
                 <h1 className="text-2xl text-text font-bold font-DMSans mb-0">
@@ -1257,7 +1282,7 @@ function Dashboard() {
                   )}
                   %
                   <svg
-                    className="fill-gray-500"
+                    className="fill-black"
                     width="10"
                     height="11"
                     viewBox="0 0 10 11"
@@ -1274,9 +1299,11 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className="flex items-center p-6 shadow-buatcard bg-coba rounded-lg dark:border-strokedark">
-            <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-blue-600 bg-blue-100 rounded-full mr-6">
-              <Gambarkotak width="80%" height="80%" />
+          <div
+            className="flex items-center p-6 shadow-buatcard rounded-lg dark:border-strokedark bg-coba"
+          >
+            <div className="inline-flex flex-shrink-0 items-center justify-center h-20 w-20 text-blue-600 bg-blue-100 rounded-full mr-6">
+              <Gambarkotak width="90%" height="90%" />
             </div>
             <div className="md:flex-1">
               <h1 className="text-2xl text-text font-bold font-DMSans text-center mb-0">
