@@ -28,7 +28,7 @@ const MachineDashboard = () => {
         const fetchData = async () => {
             try {
                 // Update with your actual API endpoint
-                const response = await axios.get('http://localhost:8002/part/getAllLatestTimestamps'); 
+                const response = await axios.get('http://10.126.15.197:8002/part/getAllLatestTimestamps'); 
                 setMachines(response.data.data);
                 setLoading(false);
             } catch (err) {
