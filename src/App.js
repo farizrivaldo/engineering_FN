@@ -64,6 +64,7 @@ import OverrideAuditView from "./pages/OEE/FetteAuditView";
 import DayOverrideManager from "./pages/OEE/FetteOverride2";
 import FetteOeeDashboard from "./pages/OEE/OEETest2";
 import MachineDashboard from "./pages/DataMonitor";
+import DataIntegrityDashboard from "./pages/DataIntegrity";
  
 
 
@@ -188,6 +189,7 @@ const [levelData, setLevelData] = useState();
 
               <Route path="/FetteOeeDashboard" element={<FetteOeeDashboard />} />
               <Route path="/DataMonitor" element={<MachineDashboard />} />
+              <Route path="/DataIntegrity" element={<DataIntegrityDashboard />} />
               
             </Routes>
           </div>
