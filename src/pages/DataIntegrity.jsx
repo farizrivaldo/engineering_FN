@@ -94,18 +94,35 @@ const LogInspector = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`http://localhost:8002/part/getHourlyHeatmap?tableName=${table}&dbName=${dbName}&date=${date}&columnName=${columnName}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.first_date) setFirstDataDate(formatDate(data.first_date));
-        if (data.last_date) setLastDataDate(formatDate(data.last_date));
-        
-        setLogs(Array.isArray(data.logs) ? data.logs : []);
-        setPage(1); 
-      })
-      .catch(err => console.error("Fetch error:", err));
-  }, [selectedId, dates]);
+  // 1. Guard: Only fetch if we have the minimum required info
+  if (!date || !table) return;
+
+  // 2. AbortController kills the "Pending" avalanche
+  const controller = new AbortController();
+  setLoading(true);
+
+  fetch(`http://10.126.15.197:8002/part/getHourlyHeatmap?tableName=${table}&dbName=${dbName}&date=${date}&columnName=${columnName}`, {
+    signal: controller.signal
+  })
+    .then(res => res.json())
+    .then(data => {
+      // 3. ONLY update the local heatmap state. 
+      // Do NOT call setLogs or setPage here!
+      setHourlyData(data);
+      setLoading(false);
+    })
+    .catch(err => {
+      if (err.name !== 'AbortError') {
+        console.error("Heatmap Fetch error:", err);
+        setLoading(false);
+      }
+    });
+
+  // 4. Cleanup function: Cancels the fetch if you click a different date
+  return () => controller.abort();
+
+  // IMPORTANT: Only watch the specific date and table being inspected
+}, [date, table, dbName, columnName]);
 
   const getHeatColor = (count) => {
     if (count >= 60) return 'bg-emerald-500'; // Perfect
@@ -205,7 +222,7 @@ const LogInspector = () => {
   useEffect(() => {
   const { expectedRows, columnName } = getTableDetails(table, dbName);
   
-  fetch(`http://localhost:8002/part/getDataIntegritySummary?tableName=${table}&dbName=${dbName}&columnName=${columnName}&startDate=${dates.start}&endDate=${dates.end}&expectedRows=${expectedRows}`)
+  fetch(`http://10.126.15.197:8002/part/getDataIntegritySummary?tableName=${table}&dbName=${dbName}&columnName=${columnName}&startDate=${dates.start}&endDate=${dates.end}&expectedRows=${expectedRows}`)
     .then(res => res.json())
     .then(data => {
       // PRE-FORMATTING: Convert ISO (17:00Z) to YYYY-MM-DD for the state
