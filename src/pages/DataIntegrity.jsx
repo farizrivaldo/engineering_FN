@@ -77,7 +77,7 @@ const LogInspector = () => {
   };
 
   // --- 2. STATE ---
-  const [selectedId, setSelectedId] = useState('');
+  const [selectedId, setSelectedId] = useState('cMT-FHDGEA1_EBR_PMA_data');
   const [dates, setDates] = useState(''); 
   const [logs, setLogs] = useState([]);
   const [page, setPage] = useState(1);
@@ -98,10 +98,14 @@ const LogInspector = () => {
     fetch(`http://localhost:8002/part/getHourlyHeatmap?tableName=${table}&dbName=${dbName}&date=${date}&columnName=${columnName}`)
       .then(res => res.json())
       .then(data => {
-        setHourlyData(data);
-        setLoading(false);
-      });
-  }, [table, date]);
+        if (data.first_date) setFirstDataDate(formatDate(data.first_date));
+        if (data.last_date) setLastDataDate(formatDate(data.last_date));
+        
+        setLogs(Array.isArray(data.logs) ? data.logs : []);
+        setPage(1); 
+      })
+      .catch(err => console.error("Fetch error:", err));
+  }, [selectedId, dates]);
 
   const getHeatColor = (count) => {
     if (count >= 60) return 'bg-emerald-500'; // Perfect
@@ -151,9 +155,12 @@ const LogInspector = () => {
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr || dateStr === '...') return '';
-    return new Date(dateStr).toLocaleDateString('sv-SE'); 
-  };
+  if (!dateStr) return '';
+  // This constructor automatically adds the +7 hours for WIB
+  const date = new Date(dateStr); 
+  // 'sv-SE' ensures it outputs exactly YYYY-MM-DD for your HTML inputs
+  return date.toLocaleDateString('sv-SE'); 
+};
 
   const getStatusStyle = (status) => {
     switch(status) {
@@ -196,19 +203,24 @@ const LogInspector = () => {
 
   // --- 5. DATA FETCHING ---
   useEffect(() => {
-    const { expectedRows, columnName } = getTableDetails(table, dbName);
-    setFirstDataDate('...'); setLastDataDate('...');
-
-    fetch(`http://10.126.15.197:8002/part/getDataIntegritySummary?tableName=${table}&dbName=${dbName}&columnName=${columnName}&startDate=${dates.start}&endDate=${dates.end}&expectedRows=${expectedRows}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.first_date) setFirstDataDate(data.first_date);
-        if (data.last_date) setLastDataDate(data.last_date);
-        setLogs(Array.isArray(data.logs) ? data.logs : []);
-        setPage(1); 
-      })
-      .catch(err => console.error("API Error:", err));
-  }, [selectedId, dates]);
+  const { expectedRows, columnName } = getTableDetails(table, dbName);
+  
+  fetch(`http://localhost:8002/part/getDataIntegritySummary?tableName=${table}&dbName=${dbName}&columnName=${columnName}&startDate=${dates.start}&endDate=${dates.end}&expectedRows=${expectedRows}`)
+    .then(res => res.json())
+    .then(data => {
+      // PRE-FORMATTING: Convert ISO (17:00Z) to YYYY-MM-DD for the state
+      if (data.first_date) {
+        const cleanStart = new Date(data.first_date).toLocaleDateString('sv-SE');
+        setFirstDataDate(cleanStart);
+      }
+      if (data.last_date) {
+        const cleanEnd = new Date(data.last_date).toLocaleDateString('sv-SE');
+        setLastDataDate(cleanEnd);
+      }
+      
+      setLogs(Array.isArray(data.logs) ? data.logs : []);
+    });
+}, [selectedId, dates.start, dates.end]);
 
   // --- 6. LOGIC ---
   const stats = useMemo(() => logs.reduce((acc, log) => {
@@ -261,15 +273,26 @@ const LogInspector = () => {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Start Date</label>
-          <input type="date" value={dates.start} className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-sm" onChange={(e) => setDates({...dates, start: e.target.value})} />
-          <button onClick={() => setDates({...dates, start: firstDataDate})} className="text-[10px] text-slate-400 mt-2 hover:text-blue-600 transition text-left ml-1">Set to First Recorded Log</button>
-        </div>
+  <label className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">Start Date</label>
+  <input 
+    type="date" 
+    value={dates.start} 
+    className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-sm" 
+    onChange={(e) => setDates(prev => ({...prev, start: e.target.value}))} 
+  />
+  <button 
+    type="button"
+    onClick={() => setDates(prev => ({ ...prev, start: firstDataDate }))} 
+    className="text-[10px] text-blue-500 font-bold mt-2 hover:text-blue-700 transition text-left ml-1"
+  >
+    Set to {firstDataDate}
+  </button>
+</div>
 
         <div className="flex flex-col">
           <label className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">End Date</label>
           <input type="date" value={dates.end} className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-sm" onChange={(e) => setDates({...dates, end: e.target.value})} />
-          <button onClick={() => setDates({...dates, end: lastDataDate})} className="text-[10px] text-slate-400 mt-2 hover:text-blue-600 transition text-left ml-1">Set to Last Recorded Log</button>
+          <button onClick={() => setDates(prev => ({ ...prev, end: lastDataDate }))} className="text-[10px] text-blue-500 font-bold mt-2 hover:text-blue-700 transition text-left ml-1">Set to {lastDataDate}</button>
         </div>
       </div>
 
