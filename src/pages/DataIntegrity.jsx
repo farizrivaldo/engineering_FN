@@ -77,8 +77,8 @@ const LogInspector = () => {
   };
 
   // --- 2. STATE ---
-  const [selectedId, setSelectedId] = useState('cMT-FHDGEA1_EBR_PMA_data|db2');
-  const [dates, setDates] = useState({ start: '2025-08-24', end: '2025-12-31' }); 
+  const [selectedId, setSelectedId] = useState('');
+  const [dates, setDates] = useState(''); 
   const [logs, setLogs] = useState([]);
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState('ALL');
