@@ -65,6 +65,7 @@ import DayOverrideManager from "./pages/OEE/FetteOverride2";
 import FetteOeeDashboard from "./pages/OEE/OEETest2";
 import MachineDashboard from "./pages/DataMonitor";
 import DataIntegrityDashboard from "./pages/DataIntegrity";
+import WH2Dashboard from "./pages/buildingWH2";
  
 
 
@@ -152,6 +153,7 @@ const [levelData, setLevelData] = useState();
               <Route path="/createnew" element={<CreateNew />} />
               <Route path="/createedite/:id" element={<CreateEdit />} />
               <Route path="/building" element={<AppPareto />} />
+              <Route path="/WH2Dashboard" element={<WH2Dashboard />} />
               <Route path="/mail" element={<CheckMail />} />
               <Route path="/editprofile" element={<EditProfile />} />
               <Route path="/production" element={<Production />} />

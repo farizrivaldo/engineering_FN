@@ -239,6 +239,7 @@ if (userGlobal.level == 2) {
           { name: "Building Management System", path: "/building?tab=BAS" },
           { name: "RnD Laboratorium Monitoring", path: "/building?tab=RnD" },
           { name: "Warehouse 1 Monitoring", path: "/building?tab=WH1" },
+          { name: "Warehouse 2 Monitoring", path: "/WH2Dashboard" },
         ],
       },{
         name: "OPE",
