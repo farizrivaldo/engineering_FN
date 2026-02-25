@@ -100,7 +100,7 @@ const fetchData = async () => {
                target_rate: 5333, 
                actual_runtime: raw.tRun,
                // Fix for potential output
-               potential_output: raw.tRun ? (raw.tRun * 5333) : 0, 
+               potential_output: (raw.tTime - raw.tPlan) > 0 ? (raw.tRun * 5333) : 0, 
                
                // Specific key for "Daily Logic"
                total_output: raw.tOut

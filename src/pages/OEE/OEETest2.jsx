@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 const COLORS = {
@@ -24,6 +25,7 @@ const FetteOeeDashboard = () => {
     const [showDailyLogic, setShowDailyLogic] = useState(false);
     const [showShiftLogic, setShowShiftLogic] = useState(false);
     const [historyMode, setHistoryMode] = useState('daily'); 
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const TARGET_RATE = 5333;
     const SHIFT_DURATIONS = { 1: 510, 2: 465, 3: 465 };
@@ -58,6 +60,38 @@ const FetteOeeDashboard = () => {
         fetchData();
     };
 
+    const handleSyncAndArchive = async () => {
+    // Assuming you have a state for the date picker, e.g., `selectedDate`
+    // If your state is named differently (like `dashboardDate`), change it here!
+    if (!date) {
+      alert("Please select a date first.");
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      // ⚠️ IMPORTANT: Make sure this URL matches your new route for getUnifiedOEE2
+      await axios.get('http://10.126.15.197:8002/part/getUnifiedOEE2', {
+        params: {
+          date: date, // Sends the date from your date picker (e.g., '2026-01-21')
+          archive: 'true'     // This triggers the saving block in your backend
+        }
+      });
+
+      alert(`✅ Successfully synced and archived data for ${date}!`);
+      
+      // If you have a function to refresh the history table, call it here:
+      // fetchHistory(); 
+
+    } catch (error) {
+      console.error("❌ Sync Error:", error);
+      alert("Failed to sync data. Check the console for details.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+    
+
     // --- HELPER COMPONENTS ---
     const CalculationTable = ({ stats, shiftTime, isDaily = false }) => {
         const r = parseFloat(stats?.tRun || stats?.run_time) || 0;
@@ -65,7 +99,7 @@ const FetteOeeDashboard = () => {
         const g = parseFloat(stats?.tGood || stats?.total_good) || 0;
         const p = parseFloat(stats?.tPlan || stats?.planned_stop) || 0;
         const t = parseFloat(stats?.tTime || stats?.total_time) || shiftTime; 
-        const pot = r * TARGET_RATE;
+        const pot = (t - p) * TARGET_RATE;
         const calcPct = (n, d) => d > 0 ? (n / d) * 100 : 0;
 
         return (
@@ -175,6 +209,33 @@ const FetteOeeDashboard = () => {
                          <span className="text-xs font-bold text-slate-400 uppercase">Live Date:</span>
                         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="border border-slate-300 rounded-lg px-3 py-1.5 font-bold text-slate-700 shadow-sm" />
                     </div>
+                    {/* Button to Archive Trigger Today's Data
+                    <button
+                        onClick={handleSyncAndArchive}
+                        disabled={isSyncing}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all active:scale-95 ${
+                            isSyncing 
+                            ? "bg-indigo-400 text-white cursor-not-allowed" 
+                            : "bg-indigo-600 text-white hover:bg-indigo-700"
+                        }`}
+                        >
+                        {isSyncing ? (
+                            <>
+                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Archiving...
+                            </>
+                        ) : (
+                            <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                            Sync & Archive Day
+                            </>
+                        )}
+                        </button> */}
                 </div>
 
                 {/* Dashboard Sections ... */}

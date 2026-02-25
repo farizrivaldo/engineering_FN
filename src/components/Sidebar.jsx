@@ -274,7 +274,6 @@ if (userGlobal.level == 2) {
          subMenu: [
           { name: "Database", path: "/DataMonitor", visible: userGlobal.level > 4 },
           { name: "Tabel Integrity", path: "/DataIntegrity", visible: userGlobal.level > 4 },
-
         ],
       }
     
