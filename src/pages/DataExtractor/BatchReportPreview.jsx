@@ -307,8 +307,8 @@ const clean = (val) => {
           <ProcessTable 
             title="Suhu & RH" 
             dataRows={[
-              { label: 'SUHU', set: reportData.suhu_set1, min: reportData.suhu_min1, max: reportData.suhu_max1, avg: reportData.suhu_avg1 },
-              { label: 'RH', set: reportData.rh_set1, min: reportData.rh_min1, max: reportData.rh_max1, avg: reportData.rh_avg1 }
+              { label: 'SUHU', set: "20 - 27", min: reportData.suhu_min1, max: reportData.suhu_max1, avg: reportData.suhu_avg1 },
+              { label: 'RH', set: "<70", min: reportData.rh_min1, max: reportData.rh_max1, avg: reportData.rh_avg1 }
             ]} 
           />
 
