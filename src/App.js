@@ -66,6 +66,8 @@ import FetteOeeDashboard from "./pages/OEE/OEETest2";
 import MachineDashboard from "./pages/DataMonitor";
 import DataIntegrityDashboard from "./pages/DataIntegrity";
 import WH2Dashboard from "./pages/buildingWH2";
+import BatchReportPreview from "./pages/DataExtractor/BatchReportPreview";
+import BatchPage from "./pages/DataExtractor/ParentPage";
  
 
 
@@ -192,6 +194,8 @@ const [levelData, setLevelData] = useState();
               <Route path="/FetteOeeDashboard" element={<FetteOeeDashboard />} />
               <Route path="/DataMonitor" element={<MachineDashboard />} />
               <Route path="/DataIntegrity" element={<DataIntegrityDashboard />} />
+              <Route path="/BatchReportPreview" element={<BatchReportPreview />} />
+              <Route path="/BatchPage" element={<BatchPage />} />
               
             </Routes>
           </div>

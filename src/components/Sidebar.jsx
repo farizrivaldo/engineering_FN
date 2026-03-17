@@ -276,7 +276,12 @@ if (userGlobal.level == 2) {
           { name: "Database", path: "/DataMonitor", visible: userGlobal.level > 4 },
           { name: "Tabel Integrity", path: "/DataIntegrity", visible: userGlobal.level > 4 },
         ],
-      }
+      },
+      {
+        name: "Form",
+        icon: <Description size={21} className="flex-shrink-0 m-1"/>,
+        path: "/BatchPage",
+      },
     
     );
     }
