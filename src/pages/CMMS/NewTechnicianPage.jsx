@@ -22,7 +22,7 @@ const WorkOrderDashboard = () => {
     const fetchWorkOrders = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://10.126.15.138:8002/part/getWorkOrders'); 
+            const response = await fetch('http://10.126.15.197:8002/part/getWorkOrders'); 
             const data = await response.json();
             if (Array.isArray(data)) setWorkOrders(data);
             else setWorkOrders([]);
@@ -35,7 +35,7 @@ const WorkOrderDashboard = () => {
 
     const openWorkOrder = async (pwo_number) => {
         try {
-            const response = await fetch(`http://10.126.15.138:8002/part/${pwo_number}`);
+            const response = await fetch(`http://10.126.15.197:8002/part/${pwo_number}`);
             const data = await response.json();
             if (!response.ok) return alert(`Error: ${data.message || 'Check console'}`);
 
@@ -84,7 +84,7 @@ const WorkOrderDashboard = () => {
     const saveWorkOrder = async () => {
         setSaving(true);
         try {
-            await fetch(`http://10.126.15.138:8002/part/${selectedPWO.pwo_number}`, {
+            await fetch(`http://10.126.15.197:8002/part/${selectedPWO.pwo_number}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
