@@ -22,9 +22,9 @@ const VibrationDashboard = () => {
     setLoading(true);
     try {
       const [res20s, resShifts, resDaily] = await Promise.all([
-                fetch('http://localhost:8002/part/getToday20SecAverages'),
-        fetch('http://localhost:8002/part/getShiftAverages'),
-        fetch('http://localhost:8002/part/getDailyAverages')
+                fetch('http://10.126.15.138:8002/part/getToday20SecAverages'),
+        fetch('http://10.126.15.138:8002/part/getShiftAverages'),
+        fetch('http://10.126.15.138:8002/part/getDailyAverages')
       ]);
 
       const [json20s, jsonShifts, jsonDaily] = await Promise.all([

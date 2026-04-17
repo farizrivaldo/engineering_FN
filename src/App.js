@@ -70,6 +70,8 @@ import CMMonitoring from "./pages/CMMonitoring";
 import BatchReportPreview from "./pages/DataExtractor/BatchReportPreview";
 import BatchPage from "./pages/DataExtractor/ParentPage";
 import VibrationDashboard from "./pages/CMVibration";
+import WorkOrderUploader from "./pages/CMMS/WorkOrderUploader";
+import WorkOrderDashboard from "./pages/CMMS/NewTechnicianPage";
  
 
 
@@ -200,6 +202,8 @@ const [levelData, setLevelData] = useState();
               <Route path="/BatchReportPreview" element={<BatchReportPreview />} />
               <Route path="/BatchPage" element={<BatchPage />} />
               <Route path="/CMVibration" element={<VibrationDashboard />} />
+              <Route path="/WorkOrderUploader" element={<WorkOrderUploader />} />
+              <Route path="/workorderdashboard" element={<WorkOrderDashboard />} />
               
             </Routes>
           </div>
@@ -249,6 +253,7 @@ const [levelData, setLevelData] = useState();
               <Route path="/TechnicianPage" element={<TechnicianPage />} />
               <Route path="/CompletedJobs" element={<CompletedJobsPage />} />
               <Route path="/TechnicianDashboard" element={<TechnicianDashboard />} />
+                            <Route path="/workorderdashboard" element={<WorkOrderDashboard />} />
             </Routes>
           </div>
         </div>

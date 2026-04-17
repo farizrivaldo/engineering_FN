@@ -105,7 +105,7 @@ function Login () {
     if (isSuccess) {
       loginTriggered.current = true;
       const levelNum = Number(detectedLevel);
-      const targetPath = levelNum === 4 ? '/TechnicianDashboard' : '/dashboard';
+      const targetPath = levelNum === 4 ? '/workorderdashboard' : '/dashboard';
       console.log('Login success. Detected level:', detectedLevel, '→ redirect to', targetPath);
       setTimeout(() => {
         navigate(targetPath);

@@ -264,6 +264,8 @@ if (userGlobal.level == 2) {
           { name: "Technician", path: "/TechnicianPage", visible: userGlobal.level <= 5 },
           { name: "Supervisor Approval", path: "/supervisor-approval", visible: userGlobal.level > 4 },
           { name: "Completed PWO", path: "/CompletedJobs",visible: userGlobal.level > 4 },
+          { name: "Work Order Uploader", path: "/WorkOrderUploader", visible: userGlobal.level > 4 },
+          { name: "Work Order Dashboard", path: "/workorderdashboard", visible: userGlobal.level > 4 },
         ],
       },{
         name: "Work Order",
