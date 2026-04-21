@@ -8,6 +8,8 @@ const WorkOrderDashboard = () => {
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [activeTab, setActiveTab] = useState("Open"); // <-- NEW STATE
+    const [completedFilter, setCompletedFilter] = useState("NotClosed"); // <-- NEW STATE
+
     const today = new Date();
     // getMonth() is 0-indexed (0=Jan, 3=Apr), so we add 1 and pad it to "04"
     const currentMonth = String(today.getMonth() + 1).padStart(2, '0'); 
@@ -89,7 +91,6 @@ const WorkOrderDashboard = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     operations: selectedPWO.operations,
-                    technician_summary: selectedPWO.technician_summary || '',
                     status: 'Completed'
                 }),
             });
@@ -99,6 +100,27 @@ const WorkOrderDashboard = () => {
             console.error("Failed to save work order:", error);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleCloseWorkOrder = async (pwo_number, e) => {
+        e.stopPropagation(); // Stops the row click from opening the form
+        
+        // Safety check to prevent accidental clicks
+        if (!window.confirm(`Are you sure you want to close PWO ${pwo_number}?`)) {
+            return;
+        }
+
+        try {
+            await fetch(`http://10.126.15.197:8002/part/${pwo_number}/close`, {
+                method: 'PUT'
+            });
+            
+            // Instantly refresh the dashboard to move it out of the Pending Review tab
+            fetchWorkOrders();
+        } catch (error) {
+            console.error("Failed to close work order:", error);
+            alert("Failed to communicate with server.");
         }
     };
 
@@ -136,9 +158,27 @@ const WorkOrderDashboard = () => {
     const completedCount = workOrdersForMonth.filter(wo => wo.status === 'Completed').length;
     const openCount = totalPWO - completedCount;
 
-    // --- 3. FILTER BY TAB AND SEARCH (For the actual table display) ---
+    // --- 3. FILTER BY TAB, SUB-TAB, AND SEARCH ---
     const filteredWorkOrders = workOrdersForMonth
-        .filter(wo => activeTab === 'Open' ? wo.status !== 'Completed' : wo.status === 'Completed')
+        .filter(wo => {
+            // If we are on the Open tab, just show non-completed jobs
+            if (activeTab === 'Open') {
+                return wo.status !== 'Completed';
+            } 
+            
+            // If we are on the Completed tab...
+            if (wo.status !== 'Completed') return false;
+            
+            // Handle the isClosed binary value (safely handling nulls or true/false)
+            // TINYINT(1) in MariaDB usually comes through as 0 or 1
+            const isClosedVal = wo.isClosed == 1 || wo.isClosed === true ? 1 : 0;
+            
+            if (completedFilter === 'NotClosed') {
+                return isClosedVal === 0;
+            } else {
+                return isClosedVal === 1;
+            }
+        })
         .filter(wo => {
             const term = searchTerm.toLowerCase();
             return (
@@ -221,7 +261,7 @@ const WorkOrderDashboard = () => {
                                             value={op.end_time || ''} onChange={(e) => handleOperationChange(index, 'end_time', e.target.value)} />
                                     </td>
                                     <td className="wo-td">
-                                        <input className="wo-input" type="text" placeholder="Add observation..."
+                                        <textarea className="wo-textarea" type="text" placeholder="Add Technician Notes"
                                             value={op.note || ''} onChange={(e) => handleOperationChange(index, 'note', e.target.value)} />
                                     </td>
                                 </tr>
@@ -233,6 +273,7 @@ const WorkOrderDashboard = () => {
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
                     <button className="wo-btn-cancel" onClick={() => setSelectedPWO(null)}>Cancel</button>
                     <button className="wo-btn-success" onClick={saveWorkOrder} disabled={saving}>
+                        
                         {saving ? 'Saving...' : 'Complete & Submit Work Order'}
                     </button>
                 </div>
@@ -251,7 +292,7 @@ const WorkOrderDashboard = () => {
             {/* --- CONTROLS ROW (Tabs, Date Pickers, Search) --- */}
             <div className="wo-controls-row">
                 
-                {/* 1. Tabs with Live Counters */}
+                {/* 1. Main Tabs */}
                 <div className="wo-tabs-container">
                     <button 
                         className={`wo-tab-btn ${activeTab === 'Open' ? 'active' : ''}`}
@@ -261,7 +302,10 @@ const WorkOrderDashboard = () => {
                     </button>
                     <button 
                         className={`wo-tab-btn ${activeTab === 'Completed' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('Completed')}
+                        onClick={() => {
+                            setActiveTab('Completed');
+                            setCompletedFilter('NotClosed'); // Reset to Not Closed when switching
+                        }}
                     >
                         Completed PWO <span style={{ opacity: 0.8, fontSize: '0.85em', marginLeft: '4px' }}>{completedCount}/{totalPWO}</span>
                     </button>
@@ -309,7 +353,37 @@ const WorkOrderDashboard = () => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+                
+                {/* --- NEW: Sub-Tabs for Completed Status --- */}
+                {activeTab === 'Completed' && (
+                    <div className="wo-subtabs-container" style={{ display: 'flex', gap: '8px', backgroundColor: 'var(--input-bg)', padding: '4px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                        <button 
+                            style={{
+                                padding: '6px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s',
+                                backgroundColor: completedFilter === 'NotClosed' ? 'var(--element-bg)' : 'transparent',
+                                color: completedFilter === 'NotClosed' ? 'var(--text-main)' : 'var(--text-muted)',
+                                boxShadow: completedFilter === 'NotClosed' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                            }}
+                            onClick={() => setCompletedFilter('NotClosed')}
+                        >
+                            Pending Review
+                        </button>   
+                        <button 
+                            style={{
+                                padding: '6px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s',
+                                backgroundColor: completedFilter === 'Closed' ? 'var(--element-bg)' : 'transparent',
+                                color: completedFilter === 'Closed' ? 'var(--text-main)' : 'var(--text-muted)',
+                                boxShadow: completedFilter === 'Closed' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                            }}
+                            onClick={() => setCompletedFilter('Closed')}
+                        >
+                            Closed
+                        </button>
+                    </div>
+                )}
             </div>
+
+            
 
             {loading ? <p>Loading system data...</p> : (
                 <div className="wo-table-wrapper">
@@ -340,7 +414,25 @@ const WorkOrderDashboard = () => {
                                                 </strong>
                                             </td>
                                         )}
-                                        <td className="wo-td"><button className="wo-btn-primary">Execute</button></td>
+                                        <td className="wo-td">
+                                            {/* We use Flexbox to put the buttons side-by-side cleanly */}
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                
+                                                <button className="wo-btn-primary">
+                                                    {activeTab === 'Open' ? 'Execute' : 'Review'}
+                                                </button>
+                                                {activeTab === 'Completed' && completedFilter === 'NotClosed' && (
+                                                    <button 
+                                                        className="wo-btn-success"
+                                                        style={{ padding: '8px 16px', margin: 0, backgroundColor: '#059669' }}
+                                                        onClick={(e) => handleCloseWorkOrder(wo.pwo_number, e)}
+                                                    >
+                                                        Close
+                                                    </button>
+                                                )}
+
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))
                             ) : (
