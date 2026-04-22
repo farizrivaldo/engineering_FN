@@ -241,6 +241,8 @@ if (userGlobal.level == 2) {
           { name: "Warehouse 1 Monitoring", path: "/building?tab=WH1" },
           { name: "Warehouse 2 Monitoring", path: "/WH2Dashboard" },
           { name: "Vibration", path: "/CMVibration", visible: userGlobal.level > 4 },
+          { name: "Spare Part", path: "/sparepartdashboard", visible: userGlobal.level > 4 },
+          
         ],
       },{
         name: "OPE",
