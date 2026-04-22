@@ -346,7 +346,6 @@ const BatchPage = () => {
             />
           </div>
 
-          {/* Batch Number */}
           {/* Batch Number Dropdown */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Batch Number</label>
@@ -361,7 +360,7 @@ const BatchPage = () => {
               ) : (
                 batchList.map((item, index) => (
                   <option key={index} value={item.BATCH}>
-                    {item.BATCH}
+                    {item.DISPLAY} {/* <-- UPDATED: Now shows the machine tags */}
                   </option>
                 ))
               )}

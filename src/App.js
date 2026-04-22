@@ -71,6 +71,7 @@ import BatchPage from "./pages/DataExtractor/ParentPage";
 import VibrationDashboard from "./pages/CMVibration";
 import WorkOrderUploader from "./pages/CMMS/WorkOrderUploader";
 import WorkOrderDashboard from "./pages/CMMS/NewTechnicianPage";
+import InventoryTable from "./pages/Sparepart/SparepartDashboard";
  
 
 
@@ -202,6 +203,7 @@ const [levelData, setLevelData] = useState();
               <Route path="/CMVibration" element={<VibrationDashboard />} />
               <Route path="/WorkOrderUploader" element={<WorkOrderUploader />} />
               <Route path="/workorderdashboard" element={<WorkOrderDashboard />} />
+              <Route path="/SparepartDashboard" element={<InventoryTable />} />
               
             </Routes>
           </div>

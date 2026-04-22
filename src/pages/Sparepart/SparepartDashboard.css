@@ -1,0 +1,123 @@
+/* InventoryTable.css */
+
+/* 1. Base / Light Mode Variables */
+.inventory-container {
+    --main-bg: #ffffff;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --element-bg: #ffffff;
+    --input-bg: #ffffff;
+    --hover-bg: #f3f4f6;
+    --th-bg: #f9fafb;
+    --accent-blue: #3b82f6;
+    
+    background-color: var(--main-bg);
+    color: var(--text-main);
+    padding: 24px;
+    font-family: system-ui, -apple-system, sans-serif;
+    border-radius: 8px;
+}
+
+/* 2. Global Dark Mode Overrides */
+html.dark .inventory-container, 
+html[data-theme="dark"] .inventory-container {
+    --main-bg: #121212;
+    --text-main: #ffffff;
+    --text-muted: #a0a0a0;
+    --border-color: #333333;
+    --element-bg: #1e1e1e;
+    --input-bg: #121212;
+    --hover-bg: #2a2a2a;
+    --th-bg: #1e1e1e;
+    --accent-blue: #3b82f6;
+}
+
+/* Header & Controls */
+.header-section {
+    margin-bottom: 20px;
+}
+
+.controls-section {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.search-input, .type-select {
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--input-bg);
+    color: var(--text-main);
+    font-size: 0.95rem;
+    outline: none;
+}
+
+.search-input:focus, .type-select:focus {
+    border-color: var(--accent-blue);
+}
+
+.search-input {
+    flex-grow: 1;
+    max-width: 400px;
+}
+
+/* 3. The Scrollable Container */
+.table-wrapper {
+    max-height: 65vh; /* Prevents the page from scrolling, only the table scrolls */
+    overflow-y: auto; 
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--element-bg);
+}
+
+.inventory-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+/* 4. Sticky Headers */
+.inventory-table th {
+    position: sticky;
+    top: 0; /* Sticks to the top of the .table-wrapper */
+    z-index: 10; /* Ensures headers stay above the scrolling rows */
+    padding: 14px 16px;
+    font-weight: 600;
+    color: var(--text-main);
+    background-color: var(--th-bg);
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); /* Adds a tiny shadow when scrolling */
+}
+
+.inventory-table td {
+    padding: 14px 16px;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--element-bg);
+}
+
+.inventory-table tbody tr:hover td {
+    background-color: var(--hover-bg);
+}
+
+.description-subtext {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Stock Status Colors */
+.stock-low {
+    color: #ef4444; 
+    font-weight: 700;
+}
+
+.stock-ok {
+    color: #10b981; 
+    font-weight: 700;
+}

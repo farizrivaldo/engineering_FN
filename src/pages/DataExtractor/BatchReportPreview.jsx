@@ -272,13 +272,69 @@ const clean = (val) => {
         </button>
       </div>
 
-      {/* STATIC GENERAL INFO */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white p-4 rounded shadow-sm mb-6 border">
-        <div><strong className="block text-gray-500 text-sm">Nama Produk</strong> {reportData.nama_produk}</div>
-        <div><strong className="block text-gray-500 text-sm">Nomor Batch</strong> {reportData.nomor_batch}</div>
-        <div><strong className="block text-gray-500 text-sm">Tanggal Proses</strong> {reportData.tanggal_proses}</div>
-        <div><strong className="block text-gray-500 text-sm">Recipe</strong> {reportData.recipe}</div>
-      </div>
+      {/* In your Batch Information Table */}
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white p-4 rounded shadow-sm mb-6 border">
+  <div>
+    <p className="text-gray-500 text-xs font-bold uppercase">Start Time</p>
+    <p className="font-semibold text-sm">{reportData.batch_start_time || '-'}</p>
+  </div>
+  <div>
+    <p className="text-gray-500 text-xs font-bold uppercase">End Time</p>
+    <p className="font-semibold text-sm">{reportData.batch_end_time || '-'}</p>
+  </div>
+  <div>
+    <p className="text-gray-500 text-xs font-bold uppercase">Total Duration</p>
+    <p className="font-semibold text-sm text-blue-600 font-mono">
+       {reportData.batch_total_duration || '-'}
+    </p>
+  </div>
+  <div>
+    <p className="text-gray-500 text-xs font-bold uppercase">Recipe</p>
+    <p className="font-semibold text-sm">Standard Recipe</p>
+  </div>
+</div>
+
+      {/* DYNAMIC GENERAL INFO */}
+<div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-white p-6 rounded shadow-sm mb-6 border border-gray-100">
+  
+  {/* Row 1: The Core Identity */}
+  <div>
+    <strong className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1">Nama Produk</strong>
+    <span className="text-gray-800 font-bold">{reportData.product_name || "Unknown Product"}</span>
+  </div>
+  
+  <div>
+    <strong className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1">Nomor Batch</strong>
+    <span className="text-gray-800 font-bold">{reportData.nomor_batch || "-"}</span>
+  </div>
+
+  <div>
+    <strong className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1">Recipe Name</strong>
+    <span className="text-blue-600 font-bold">{reportData.recipe_name || "Standard"}</span>
+  </div>
+
+  <div>
+    <strong className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1">Tanggal Proses</strong>
+    <span className="text-gray-800 font-bold">{reportData.tanggal_proses || "-"}</span>
+  </div>
+
+  {/* Row 2: The Timeline Data (Optional but recommended) */}
+  <div className="pt-2 border-t md:border-t-0">
+    <strong className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1">Start Time</strong>
+    <span className="text-gray-700 font-medium">{reportData.batch_start_time || "--:--"}</span>
+  </div>
+
+  <div className="pt-2 border-t md:border-t-0">
+    <strong className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1">End Time</strong>
+    <span className="text-gray-700 font-medium">{reportData.batch_end_time || "--:--"}</span>
+  </div>
+
+  <div className="pt-2 border-t md:border-t-0">
+    <strong className="block text-gray-400 text-[10px] uppercase tracking-wider mb-1">Total Duration</strong>
+    <span className="text-indigo-600 font-bold font-mono text-sm">{reportData.batch_total_duration || "-"}</span>
+  </div>
+
+</div>
 
       {/* TAB NAVIGATION */}
       <div className="flex space-x-4 mb-6 border-b">
@@ -316,20 +372,19 @@ const clean = (val) => {
           <ProcessTable 
             title="Speed & Waktu" 
             dataRows={[
-              { label: 'Speed (RPM)', set: reportData.binder_speed_set1, min: reportData.binder_speed_min1, max: reportData.binder_speed_max1, avg: reportData.binder_speed_avg1 },
-              { label: 'Waktu (menit)', set: reportData.binder_waktu_set1, min: reportData.binder_waktu_min1, max: reportData.binder_waktu_max1, avg: reportData.binder_waktu_avg1 }
+              { label: 'Speed (RPM)', set: reportData.pma_recipe_pump_speed1 ?? '-', min: reportData.binder_speed_min1, max: reportData.binder_speed_max1, avg: reportData.binder_speed_avg1 },
+              { label: 'Waktu (menit)', set: '-', min: reportData.binder_waktu_min1, max: reportData.binder_waktu_max1, avg: reportData.binder_waktu_avg1 }
             ]} 
           />
 
-          <h2 className="text-xl font-bold text-gray-800 border-b pb-2">TRANSFER GRANUL BASAH (LOT 1)</h2>
+          <h2 className="text-xl font-bold text-gray-800 border-b pb-2 mt-8 mb-4">TRANSFER GRANUL BASAH (LOT 1)</h2>
           <h2 className="text-xl font-bold text-gray-800 border-b pb-2 mt-8 mb-4">GRANULASI (LOT 1)</h2>
           
-          {/* --- UPDATED: MIXING IV --- */}
           <ProcessTable 
             title="Input Material I" 
             dataRows={[
-              { label: 'Impeller loading speed (RPM)', set: reportData.input1_impeller_set1, min: reportData.input1_impeller_min1, max: reportData.input1_impeller_max1, avg: reportData.input1_impeller_avg1 },
-              { label: 'Filter clear interval time (sec)', set: reportData.input1_filter_clear_set1, min: reportData.input1_filter_clear_min1, max: reportData.input1_filter_clear_max1, avg: reportData.input1_filter_clear_avg1 },
+              { label: 'Impeller loading speed (RPM)', set: reportData.pma_recipe_loading_speed ?? '-', min: reportData.input1_impeller_min1, max: reportData.input1_impeller_max1, avg: reportData.input1_impeller_avg1 },
+              { label: 'Filter clear interval time (sec)', set: reportData.pma_recipe_filter_interval ?? '-', min: reportData.input1_filter_clear_min1, max: reportData.input1_filter_clear_max1, avg: reportData.input1_filter_clear_avg1 },
               { label: 'Waktu loading (menit)', set: '-', min: reportData.input1_waktu_min1, max: reportData.input1_waktu_max1, avg: reportData.input1_waktu_avg1 }
             ]} 
           />
@@ -337,213 +392,212 @@ const clean = (val) => {
           <ProcessTable 
             title="Mixing I" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.mix1_impeller_set1, min: reportData.mix1_impeller_min1, max: reportData.mix1_impeller_max1, avg: reportData.mix1_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.mix1_chopper_set1, min: reportData.mix1_chopper_min1, max: reportData.mix1_chopper_max1, avg: reportData.mix1_chopper_avg1 },
-              { label: 'Waktu (menit)', set: reportData.mix1_waktu_set1, min: reportData.mix1_waktu_min1, max: reportData.mix1_waktu_max1, avg: reportData.mix1_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.mix1_recipe_impeller ?? '-', min: reportData.mix1_impeller_min1, max: reportData.mix1_impeller_max1, avg: reportData.mix1_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.mix1_recipe_chopper ?? '-', min: reportData.mix1_chopper_min1, max: reportData.mix1_chopper_max1, avg: reportData.mix1_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.mix1_recipe_time ?? '-', min: reportData.mix1_waktu_min1, max: reportData.mix1_waktu_max1, avg: reportData.mix1_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Input Material II" 
             dataRows={[
-              { label: 'Impeller loading speed (RPM)', set: reportData.input2_impeller_set1, min: reportData.input2_impeller_min1, max: reportData.input2_impeller_max1, avg: reportData.input2_impeller_avg1 },
-              { label: 'Filter clear interval time (sec)', set: reportData.input2_filter_clear_set1, min: reportData.input2_filter_clear_min1, max: reportData.input2_filter_clear_max1, avg: reportData.input2_filter_clear_avg1 },
+              { label: 'Impeller loading speed (RPM)', set: reportData.pma_recipe_loading_speed ?? '-', min: reportData.input2_impeller_min1, max: reportData.input2_impeller_max1, avg: reportData.input2_impeller_avg1 },
+              { label: 'Filter clear interval time (sec)', set: reportData.pma_recipe_filter_interval ?? '-', min: reportData.input2_filter_clear_min1, max: reportData.input2_filter_clear_max1, avg: reportData.input2_filter_clear_avg1 },
               { label: 'Waktu loading (menit)', set: '-', min: reportData.input2_waktu_min1, max: reportData.input2_waktu_max1, avg: reportData.input2_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Mixing II" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.mix2_impeller_set1, min: reportData.mix2_impeller_min1, max: reportData.mix2_impeller_max1, avg: reportData.mix2_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.mix2_chopper_set1, min: reportData.mix2_chopper_min1, max: reportData.mix2_chopper_max1, avg: reportData.mix2_chopper_avg1 },
-              { label: 'Waktu (menit)', set: reportData.mix2_waktu_set1, min: reportData.mix2_waktu_min1, max: reportData.mix2_waktu_max1, avg: reportData.mix2_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.mix2_recipe_impeller ?? '-', min: reportData.mix2_impeller_min1, max: reportData.mix2_impeller_max1, avg: reportData.mix2_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.mix2_recipe_chopper ?? '-', min: reportData.mix2_chopper_min1, max: reportData.mix2_chopper_max1, avg: reportData.mix2_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.mix2_recipe_time ?? '-', min: reportData.mix2_waktu_min1, max: reportData.mix2_waktu_max1, avg: reportData.mix2_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Mixing III" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.mix3_impeller_set1, min: reportData.mix3_impeller_min1, max: reportData.mix3_impeller_max1, avg: reportData.mix3_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.mix3_chopper_set1, min: reportData.mix3_chopper_min1, max: reportData.mix3_chopper_max1, avg: reportData.mix3_chopper_avg1 },
-              { label: 'Waktu (menit)', set: reportData.mix3_waktu_set1, min: reportData.mix3_waktu_min1, max: reportData.mix3_waktu_max1, avg: reportData.mix3_waktu_avg1 },
-              { label: '% Pump Speed', set: reportData.mix3_pump_set1, min: reportData.mix3_pump_min1, max: reportData.mix3_pump_max1, avg: reportData.mix3_pump_avg1 },
-              { label: 'Ampere (A)', set: reportData.mix3_ampere_set1, min: reportData.mix3_ampere_min1, max: reportData.mix3_ampere_max1, avg: reportData.mix3_ampere_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.mix3_recipe_impeller ?? '-', min: reportData.mix3_impeller_min1, max: reportData.mix3_impeller_max1, avg: reportData.mix3_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.mix3_recipe_chopper ?? '-', min: reportData.mix3_chopper_min1, max: reportData.mix3_chopper_max1, avg: reportData.mix3_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.mix3_recipe_time ?? '-', min: reportData.mix3_waktu_min1, max: reportData.mix3_waktu_max1, avg: reportData.mix3_waktu_avg1 },
+              { label: '% Pump Speed', set: reportData.mix3_recipe_pump ?? '-', min: reportData.mix3_pump_min1, max: reportData.mix3_pump_max1, avg: reportData.mix3_pump_avg1 },
+              { label: 'Ampere (A)', set: '-', min: reportData.mix3_ampere_min1, max: reportData.mix3_ampere_max1, avg: reportData.mix3_ampere_avg1 }
             ]} 
           />
-         {/* --- UPDATED: MIXING IV --- */}
           <ProcessTable 
             title="Mixing IV" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.mix4_impeller_set1, min: reportData.mix4_impeller_min1, max: reportData.mix4_impeller_max1, avg: reportData.mix4_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.mix4_chopper_set1, min: reportData.mix4_chopper_min1, max: reportData.mix4_chopper_max1, avg: reportData.mix4_chopper_avg1 },
-              { label: 'Waktu (menit)', set: reportData.mix4_waktu_set1, min: reportData.mix4_waktu_min1, max: reportData.mix4_waktu_max1, avg: reportData.mix4_waktu_avg1 },
-              { label: '% Pump Speed', set: reportData.mix4_pump_set1, min: reportData.mix4_pump_min1, max: reportData.mix4_pump_max1, avg: reportData.mix4_pump_avg1 },
-              { label: 'Ampere (A)', set: reportData.mix4_ampere_set1, min: reportData.mix4_ampere_min1, max: reportData.mix4_ampere_max1, avg: reportData.mix4_ampere_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.mix4_recipe_impeller ?? '-', min: reportData.mix4_impeller_min1, max: reportData.mix4_impeller_max1, avg: reportData.mix4_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.mix4_recipe_chopper ?? '-', min: reportData.mix4_chopper_min1, max: reportData.mix4_chopper_max1, avg: reportData.mix4_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.mix4_recipe_time ?? '-', min: reportData.mix4_waktu_min1, max: reportData.mix4_waktu_max1, avg: reportData.mix4_waktu_avg1 },
+              { label: '% Pump Speed', set: reportData.mix4_recipe_pump ?? '-', min: reportData.mix4_pump_min1, max: reportData.mix4_pump_max1, avg: reportData.mix4_pump_avg1 },
+              { label: 'Ampere (A)', set: '-', min: reportData.mix4_ampere_min1, max: reportData.mix4_ampere_max1, avg: reportData.mix4_ampere_avg1 }
             ]} 
           />
           
           <ProcessTable 
             title="Discharge I (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge1_impeller_set1, min: reportData.discharge1_impeller_min1, max: reportData.discharge1_impeller_max1, avg: reportData.discharge1_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge1_chopper_set1, min: reportData.discharge1_chopper_min1, max: reportData.discharge1_chopper_max1, avg: reportData.discharge1_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge1_waktu_min1, max: reportData.discharge1_waktu_max1, avg: reportData.discharge1_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge1_recipe_impeller ?? '-', min: reportData.discharge1_impeller_min1, max: reportData.discharge1_impeller_max1, avg: reportData.discharge1_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge1_recipe_chopper ?? '-', min: reportData.discharge1_chopper_min1, max: reportData.discharge1_chopper_max1, avg: reportData.discharge1_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge1_recipe_time ?? '-', min: reportData.discharge1_waktu_min1, max: reportData.discharge1_waktu_max1, avg: reportData.discharge1_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge II (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge2_impeller_set1, min: reportData.discharge2_impeller_min1, max: reportData.discharge2_impeller_max1, avg: reportData.discharge2_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge2_chopper_set1, min: reportData.discharge2_chopper_min1, max: reportData.discharge2_chopper_max1, avg: reportData.discharge2_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge2_waktu_min1, max: reportData.discharge2_waktu_max1, avg: reportData.discharge2_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge2_recipe_impeller ?? '-', min: reportData.discharge2_impeller_min1, max: reportData.discharge2_impeller_max1, avg: reportData.discharge2_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge2_recipe_chopper ?? '-', min: reportData.discharge2_chopper_min1, max: reportData.discharge2_chopper_max1, avg: reportData.discharge2_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge2_recipe_time ?? '-', min: reportData.discharge2_waktu_min1, max: reportData.discharge2_waktu_max1, avg: reportData.discharge2_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge III (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge3_impeller_set1, min: reportData.discharge3_impeller_min1, max: reportData.discharge3_impeller_max1, avg: reportData.discharge3_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge3_chopper_set1, min: reportData.discharge3_chopper_min1, max: reportData.discharge3_chopper_max1, avg: reportData.discharge3_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge3_waktu_min1, max: reportData.discharge3_waktu_max1, avg: reportData.discharge3_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge3_recipe_impeller ?? '-', min: reportData.discharge3_impeller_min1, max: reportData.discharge3_impeller_max1, avg: reportData.discharge3_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge3_recipe_chopper ?? '-', min: reportData.discharge3_chopper_min1, max: reportData.discharge3_chopper_max1, avg: reportData.discharge3_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge3_recipe_time ?? '-', min: reportData.discharge3_waktu_min1, max: reportData.discharge3_waktu_max1, avg: reportData.discharge3_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge IV (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge4_impeller_set1, min: reportData.discharge4_impeller_min1, max: reportData.discharge4_impeller_max1, avg: reportData.discharge4_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge4_chopper_set1, min: reportData.discharge4_chopper_min1, max: reportData.discharge4_chopper_max1, avg: reportData.discharge4_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge4_waktu_min1, max: reportData.discharge4_waktu_max1, avg: reportData.discharge4_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge4_recipe_impeller ?? '-', min: reportData.discharge4_impeller_min1, max: reportData.discharge4_impeller_max1, avg: reportData.discharge4_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge4_recipe_chopper ?? '-', min: reportData.discharge4_chopper_min1, max: reportData.discharge4_chopper_max1, avg: reportData.discharge4_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge4_recipe_time ?? '-', min: reportData.discharge4_waktu_min1, max: reportData.discharge4_waktu_max1, avg: reportData.discharge4_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge V (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge5_impeller_set1, min: reportData.discharge5_impeller_min1, max: reportData.discharge5_impeller_max1, avg: reportData.discharge5_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge5_chopper_set1, min: reportData.discharge5_chopper_min1, max: reportData.discharge5_chopper_max1, avg: reportData.discharge5_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge5_waktu_min1, max: reportData.discharge5_waktu_max1, avg: reportData.discharge5_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge5_recipe_impeller ?? '-', min: reportData.discharge5_impeller_min1, max: reportData.discharge5_impeller_max1, avg: reportData.discharge5_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge5_recipe_chopper ?? '-', min: reportData.discharge5_chopper_min1, max: reportData.discharge5_chopper_max1, avg: reportData.discharge5_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge5_recipe_time ?? '-', min: reportData.discharge5_waktu_min1, max: reportData.discharge5_waktu_max1, avg: reportData.discharge5_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge VI (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge6_impeller_set1, min: reportData.discharge6_impeller_min1, max: reportData.discharge6_impeller_max1, avg: reportData.discharge6_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge6_chopper_set1, min: reportData.discharge6_chopper_min1, max: reportData.discharge6_chopper_max1, avg: reportData.discharge6_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge6_waktu_min1, max: reportData.discharge6_waktu_max1, avg: reportData.discharge6_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge6_recipe_impeller ?? '-', min: reportData.discharge6_impeller_min1, max: reportData.discharge6_impeller_max1, avg: reportData.discharge6_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge6_recipe_chopper ?? '-', min: reportData.discharge6_chopper_min1, max: reportData.discharge6_chopper_max1, avg: reportData.discharge6_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge6_recipe_time ?? '-', min: reportData.discharge6_waktu_min1, max: reportData.discharge6_waktu_max1, avg: reportData.discharge6_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge VII (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge7_impeller_set1, min: reportData.discharge7_impeller_min1, max: reportData.discharge7_impeller_max1, avg: reportData.discharge7_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge7_chopper_set1, min: reportData.discharge7_chopper_min1, max: reportData.discharge7_chopper_max1, avg: reportData.discharge7_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge7_waktu_min1, max: reportData.discharge7_waktu_max1, avg: reportData.discharge7_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge7_recipe_impeller ?? '-', min: reportData.discharge7_impeller_min1, max: reportData.discharge7_impeller_max1, avg: reportData.discharge7_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge7_recipe_chopper ?? '-', min: reportData.discharge7_chopper_min1, max: reportData.discharge7_chopper_max1, avg: reportData.discharge7_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge7_recipe_time ?? '-', min: reportData.discharge7_waktu_min1, max: reportData.discharge7_waktu_max1, avg: reportData.discharge7_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge VIII (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge8_impeller_set1, min: reportData.discharge8_impeller_min1, max: reportData.discharge8_impeller_max1, avg: reportData.discharge8_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge8_chopper_set1, min: reportData.discharge8_chopper_min1, max: reportData.discharge8_chopper_max1, avg: reportData.discharge8_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge8_waktu_min1, max: reportData.discharge8_waktu_max1, avg: reportData.discharge8_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge8_recipe_impeller ?? '-', min: reportData.discharge8_impeller_min1, max: reportData.discharge8_impeller_max1, avg: reportData.discharge8_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge8_recipe_chopper ?? '-', min: reportData.discharge8_chopper_min1, max: reportData.discharge8_chopper_max1, avg: reportData.discharge8_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge8_recipe_time ?? '-', min: reportData.discharge8_waktu_min1, max: reportData.discharge8_waktu_max1, avg: reportData.discharge8_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge IX (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge9_impeller_set1, min: reportData.discharge9_impeller_min1, max: reportData.discharge9_impeller_max1, avg: reportData.discharge9_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge9_chopper_set1, min: reportData.discharge9_chopper_min1, max: reportData.discharge9_chopper_max1, avg: reportData.discharge9_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge9_waktu_min1, max: reportData.discharge9_waktu_max1, avg: reportData.discharge9_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge9_recipe_impeller ?? '-', min: reportData.discharge9_impeller_min1, max: reportData.discharge9_impeller_max1, avg: reportData.discharge9_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge9_recipe_chopper ?? '-', min: reportData.discharge9_chopper_min1, max: reportData.discharge9_chopper_max1, avg: reportData.discharge9_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge9_recipe_time ?? '-', min: reportData.discharge9_waktu_min1, max: reportData.discharge9_waktu_max1, avg: reportData.discharge9_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge X (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge10_impeller_set1, min: reportData.discharge10_impeller_min1, max: reportData.discharge10_impeller_max1, avg: reportData.discharge10_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge10_chopper_set1, min: reportData.discharge10_chopper_min1, max: reportData.discharge10_chopper_max1, avg: reportData.discharge10_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge10_waktu_min1, max: reportData.discharge10_waktu_max1, avg: reportData.discharge10_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge10_recipe_impeller ?? '-', min: reportData.discharge10_impeller_min1, max: reportData.discharge10_impeller_max1, avg: reportData.discharge10_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge10_recipe_chopper ?? '-', min: reportData.discharge10_chopper_min1, max: reportData.discharge10_chopper_max1, avg: reportData.discharge10_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge10_recipe_time ?? '-', min: reportData.discharge10_waktu_min1, max: reportData.discharge10_waktu_max1, avg: reportData.discharge10_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge XI (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge11_impeller_set1, min: reportData.discharge11_impeller_min1, max: reportData.discharge11_impeller_max1, avg: reportData.discharge11_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge11_chopper_set1, min: reportData.discharge11_chopper_min1, max: reportData.discharge11_chopper_max1, avg: reportData.discharge11_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge11_waktu_min1, max: reportData.discharge11_waktu_max1, avg: reportData.discharge11_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge11_recipe_impeller ?? '-', min: reportData.discharge11_impeller_min1, max: reportData.discharge11_impeller_max1, avg: reportData.discharge11_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge11_recipe_chopper ?? '-', min: reportData.discharge11_chopper_min1, max: reportData.discharge11_chopper_max1, avg: reportData.discharge11_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge11_recipe_time ?? '-', min: reportData.discharge11_waktu_min1, max: reportData.discharge11_waktu_max1, avg: reportData.discharge11_waktu_avg1 }
             ]} 
           />
           <ProcessTable 
             title="Discharge XII (Lot 1)" 
             dataRows={[
-              { label: 'Impeller (RPM)', set: reportData.discharge12_impeller_set1, min: reportData.discharge12_impeller_min1, max: reportData.discharge12_impeller_max1, avg: reportData.discharge12_impeller_avg1 },
-              { label: 'Chopper (RPM)', set: reportData.discharge12_chopper_set1, min: reportData.discharge12_chopper_min1, max: reportData.discharge12_chopper_max1, avg: reportData.discharge12_chopper_avg1 },
-              { label: 'Waktu (menit)', set: null, min: reportData.discharge12_waktu_min1, max: reportData.discharge12_waktu_max1, avg: reportData.discharge12_waktu_avg1 }
+              { label: 'Impeller (RPM)', set: reportData.discharge12_recipe_impeller ?? '-', min: reportData.discharge12_impeller_min1, max: reportData.discharge12_impeller_max1, avg: reportData.discharge12_impeller_avg1 },
+              { label: 'Chopper (RPM)', set: reportData.discharge12_recipe_chopper ?? '-', min: reportData.discharge12_chopper_min1, max: reportData.discharge12_chopper_max1, avg: reportData.discharge12_chopper_avg1 },
+              { label: 'Waktu (menit)', set: reportData.discharge12_recipe_time ?? '-', min: reportData.discharge12_waktu_min1, max: reportData.discharge12_waktu_max1, avg: reportData.discharge12_waktu_avg1 }
             ]} 
           />
+
           <h2 className="text-xl font-bold text-gray-800 border-b pb-2 mt-8 mb-4">LOADING (LOT 1)</h2>
-          <ProcessTable 
+<ProcessTable 
   title="Loading Parameters" 
   dataRows={[
-    { label: 'Inlet temperature', set: '-', min: clean(reportData.loading_temp_min1), max: clean(reportData.loading_temp_max1), avg: clean(reportData.loading_temp_avg1) },
-    { label: 'Air Flow', set: '-', min: clean(reportData.loading_flow_min1), max: clean(reportData.loading_flow_max1), avg: clean(reportData.loading_flow_avg1) },
-    { label: 'Filter Clear Interval', set: '-', min: clean(reportData.loading_filter_min1), max: clean(reportData.loading_filter_max1), avg: clean(reportData.loading_filter_avg1) },
-    { label: 'Number of Filter Shake', set: '-', min: clean(reportData.loading_filtershake_min1), max: clean(reportData.loading_filtershake_max1), avg: clean(reportData.loading_filtershake_avg1) },
-    { label: 'Time', set: '-', min: clean(reportData.loading_time_avg1), max: clean(reportData.loading_time_avg1), avg: clean(reportData.loading_time_avg1) },
-    { label: '% Valve', set: '-', min: clean(reportData.loading_valve_min1), max: clean(reportData.loading_valve_max1), avg: clean(reportData.loading_valve_avg1) }
+    { label: 'Inlet temperature', set: reportData.loading_recipe_temp || '-', min: clean(reportData.loading_temp_min1), max: clean(reportData.loading_temp_max1), avg: clean(reportData.loading_temp_avg1) },
+    { label: 'Air Flow', set: reportData.loading_recipe_flow || '-', min: clean(reportData.loading_flow_min1), max: clean(reportData.loading_flow_max1), avg: clean(reportData.loading_flow_avg1) },
+    { label: 'Filter Clear Interval', set: reportData.loading_recipe_filter || '-', min: clean(reportData.loading_filter_min1), max: clean(reportData.loading_filter_max1), avg: clean(reportData.loading_filter_avg1) },
+    { label: 'Number of Filter Shake', set: reportData.loading_recipe_filtershake || '-', min: clean(reportData.loading_filtershake_min1), max: clean(reportData.loading_filtershake_max1), avg: clean(reportData.loading_filtershake_avg1) },
+    { label: 'Time', set: reportData.loading_recipe_time || '-', min: clean(reportData.loading_time_avg1), max: clean(reportData.loading_time_avg1), avg: clean(reportData.loading_time_avg1) },
+    { label: '% Valve', set: reportData.loading_recipe_valve || '-', min: clean(reportData.loading_valve_min1), max: clean(reportData.loading_valve_max1), avg: clean(reportData.loading_valve_avg1) }
   ]} 
 />
 
           <h2 className="text-xl font-bold text-gray-800 border-b pb-2 mt-8 mb-4">DRYING (LOT 1)</h2>
-                        <ProcessTable 
-                title="Drying Parameters" 
-                dataRows={[
-                  { label: 'Inlet temperature', set: '-', min: clean(reportData.drying_temp_min1), max: clean(reportData.drying_temp_max1), avg: clean(reportData.drying_temp_avg1) },
-                  { label: 'Air Flow', set: '-', min: clean(reportData.drying_airflow_min1), max: clean(reportData.drying_airflow_max1), avg: clean(reportData.drying_airflow_avg1) },
-                  { label: 'Filter Clear Interval', set: '-', min: clean(reportData.drying_filter_min1), max: clean(reportData.drying_filter_max1), avg: clean(reportData.drying_filter_avg1) },
-                  { label: 'Number of Filter Shake', set: '-', min: clean(reportData.drying_filtershake_min1), max: clean(reportData.drying_filtershake_max1), avg: clean(reportData.drying_filtershake_avg1) },
-                  // Use 'drying_pengeringan_avg1' here for the "Waktu Pengeringan" row
-                  { label: 'Waktu Pengeringan', set: '-', min: reportData.drying_pengeringan_avg1, max: reportData.drying_pengeringan_avg1, avg: reportData.drying_pengeringan_avg1 },
-                  { label: 'Exhaust temperature', set: '-', min: '-', max: '-', avg: '-' }
-                ]} 
-              />
+<ProcessTable 
+  title="Drying Parameters" 
+  dataRows={[
+    { label: 'Inlet temperature', set: reportData.drying_recipe_temp || '-', min: clean(reportData.drying_temp_min1), max: clean(reportData.drying_temp_max1), avg: clean(reportData.drying_temp_avg1) },
+    { label: 'Air Flow', set: reportData.drying_recipe_flow || '-', min: clean(reportData.drying_airflow_min1), max: clean(reportData.drying_airflow_max1), avg: clean(reportData.drying_airflow_avg1) },
+    { label: 'Filter Clear Interval', set: reportData.drying_recipe_filter || '-', min: clean(reportData.drying_filter_min1), max: clean(reportData.drying_filter_max1), avg: clean(reportData.drying_filter_avg1) },
+    { label: 'Number of Filter Shake', set: reportData.drying_recipe_filtershake || '-', min: clean(reportData.drying_filtershake_min1), max: clean(reportData.drying_filtershake_max1), avg: clean(reportData.drying_filtershake_avg1) },
+    { label: 'Waktu Pengeringan', set: reportData.drying_recipe_time || '-', min: reportData.drying_pengeringan_avg1, max: reportData.drying_pengeringan_avg1, avg: reportData.drying_pengeringan_avg1 },
+    { label: 'Exhaust temperature', set: reportData.drying_recipe_exhaust || '-', min: '-', max: '-', avg: '-' }
+  ]} 
+/>
 
           <h2 className="text-xl font-bold text-gray-800 border-b pb-2 mt-8 mb-4">TRANSFER GRANUL KERING (LOT 1)</h2>
           <ProcessTable 
             title="Transfer Parameters" 
             dataRows={[
               { label: 'Start time', set: reportData.transfer_start_set1, min: reportData.transfer_start_min1, max: reportData.transfer_start_max1, avg: reportData.transfer_start_avg1 },
-              { label: 'End time', set: reportData.transfer_end_set1, min: reportData.transfer_end_min1, max: reportData.transfer_end_max1, avg: reportData.transfer_end_avg1 },
-              { label: 'Inlet Temperature', set: reportData.transfer_inlet_set1, min: reportData.transfer_inlet_min1, max: reportData.transfer_inlet_max1, avg: reportData.transfer_inlet_avg1 },
-              { label: 'Air Flow', set: reportData.transfer_flow_set1, min: reportData.transfer_flow_min1, max: reportData.transfer_flow_max1, avg: reportData.transfer_flow_avg1 }
-            ]} 
+    { label: 'End time', set: reportData.transfer_end_set1, min: reportData.transfer_end_min1, max: reportData.transfer_end_max1, avg: reportData.transfer_end_avg1 },
+    { label: 'Inlet Temperature', set: reportData.transfer_recipe_temp || '-', min: reportData.transfer_inlet_min1, max: reportData.transfer_inlet_max1, avg: reportData.transfer_inlet_avg1 },
+    { label: 'Air Flow', set: reportData.transfer_recipe_flow || '-', min: reportData.transfer_flow_min1, max: reportData.transfer_flow_max1, avg: reportData.transfer_flow_avg1 }
+  ]}
           />
 
           <h2 className="text-xl font-bold text-gray-800 border-b pb-2 mt-8 mb-4">PENGAYAKAN & FINAL MIXING (LOT 1)</h2>
           {/* Discharge I */}
-            <ProcessTable 
-              title="Discharge I" 
-              dataRows={[
-                { label: 'Prod. Discharge valve position (%)', set: '-', min: clean(reportData.discharge1_valve_min1), max: clean(reportData.discharge1_valve_max1), avg: clean(reportData.discharge1_valve_avg1) },
-                { label: 'Speed (RPM)', set: '-', min: clean(reportData.discharge1_speed_min1), max: clean(reportData.discharge1_speed_max1), avg: clean(reportData.discharge1_speed_avg1) },
-                { label: 'Waktu (minutes)', set: '-', min: reportData.discharge1_waktu_avg1, max: reportData.discharge1_waktu_avg1, avg: reportData.discharge1_waktu_avg1 }
-              ]} 
-            />
+<ProcessTable 
+  title="Discharge I" 
+  dataRows={[
+    { label: 'Prod. Discharge valve position (%)', set: reportData.discharge_1_recipe_valve ?? '-', min: clean(reportData.discharge1_valve_min1), max: clean(reportData.discharge1_valve_max1), avg: clean(reportData.discharge1_valve_avg1) },
+    { label: 'Speed (RPM)', set: reportData.discharge_1_recipe_speed ?? '-', min: clean(reportData.discharge1_speed_min1), max: clean(reportData.discharge1_speed_max1), avg: clean(reportData.discharge1_speed_avg1) },
+    { label: 'Waktu (minutes)', set: reportData.discharge_1_recipe_time ?? '-', min: reportData.discharge1_waktu_avg1, max: reportData.discharge1_waktu_avg1, avg: reportData.discharge1_waktu_avg1 }
+  ]} 
+/>
 
             {/* Discharge II */}
-            <ProcessTable 
-              title="Discharge II" 
-              dataRows={[
-                { label: 'Prod. Discharge valve position (%)', set: '-', min: clean(reportData.discharge2_valve_min1), max: clean(reportData.discharge2_valve_max1), avg: clean(reportData.discharge2_valve_avg1) },
-                { label: 'Speed (RPM)', set: '-', min: clean(reportData.discharge2_speed_min1), max: clean(reportData.discharge2_speed_max1), avg: clean(reportData.discharge2_speed_avg1) },
-                { label: 'Waktu (minutes)', set: '-', min: reportData.discharge2_waktu_avg1, max: reportData.discharge2_waktu_avg1, avg: reportData.discharge2_waktu_avg1 }
-              ]} 
-            />
+<ProcessTable 
+  title="Discharge II" 
+  dataRows={[
+    { label: 'Prod. Discharge valve position (%)', set: reportData.discharge_2_recipe_valve ?? '-', min: clean(reportData.discharge2_valve_min1), max: clean(reportData.discharge2_valve_max1), avg: clean(reportData.discharge2_valve_avg1) },
+    { label: 'Speed (RPM)', set: reportData.discharge_2_recipe_speed ?? '-', min: clean(reportData.discharge2_speed_min1), max: clean(reportData.discharge2_speed_max1), avg: clean(reportData.discharge2_speed_avg1) },
+    { label: 'Waktu (minutes)', set: reportData.discharge_2_recipe_time ?? '-', min: reportData.discharge2_waktu_avg1, max: reportData.discharge2_waktu_avg1, avg: reportData.discharge2_waktu_avg1 }
+  ]} 
+/>
 
             {/* Discharge III */}
-            <ProcessTable 
-              title="Discharge III" 
-              dataRows={[
-                { label: 'Prod. Discharge valve position (%)', set: '-', min: clean(reportData.discharge3_valve_min1), max: clean(reportData.discharge3_valve_max1), avg: clean(reportData.discharge3_valve_avg1) },
-                { label: 'Speed (RPM)', set: '-', min: clean(reportData.discharge3_speed_min1), max: clean(reportData.discharge3_speed_max1), avg: clean(reportData.discharge3_speed_avg1) },
-                { label: 'Waktu (minutes)', set: '-', min: reportData.discharge3_waktu_avg1, max: reportData.discharge3_waktu_avg1, avg: reportData.discharge3_waktu_avg1 }
-              ]} 
-            />
+<ProcessTable 
+  title="Discharge III" 
+  dataRows={[
+    { label: 'Prod. Discharge valve position (%)', set: reportData.discharge_3_recipe_valve ?? '-', min: clean(reportData.discharge3_valve_min1), max: clean(reportData.discharge3_valve_max1), avg: clean(reportData.discharge3_valve_avg1) },
+    { label: 'Speed (RPM)', set: reportData.discharge_3_recipe_speed ?? '-', min: clean(reportData.discharge3_speed_min1), max: clean(reportData.discharge3_speed_max1), avg: clean(reportData.discharge3_speed_avg1) },
+    { label: 'Waktu (minutes)', set: reportData.discharge_3_recipe_time ?? '-', min: reportData.discharge3_waktu_avg1, max: reportData.discharge3_waktu_avg1, avg: reportData.discharge3_waktu_avg1 }
+  ]} 
+/>
 
           <h2 className="text-xl font-bold text-gray-800 border-b pb-2 mt-8 mb-4">MIXING (LOT 1)</h2>
           <ProcessTable 

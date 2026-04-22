@@ -356,25 +356,15 @@ const WorkOrderDashboard = () => {
                 
                 {/* --- NEW: Sub-Tabs for Completed Status --- */}
                 {activeTab === 'Completed' && (
-                    <div className="wo-subtabs-container" style={{ display: 'flex', gap: '8px', backgroundColor: 'var(--input-bg)', padding: '4px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <div className="wo-tabs-container">
                         <button 
-                            style={{
-                                padding: '6px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s',
-                                backgroundColor: completedFilter === 'NotClosed' ? 'var(--element-bg)' : 'transparent',
-                                color: completedFilter === 'NotClosed' ? 'var(--text-main)' : 'var(--text-muted)',
-                                boxShadow: completedFilter === 'NotClosed' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-                            }}
+                            className={`wo-tab-btn ${completedFilter === 'NotClosed' ? 'active' : ''}`}
                             onClick={() => setCompletedFilter('NotClosed')}
                         >
                             Pending Review
-                        </button>   
+                        </button>
                         <button 
-                            style={{
-                                padding: '6px 16px', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s',
-                                backgroundColor: completedFilter === 'Closed' ? 'var(--element-bg)' : 'transparent',
-                                color: completedFilter === 'Closed' ? 'var(--text-main)' : 'var(--text-muted)',
-                                boxShadow: completedFilter === 'Closed' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-                            }}
+                            className={`wo-tab-btn ${completedFilter === 'Closed' ? 'active' : ''}`}
                             onClick={() => setCompletedFilter('Closed')}
                         >
                             Closed
