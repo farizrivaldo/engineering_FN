@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './SparepartDashboard.css';
+import { useNavigate } from 'react-router-dom';
+import SparepartLogForm from './SparepartForm'; // Adjust path as needed
 
 const InventoryTable = () => {
     const [parts, setParts] = useState([]);
@@ -8,6 +10,9 @@ const InventoryTable = () => {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('ALL');
+
+    const navigate = useNavigate();
+    const [isLogFormOpen, setIsLogFormOpen] = useState(false);
 
     useEffect(() => {
         const fetchInventory = async () => {
@@ -40,10 +45,46 @@ const InventoryTable = () => {
     if (isLoading) return <div className="inventory-container">Loading inventory data...</div>;
     if (error) return <div className="inventory-container" style={{ color: '#ef4444' }}>Error: {error}</div>;
 
-    return (
+   return (
         <div className="inventory-container">
-            <div className="header-section">
-                <h2>Inventory Parts Overview</h2>
+            
+            {/* Added Flexbox here to align the title and the button perfectly on the same line */}
+            <div className="header-section" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ margin: 0 }}>Inventory Parts Overview</h2>
+
+                <button 
+                        // IMPORTANT: Change '/database/logs' to match your actual route in App.js!
+                        onClick={() => navigate('/sparepartlogs')} 
+                        style={{
+                            backgroundColor: 'var(--element-bg)',
+                            color: 'var(--text-main)',
+                            padding: '10px 20px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-color)',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                        }}
+                    >
+                        📄 View Audit Logs
+                    </button>
+                
+                {/* <-- 3a. The Trigger Button */}
+                <button 
+                    onClick={() => setIsLogFormOpen(true)}
+                    style={{
+                        backgroundColor: 'var(--accent-blue)',
+                        color: '#ffffff',
+                        padding: '10px 20px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                >
+                    + Log Sparepart Usage
+                </button>
             </div>
 
             <div className="controls-section">
@@ -112,6 +153,13 @@ const InventoryTable = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* <-- 3b. The Modal Container */}
+            {/* When isLogFormOpen is true, this renders our popup over the table */}
+            {isLogFormOpen && (
+                <SparepartLogForm onClose={() => setIsLogFormOpen(false)} />
+            )}
+
         </div>
     );
 };
