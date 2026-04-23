@@ -6,6 +6,7 @@ const SparepartLogForm = ({ onClose }) => {
     // 1. Form Inputs
     const [employeeName, setEmployeeName] = useState('');
     const [workOrderNumber, setWorkOrderNumber] = useState('');
+    const [description, setDescription] = useState('');
     
     // 2. The "Cart" (Array of items the user is taking)
     const [cart, setCart] = useState([]);
@@ -14,6 +15,7 @@ const SparepartLogForm = ({ onClose }) => {
     const [inventory, setInventory] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [division, setDivision] = useState(''); // <-- NEW STATE
     
     // 4. UI Status
     const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: '' }
@@ -107,7 +109,9 @@ const SparepartLogForm = ({ onClose }) => {
         // Construct the exact JSON payload the backend expects
         const payload = {
             Employee_Name: employeeName,
+            Division: division,
             Work_Order_Number: workOrderNumber || null,
+            Description: description || null,
             Items_Taken: cart
         };
 
@@ -172,6 +176,22 @@ const SparepartLogForm = ({ onClose }) => {
                         />
                     </div>
                     <div className="input-group">
+    <label>Division *</label>
+    <select 
+        className="standard-input"
+        value={division}
+        onChange={(e) => setDivision(e.target.value)}
+        required
+    >
+        <option value="" disabled>Select Division...</option>
+        <option value="Imecon">Imecon</option>
+        <option value="Maintenance">Maintenance</option>
+        <option value="Utility">Utility</option>
+        <option value="Production">Production</option>
+        <option value="Intern">Intern</option>
+    </select>
+</div>
+                    <div className="input-group">
                         <label>Work Order Number (Optional)</label>
                         <input 
                             type="text" 
@@ -223,9 +243,20 @@ const SparepartLogForm = ({ onClose }) => {
                     )}
                 </div>
 
+                <div className="input-group" style={{ gridColumn: '1 / -1' }}> {/* Spans the full width */}
+    <label>Description / Reason for Parts</label>
+    <textarea 
+        className="standard-input"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder="e.g., Routine maintenance on conveyor belt motor..."
+        rows="2"
+    />
+</div>
+
                 {/* The Cart Section */}
+                <h3 style={{ margin: '0 0 16px 0', padding: '5px 0 0'}}>Items to Checkout</h3>
                 <div className="cart-section">
-                    <h3 style={{ margin: '0 0 16px 0' }}>Items to Checkout</h3>
                     {cart.length === 0 ? (
                         <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
                             Your cart is empty. Search above to add items.

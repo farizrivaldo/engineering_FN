@@ -121,3 +121,158 @@ html[data-theme="dark"] .inventory-container {
     color: #10b981; 
     font-weight: 700;
 }
+
+/* --- Date Filter Styles --- */
+.date-filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    background-color: var(--element-bg);
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.date-input, .date-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--input-bg);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.date-input:focus, .date-select:focus {
+    border-color: var(--accent-blue);
+}
+
+.date-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--hover-bg);
+}
+
+/* Toggle Switch Styles */
+.toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto; /* Pushes the toggle to the right side */
+    padding-left: 16px;
+    border-left: 1px solid var(--border-color);
+}
+
+.toggle-checkbox {
+    accent-color: var(--accent-blue);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* --- Edit Mode Styles --- */
+.edit-mode-toggle {
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.edit-mode-toggle.active {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.table-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--accent-blue);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.action-btn {
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.save-btn {
+    background-color: #10b981;
+    color: white;
+    margin-right: 8px;
+}
+
+.cancel-btn {
+    background-color: var(--hover-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.edit-btn {
+    background-color: var(--element-bg);
+    color: var(--accent-blue);
+    border: 1px solid var(--accent-blue);
+}
+
+/* --- Reorder Row Colors --- */
+
+/* Light Mode */
+.inventory-table tbody tr.reorder-row td {
+    background-color: #fee2e2; /* Very light red */
+}
+.inventory-table tbody tr.reorder-row:hover td {
+    background-color: #fecaca; /* Slightly darker red on hover */
+}
+
+/* Dark Mode Overrides */
+html.dark .inventory-table tbody tr.reorder-row td,
+html[data-theme="dark"] .inventory-table tbody tr.reorder-row td {
+    background-color: rgba(239, 68, 68, 0.15); /* Subtle dark red tint */
+}
+html.dark .inventory-table tbody tr.reorder-row:hover td,
+html[data-theme="dark"] .inventory-table tbody tr.reorder-row:hover td {
+    background-color: rgba(239, 68, 68, 0.25);
+}
+
+/* --- Reorder Filter Toggle --- */
+.reorder-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 16px;
+    padding-left: 16px;
+    border-left: 1px solid var(--border-color);
+}
+
+.reorder-checkbox {
+    accent-color: #ef4444; /* Makes the checkbox red to match the theme */
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}

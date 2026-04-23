@@ -148,3 +148,37 @@ html[data-theme="dark"] .audit-container {
     color: var(--text-muted);
     font-style: italic;
 }
+/* --- Header & New Button Styles --- */
+.back-btn {
+    background: transparent;
+    border: none;
+    color: var(--accent-blue);
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.95rem;
+}
+
+.back-btn:hover {
+    text-decoration: underline;
+}
+
+.inline-edit-btn {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px; /* Pushes it slightly below the Log ID */
+}
+
+.inline-edit-btn:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
