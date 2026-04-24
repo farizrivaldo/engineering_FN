@@ -196,12 +196,12 @@ const GranulationReport = () => {
 </div>
                 <div>
                     <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase">Mulai</label>
-                    <input type="datetime-local" step="1" className="w-full border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-gray-50 dark:bg-[#0d1117] text-sm dark:text-white"
+                    <input type="datetime-local"  className="w-full border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-gray-50 dark:bg-[#0d1117] text-sm dark:text-white"
                         value={filters.startDate} onChange={(e) => setFilters({...filters, startDate: e.target.value})} />
                 </div>
                 <div>
                     <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 mb-2 uppercase">Selesai</label>
-                    <input type="datetime-local" step="1" className="w-full border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-gray-50 dark:bg-[#0d1117] text-sm dark:text-white"
+                    <input type="datetime-local" className="w-full border-gray-200 dark:border-gray-700 rounded-lg p-2 bg-gray-50 dark:bg-[#0d1117] text-sm dark:text-white"
                         value={filters.endDate} onChange={(e) => setFilters({...filters, endDate: e.target.value})} />
                 </div>
                 <button onClick={() => { setPage(1); fetchData(); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg shadow-md transition-transform active:scale-95">
