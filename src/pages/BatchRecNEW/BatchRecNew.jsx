@@ -33,7 +33,7 @@ const GranulationReport = () => {
 
     setLoading(true);
     try {
-        const response = await axios.get('http://localhost:8002/part/granulation-batch-record', { 
+        const response = await axios.get('http://10.126.15.197:8002/part/granulation-batch-record', { 
             params: { 
                 line: currentFilters.line,
                 machine: currentFilters.machine,
@@ -82,7 +82,7 @@ const GranulationReport = () => {
     const handleExportPDF = async () => {
     try {
         setLoading(true);
-        const response = await axios.get('http://localhost:8002/part/export-pdf', { params: filters });
+        const response = await axios.get('http://10.126.15.197:8002/part/export-pdf', { params: filters });
         const fullData = response.data;
 
         if (!fullData || fullData.length === 0) return alert("Data kosong");
@@ -120,7 +120,7 @@ const GranulationReport = () => {
     const handleExportExcel = async () => {
     try {
         setLoading(true);
-        const response = await axios.get('http://localhost:8002/part/export-pdf', { params: filters });
+        const response = await axios.get('http://10.126.15.197:8002/part/export-pdf', { params: filters });
         
         // 1. Validasi: Jika response kosong atau data tidak ada
         if (!response.data || response.data.length === 0) {
