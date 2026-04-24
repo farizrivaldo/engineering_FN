@@ -74,7 +74,7 @@ import WorkOrderDashboard from "./pages/CMMS/NewTechnicianPage";
 import InventoryTable from "./pages/Sparepart/SparepartDashboard";
 import SparepartLogForm from "./pages/Sparepart/SparepartForm";
 import SparepartLogs from "./pages/Sparepart/SparepartLogs";
- 
+import GranulationReport from "./pages/BatchRecNEW/BatchRecNew"; 
 
 
 function App() {
@@ -208,6 +208,7 @@ const [levelData, setLevelData] = useState();
               <Route path="/SparepartDashboard" element={<InventoryTable />} />
               <Route path="/sparepartform" element={<SparepartLogForm />} />
               <Route path="/sparepartlogs" element={<SparepartLogs />} />
+              <Route path="/granulation-batch-record" element={<GranulationReport />} />
 
 
               
@@ -260,6 +261,7 @@ const [levelData, setLevelData] = useState();
               <Route path="/CompletedJobs" element={<CompletedJobsPage />} />
               <Route path="/TechnicianDashboard" element={<TechnicianDashboard />} />
               <Route path="/workorderdashboard" element={<WorkOrderDashboard />} />
+              <Route path="/granulation-batch-record" element={<GranulationReport />} />
               
 
             </Routes>

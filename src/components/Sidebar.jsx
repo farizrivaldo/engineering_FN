@@ -173,6 +173,27 @@ if (userGlobal.level == 2) {
       
     }
 
+    if (userGlobal.level == 4) {
+      navigation.push(
+    
+      {
+        name: "Batch Record",
+        icon: <AssignmentIcon size={21} className="flex-shrink-0 m-[2px] gap-y-1"/>,
+        path: "/BatchRecord",
+        subMenu: [
+          { name: "Batch Record - CMT", path: "/BatchRecord" },
+          { name: "Batch Record - Node-RED", path: "/granulation-batch-record"},
+        ],
+      },
+    
+    
+    
+    
+    );
+
+      
+    }
+
     // ... Levels 2, 3, 4 shortened for brevity in this response but kept in your logic ...
     if (userGlobal.level == 5) {
       navigation.push({
@@ -252,6 +273,10 @@ if (userGlobal.level == 2) {
         name: "Batch Record",
         icon: <AssignmentIcon size={21} className="flex-shrink-0 m-[2px] gap-y-1"/>,
         path: "/BatchRecord",
+        subMenu: [
+          { name: "Batch Record - CMT", path: "/BatchRecord" },
+          { name: "Batch Record - Node-RED", path: "/granulation-batch-record"},
+        ],
       },{
         name: "History Tabel",
         icon: <TableViewIcon size={21} className="flex-shrink-0 m-[2px] gap-y-1"/>,
