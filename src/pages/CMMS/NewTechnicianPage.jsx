@@ -253,11 +253,11 @@ const WorkOrderDashboard = () => {
                                             value={op.Technician || ''} onChange={(e) => handleOperationChange(index, 'Technician', e.target.value)} />
                                     </td>
                                     <td className="wo-td">
-                                        <input className="wo-input" style={{width: '130px'}} type="time"
+                                        <input className="wo-input" style={{width: '130px'}} type="datetime-local"
                                             value={op.start_time || ''} onChange={(e) => handleOperationChange(index, 'start_time', e.target.value)} />
                                     </td>
                                     <td className="wo-td">
-                                        <input className="wo-input" style={{width: '130px'}} type="time"
+                                        <input className="wo-input" style={{width: '130px'}} type="datetime-local"
                                             value={op.end_time || ''} onChange={(e) => handleOperationChange(index, 'end_time', e.target.value)} />
                                     </td>
                                     <td className="wo-td">

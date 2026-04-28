@@ -362,3 +362,9 @@ html[data-theme="dark"] .wo-container {
     border-color: var(--accent-blue);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
+
+/* --- SPECIFIC FIX FOR DATETIME INPUTS --- */
+input[type="datetime-local"].wo-input {
+    min-width: 210px; /* Forces the box to be wide enough for the full date and time */
+    width: 100%;      /* Ensures it fills the table cell nicely */
+}
