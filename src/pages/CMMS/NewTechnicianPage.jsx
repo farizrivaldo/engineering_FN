@@ -84,6 +84,27 @@ const WorkOrderDashboard = () => {
     };
 
     const saveWorkOrder = async () => {
+        // --- NEW: STRICT FORM VALIDATION ---
+        if (selectedPWO && selectedPWO.operations) {
+            for (let i = 0; i < selectedPWO.operations.length; i++) {
+                const op = selectedPWO.operations[i];
+                
+                // Safely grab the values and trim away empty spaces
+                const tech = (op.Technician || op.technician || '').toString().trim();
+                const start = (op.start_time || '').toString().trim();
+                const end = (op.end_time || '').toString().trim();
+                const note = (op.note || '').toString().trim();
+
+                // If ANY of these four fields are empty, block the save!
+                if (!tech || !start || !end || !note) {
+                    // Alert the user exactly which step needs fixing
+                    alert(`Submission Blocked 🛑\n\nPlease fill out all fields (Technician, Start Time, End Time, and Note) for Step ${op.Step || i + 1}.`);
+                    return; // <--- This 'return' instantly stops the save process
+                }
+            }
+        }
+        // -----------------------------------
+
         setSaving(true);
         try {
             await fetch(`http://10.126.15.197:8002/part/${selectedPWO.pwo_number}`, {
@@ -94,10 +115,12 @@ const WorkOrderDashboard = () => {
                     status: 'Completed'
                 }),
             });
+            
             setSelectedPWO(null);
             fetchWorkOrders();
         } catch (error) {
             console.error("Failed to save work order:", error);
+            alert("Failed to communicate with server.");
         } finally {
             setSaving(false);
         }
