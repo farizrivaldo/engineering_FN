@@ -54,55 +54,89 @@ const InventoryTable = () => {
         const file = event.target.files[0];
         if (!file) return;
 
-        setIsLoading(true); // Show loading state while parsing and uploading
+        setIsLoading(true);
 
         Papa.parse(file, {
-            delimiter: ";", // Your CSV uses semicolons
+            delimiter: ";", 
             skipEmptyLines: true,
             complete: async function(results) {
-                // results.data is a giant array containing every row.
-                // Row index 17 contains your column names. Index 18 is where the actual data starts.
-                const dataRows = results.data.slice(18);
+                const headerIndex = results.data.findIndex(row => row[0] && row[0].trim() === 'Part Number');
+                
+                if (headerIndex === -1) {
+                    alert("Invalid CSV Format: Could not find the 'Part Number' header row.");
+                    setIsLoading(false);
+                    return;
+                }
+
+                const headers = results.data[headerIndex].map(h => h ? h.trim() : '');
+                
+                const idxPart = headers.indexOf('Part Number');
+                const idxDesc = headers.indexOf('Part Description');
+                const idxAvail = headers.indexOf('Availability');
+                const idxMin = headers.indexOf('Re-Order Point Min');
+                const idxMax = headers.indexOf('Re-Order Point Max');
+
+                // PASTE IT RIGHT HERE!
+                const parseNumber = (val) => {
+                    if (val === undefined || val === null || val.trim() === '') return null;
+                    const parsed = parseInt(val.replace(/,/g, ''), 10);
+                    return isNaN(parsed) ? null : parsed;
+                };
+
+                const dataRows = results.data.slice(headerIndex + 1);
                 const payload = [];
 
                 dataRows.forEach(row => {
-                    // Based on your CSV structure:
-                    // Index 0 = Part Number, Index 6 = Availability, Index 17 = Last Issue Date
-                    const partNumber = row[0] ? row[0].trim() : null;
-                    const rawAvailability = row[6] ? row[6].trim() : '0';
-                    const lastIssueDate = row[17] ? row[17].trim() : null;
+                    const partNumber = row[idxPart] ? row[idxPart].trim() : null;
 
-                    if (partNumber) {
-                        // Strip out commas from numbers (e.g., "1,000" -> 1000)
-                        const availability = parseInt(rawAvailability.replace(/,/g, ''), 10) || 0;
-                        
-                        payload.push({
-                            partNumber,
-                            availability,
-                            lastIssueDate
-                        });
+                    // --- THE BOUNCER: STRICT VALIDATION ---
+                    // 1. Must not be empty
+                    // 2. Must not be the header text itself
+                    // 3. Must not contain spaces or colons (blocks metadata like "Category : ")
+                    if (
+                        !partNumber || 
+                        partNumber.toLowerCase().includes('part number') || 
+                        partNumber.includes(' ') || 
+                        partNumber.includes(':')
+                    ) {
+                        return; // Skip this garbage row entirely and move to the next one
                     }
+
+                    // If it passed the bouncer, it's a real part number! Extract the rest:
+                    const description = (idxDesc !== -1 && row[idxDesc] && row[idxDesc].trim() !== '') ? row[idxDesc].trim() : null;
+                    const availability = idxAvail !== -1 ? parseNumber(row[idxAvail]) : null;
+                    const reorderMin = idxMin !== -1 ? parseNumber(row[idxMin]) : null;
+                    const reorderMax = idxMax !== -1 ? parseNumber(row[idxMax]) : null;
+
+                    payload.push({
+                        partNumber,
+                        description,
+                        availability,
+                        reorderMin,
+                        reorderMax
+                    });
                 });
 
                 try {
-                    // Send the clean JSON payload to your new backend route
                     const response = await fetch('http://10.126.15.197:8002/part/updateInventoryBatch', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ updates: payload })
                     });
 
-                    if (!response.ok) throw new Error("Failed to update database.");
+                    if (!response.ok) {
+                        const errData = await response.json();
+                        throw new Error(errData.details || "Failed to update database.");
+                    }
                     
-                    alert("Inventory updated successfully!");
-                    window.location.reload(); // Refresh to see the new numbers
+                    alert("Inventory synced successfully!");
+                    window.location.reload(); 
 
                 } catch (err) {
                     console.error(err);
-                    alert("Error uploading CSV data.");
+                    alert(`Error: ${err.message}`);
                 } finally {
                     setIsLoading(false);
-                    // Reset the file input so they can upload the same file again if needed
                     if (fileInputRef.current) fileInputRef.current.value = ""; 
                 }
             }
