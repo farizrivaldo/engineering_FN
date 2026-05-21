@@ -88,361 +88,132 @@ export default function WaterManagement() {
       }
     ); 
 
-    var OsmotoLoopo = 0;
-    var OsmotoLoopom3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var OP = Number(response1.data[i].OutletPretreatment.toFixed(2))
-      var soft = Number(response1.data[i].Softwater.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var value = OP - ro - soft
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      OsmotoLoopo = data
-      OsmotoLoopom3 = Number(value.toFixed(2))
-    }
-    setOsmoLoopo(OsmotoLoopo);
-    setOsmoLoopom3(OsmotoLoopom3)
+    // Guard against empty data
+    if (!response1.data || response1.data.length === 0) return;
 
-    var domtolt1 = 0;
-    var domtolt1om3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var dom = Number(response1.data[i].Domestik.toFixed(2))
-      var qc = Number(response1.data[i].AtasLabQC.toFixed(2))
-      var toilet = Number(response1.data[i].AtasToiletLt2.toFixed(2))
-      var wh = Number(response1.data[i].Workshop.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var value = dom - qc - toilet - wh 
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      domtolt1 = data
-      domtolt1om3 = Number(value.toFixed(2))
-    }
-    setlantai1(domtolt1);
-    setlantai1m3(domtolt1om3)
+    // ONE single loop to process everything efficiently
+    for (let i = 0; i < response1.data.length; i++) {
+      let row = response1.data[i];
 
-    var LoopotoProduksi = 0;
-    var LoopotoProduksim3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var OP = Number(response1.data[i].OutletPretreatment.toFixed(2))
-      var soft = Number(response1.data[i].Softwater.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var CIP = Number (response1.data[i].Cip.toFixed(2))
-      var sumber = pdam + ro
-      var value = OP - ro - soft - CIP
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      LoopotoProduksi = data
-      LoopotoProduksim3 = value
-    } 
-    setLoopoProduksis(LoopotoProduksi);
-    setLoopoProduksism3(LoopotoProduksim3);
+      // 1. SAFE EXTRACTION: Convert everything to pure numbers first
+      let pdam = Number(row.Pdam || 0);
+      let ro = Number(row.RejectOsmotron || 0);
+      let dom = Number(row.Domestik || 0);
+      let qc = Number(row.AtasLabQC || 0);
+      let toilet = Number(row.AtasToiletLt2 || 0);
+      let wh = Number(row.Workshop || 0);
+      let op = Number(row.OutletPretreatment || 0);
+      let soft = Number(row.Softwater || 0);
+      let cip = Number(row.Cip || 0);
+      let ip = Number(row.InletPretreatment || 0);
+      let boiler = Number(row.Boiler || 0);
+      let airMancur = Number(row.AirMancur || 0);
+      let lab = Number(row.Lab || 0);
+      let hot = Number(row.Hotwater || 0);
+      let chill = Number(row.Chiller || 0);
+      let taman = Number(row.Taman || 0);
 
-    var PDAMtoDom = 0;
-    var PDAMtoDomm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].Domestik.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      PDAMtoDom = data
-      PDAMtoDomm3 = value
-    }
-    setPDAMDom(PDAMtoDom);
-    setPDAMDomm3(PDAMtoDomm3);
+      // 2. BASE MATH
+      let sumber = pdam + ro;
 
-    var OsmotoRO = 0;
-    var OsmotoROm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].RejectOsmotron.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      OsmotoRO = data;
-      OsmotoROm3 = value;
-    }
-    setOsmoRO(OsmotoRO);
-    setOsmoROm3(OsmotoROm3);
+      // 3. HELPER FUNCTION: Safely calculates percentage without dividing by zero
+      const safePercent = (val, totalSrc) => totalSrc > 0 ? (val / totalSrc) * 100 : 0;
 
-    var PDAMtoIP = 0;
-    var PDAMtoIPm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].InletPretreatment.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      PDAMtoIP = data;
-      PDAMtoIPm3 = value;
-    }
-    setPDAMIP(PDAMtoIP);
-    setPDAMIPm3(PDAMtoIPm3);
-
-    var PDAMtoBoiler = 0;
-    var PDAMtoBoilerm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].Boiler.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      PDAMtoBoiler = data;
-      PDAMtoBoilerm3 = value;
-    }
-    setPDAMBoiler(PDAMtoBoiler);
-    setPDAMBoilerm3(PDAMtoBoilerm3);
-
-    var SumbertoPDAM = 0;
-    var SumbertoPDAM1 =0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      SumbertoPDAM = pdam;
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = pdam/sumber*100
-      var data = Number(total.toFixed(2))
-      SumbertoPDAM1 = data;
-    }
-    setSumberPDAM(SumbertoPDAM);
-    setSumberPDAM1(SumbertoPDAM1);
-
-    var SupplyAir = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var data = Number(sumber.toFixed(2))
-      SupplyAir = data;
+      // --- CALCULATE AND SET ALL NODES ---
       
-    }
-    setSupllyAir(SupplyAir);
+      // Lantai 1
+      let valLantai1 = dom - qc - toilet - wh;
+      setlantai1(Number(safePercent(valLantai1, sumber).toFixed(2)));
+      setlantai1m3(Number(valLantai1.toFixed(2)));
 
-    var DomtoWorkshop = 0;
-    var DomtoWorkshopm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].Workshop.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      DomtoWorkshopm3 = value;
-      DomtoWorkshop = data;
-    }
-    setDomWork(DomtoWorkshop);
-    setDomWorkm3(DomtoWorkshopm3);
+      // Loopo to Produksi
+      let valLoopo = op - ro - soft - cip;
+      setLoopoProduksis(Number(safePercent(valLoopo, sumber).toFixed(2)));
+      setLoopoProduksism3(Number(valLoopo.toFixed(2))); 
 
-    var DomtoQC = 0;
-    var DomtoQCm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].AtasLabQC.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      DomtoQC = data;
-      DomtoQCm3 = value;
-    }
-    setDomQC(DomtoQC);
-    setDomQCm3(DomtoQCm3);
+      // PDAM to Domestik
+      setPDAMDom(Number(safePercent(dom, sumber).toFixed(2)));
+      setPDAMDomm3(Number(dom.toFixed(2)));
 
-    var DomtoToilet = 0;
-    var DomtoToiletm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].AtasToiletLt2.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      DomtoToilet = data;
-      DomtoToiletm3 = value;
-    }
-    setDomToilet(DomtoToilet);
-    setDomToiletm3(DomtoToiletm3);
+      // Osmotron to RO
+      setOsmoRO(Number(safePercent(ro, sumber).toFixed(2)));
+      setOsmoROm3(Number(ro.toFixed(2)));
 
-    var IPtoOP = 0;
-    var IPtoOPm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].OutletPretreatment.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      IPtoOP = data;
-      IPtoOPm3 = value;
-    }
-    setIPOP(IPtoOP);
-    setIPOPm3(IPtoOPm3);
+      // PDAM to IP
+      setPDAMIP(Number(safePercent(ip, sumber).toFixed(2)));
+      setPDAMIPm3(Number(ip.toFixed(2)));
 
-    var OPtoOsmo = 0;
-    var OPtoOsmom3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var OP = Number(response1.data[i].OutletPretreatment.toFixed(2))
-      var Soft = Number(response1.data[i].Softwater.toFixed(2))
-      var value = OP - Soft
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      OPtoOsmo = data;
-      OPtoOsmom3 = Number(value.toFixed(2));
-    }
-    setOPOsmo(OPtoOsmo);
-    setOPOsmom3(OPtoOsmom3);
+      // PDAM to Boiler
+      setPDAMBoiler(Number(safePercent(boiler, sumber).toFixed(2)));
+      setPDAMBoilerm3(Number(boiler.toFixed(2)));
 
-    var OsmotoCIP = 0;
-    var OsmotoCIPm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].Cip.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      OsmotoCIP = data;
-      OsmotoCIPm3 = value;
-    }
-    setOsmoCIP(OsmotoCIP);
-    setOsmoCIPm3(OsmotoCIPm3);
+      // Sumber to PDAM
+      setSumberPDAM(Number(pdam.toFixed(2)));
+      setSumberPDAM1(Number(safePercent(pdam, sumber).toFixed(2)));
 
-    var OsmotoPDAM = 0;
-    var OsmotoPDAM1 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var ro = Number(response1.data[i].RejectOsmotron.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      OsmotoPDAM = ro;
-      var sumber = pdam + ro
-      var total = ro/sumber*100
-      var data = Number(total.toFixed(2))
-      OsmotoPDAM1 = data;
-    }
-    setOsmoPDAM(OsmotoPDAM);
-    setOsmoPDAM1(OsmotoPDAM1);
+      // Supply Air
+      setSupllyAir(Number(sumber.toFixed(2)));
 
-    var OPtoSoft = 0;
-    var OPtoSoftm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].Softwater.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      OPtoSoft = data;
-      OPtoSoftm3 = value;
-    }
-    setOPSoftwater(OPtoSoft);
-    setOPSoftwaterm3(OPtoSoftm3);
+      // Domestik to Workshop
+      setDomWork(Number(safePercent(wh, sumber).toFixed(2)));
+      setDomWorkm3(Number(wh.toFixed(2)));
 
-    var TamantoAirMancur = 0;
-    var TamantoAirMancurm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].AirMancur.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      TamantoAirMancur = data;
-      TamantoAirMancurm3 = value;
-    }
-    setTamanAirMancur(TamantoAirMancur);
-    setTamanAirMancurm3(TamantoAirMancurm3);
+      // Domestik to QC
+      setDomQC(Number(safePercent(qc, sumber).toFixed(2)));
+      setDomQCm3(Number(qc.toFixed(2)));
 
-    var SofttoLab = 0;
-    var SofttoLabm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].Lab.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      SofttoLab = data;
-      SofttoLabm3 = value;
-    }
-    setSoftLab(SofttoLab);
-    setSoftLabm3(SofttoLabm3);
+      // Domestik to Toilet
+      setDomToilet(Number(safePercent(toilet, sumber).toFixed(2)));
+      setDomToiletm3(Number(toilet.toFixed(2)));
 
-    var SofttoWash = 0;
-    var SofttoWashm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var soft = Number(response1.data[i].Softwater.toFixed(2))
-      var lab1 = Number(response1.data[i].Lab.toFixed(2))
-      var hot = Number(response1.data[i].Hotwater.toFixed(2))
-      var chill = Number(response1.data[i].Chiller.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var value = soft-lab1-hot-chill
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      SofttoWash = data;
-      SofttoWashm3 = value; 
-    }
-    setWashing(SofttoWash);
-    setWashingm3(SofttoWashm3);
+      // IP to OP
+      setIPOP(Number(safePercent(op, sumber).toFixed(2)));
+      setIPOPm3(Number(op.toFixed(2)));
 
-    var SofttoChill = 0;
-    var SofttoChillm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].Chiller.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      SofttoChill = data;
-      SofttoChillm3 = value;
-    }
-    setSoftChill(SofttoChill);
-    setSoftChillm3(SofttoChillm3);
+      // OP to Osmotron
+      let valOPOs = op - soft;
+      setOPOsmo(Number(safePercent(valOPOs, sumber).toFixed(2)));
+      setOPOsmom3(Number(valOPOs.toFixed(2)));
 
-    var SofttoHot = 0;
-    var SofttoHotm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].Hotwater.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      SofttoHot = data;
-      SofttoHotm3 = value;
-    }
-    setSoftHot(SofttoHot);
-    setSoftHotm3(SofttoHotm3);
+      // Osmotron to CIP
+      setOsmoCIP(Number(safePercent(cip, sumber).toFixed(2)));
+      setOsmoCIPm3(Number(cip.toFixed(2)));
 
-    var PDAMtoTaman = 0;
-    var PDAMtoTamanm3 = 0;
-    for (var i = 0; i < response1.data.length; i++) {
-      var value = Number(response1.data[i].Taman.toFixed(2))
-      var pdam = Number(response1.data[i].Pdam.toFixed(2))
-      var ro = Number (response1.data[i].RejectOsmotron.toFixed(2))
-      var sumber = pdam + ro
-      var total = value/sumber*100
-      var data = Number(total.toFixed(2))
-      PDAMtoTaman = data;
-      PDAMtoTamanm3 = value;
+      // Osmotron to PDAM
+      setOsmoPDAM(Number(ro.toFixed(2)));
+      setOsmoPDAM1(Number(safePercent(ro, sumber).toFixed(2)));
+
+      // OP to Softwater
+      setOPSoftwater(Number(safePercent(soft, sumber).toFixed(2)));
+      setOPSoftwaterm3(Number(soft.toFixed(2)));
+
+      // Taman to Air Mancur
+      setTamanAirMancur(Number(safePercent(airMancur, sumber).toFixed(2)));
+      setTamanAirMancurm3(Number(airMancur.toFixed(2)));
+
+      // Soft to Lab
+      setSoftLab(Number(safePercent(lab, sumber).toFixed(2)));
+      setSoftLabm3(Number(lab.toFixed(2)));
+
+      // Soft to Washing
+      let valWash = soft - lab - hot - chill;
+      setWashing(Number(safePercent(valWash, sumber).toFixed(2)));
+      setWashingm3(Number(valWash.toFixed(2)));
+
+      // Soft to Chiller
+      setSoftChill(Number(safePercent(chill, sumber).toFixed(2)));
+      setSoftChillm3(Number(chill.toFixed(2)));
+
+      // Soft to Hotwater
+      setSoftHot(Number(safePercent(hot, sumber).toFixed(2)));
+      setSoftHotm3(Number(hot.toFixed(2)));
+
+      // PDAM to Taman
+      setPDAMTaman(Number(safePercent(taman, sumber).toFixed(2)));
+      setPDAMTamanm3(Number(taman.toFixed(2)));
     }
-    setPDAMTaman(PDAMtoTaman);
-    setPDAMTamanm3(PDAMtoTamanm3);
   }
-  
+
   const fetchWaterDaily = async () => {
     setLoading(true);
     setError(null);
@@ -459,49 +230,36 @@ export default function WaterManagement() {
         }
       );
 
-      if (WaterArea === "cMT-BWT_PDAM_Sehari_data"){
-          var multipliedData = response.data.map((data) => ({
-              label: data.label,
-              y: data.y,
-              x: data.x,
-          }));
-        } else if (
-          WaterArea === "cMT-BWT_Dom_sehari_data" ||
-          WaterArea === "cMT-BWT_Softwater_sehari_data" ||
-          WaterArea === "cMT-BWT_Boiler_sehari_data"
-        ) {
-          multipliedData = response.data.map((data) => ({
-            label: data.label,
-            y: data.y,
-            x: data.x,
-          }));
-        } else {
-          multipliedData = response.data.map((data) => ({
-            label: data.label,
-            y: data.y,
-            x: data.x,
-          }));
-        }
+      // Error guard: if no data comes back, stop execution here to prevent math crashes
+      if (!response.data || response.data.length === 0) {
+        setError("No available data");
+        setWaterDaily([]);
+        settotalair(0);
+        sethighair(0);
+        setlowhair(0);
+        setLoading(false);
+        return;
+      }
+
+      // Simplified redundant if/else mapping
+      const multipliedData = response.data.map((data) => ({
+        label: data.label,
+        y: Number(data.y || 0), // Ensure 'y' is safely a number
+        x: data.x,
+      }));
+      
       setWaterDaily(multipliedData);
 
-      const totalWater = multipliedData.reduce ((sum, data) => sum + data.y, 0);
-      var total = 0
-      total = Number(totalWater.toFixed(2))
-      settotalair(total); 
-      
+      // Safe Math calculations
+      const totalWater = multipliedData.reduce((sum, data) => sum + data.y, 0);
+      settotalair(Number(totalWater.toFixed(2))); 
 
-      const maxwater = multipliedData.reduce ((acc, data) => Math.max (acc, data.y), Number.NEGATIVE_INFINITY);
-      var max = Number(maxwater.toFixed(2))
-      sethighair(max);
+      const maxwater = multipliedData.reduce((acc, data) => Math.max(acc, data.y), Number.NEGATIVE_INFINITY);
+      sethighair(Number(maxwater.toFixed(2)));
 
-      const minwater = Math.min(...response.data.map((data) => data.y));
-      var min = Number(minwater.toFixed(2))
-      setlowhair(min);
+      const minwater = Math.min(...multipliedData.map((data) => data.y));
+      setlowhair(Number(minwater.toFixed(2)));
 
-      // Error jika data kosong
-      if (multipliedData.length === 0) {
-        setError("No available data");
-      }
     } catch (err) {
       setError("No available data");
     } finally {
@@ -510,25 +268,20 @@ export default function WaterManagement() {
   };
 
   let dateStart = (e) =>{
-      var dataInput = e.target.value;
-      setStartDate(dataInput);
+      setStartDate(e.target.value);
   };
   let dateFinish = (e) =>{
-      var dataInput = e.target.value;
-      setFinishDate(dataInput);
+      setFinishDate(e.target.value);
   };
   let getWaterArea = (e) =>{
-      var dataInput = e.target.value;
-      setWaterArea(dataInput);
+      setWaterArea(e.target.value);
   };
 
   let sankeyStart = (e) =>{
-      var dataInput = e.target.value;
-      setStartSankey(dataInput);
+      setStartSankey(e.target.value);
   };
   let sankeyFinish = (e) =>{
-      var dataInput = e.target.value;
-      setFinishSankey(dataInput);
+      setFinishSankey(e.target.value);
   };
 
   useEffect(() => {
@@ -832,30 +585,30 @@ export default function WaterManagement() {
         <div className="flex flex-col items-center xl:w-64">
           <h5 className="mb-1">Flow Meter</h5>
           <Select placeholder="Select Flow Meter" onChange={getWaterArea}>
-            <option value="cMT-DB-WATER-UTY2_PDAM_Sehari_data">PDAM</option>
-            <option value="cMT-DB-WATER-UTY2_Dom_sehari_data">Domestik</option>
-            <option value="cMT-DB-WATER-UTY2_Softwater_sehari_data">Softwater</option>
-            <option value="cMT-DB-WATER-UTY2_Boiler_sehari_data">Boiler</option>
-            <option value="cMT-DB-WATER-UTY2_Inlet_Sehari_data">Inlet Pretreatment</option>
-            <option value="cMT-DB-WATER-UTY2_Outlet_sehari_data">Outlet Pretreatment</option>
-            <option value="cMT-DB-WATER-UTY2_RO_sehari_data">Reject Osmotronn</option>
-            <option value="cMT-DB-WATER-UTY2_Chiller_sehari_data">Chiller</option>
-            <option value="cMT-DB-WATER-UTY2_Taman_sehari_data">Taman & Pos Jaga</option>
-            <option value="cMT-DB-WATER-UTY2_WWTP_Biologi_1d_data">WWTP Biologi</option>
-            <option value="cMT-DB-WATER-UTY2_WWTP_Kimia_1d_data">WWTP Kimia</option>
-            <option value="cMT-DB-WATER-UTY2_WWTP_Outlet_1d_data">WWTP Outlet</option>
-            <option value="cMT-DB-WATER-UTY2_CIP_Sehari_data">CIP</option>
-            <option value="cMT-DB-WATER-UTY2_Hotwater_Sehari_data">Hotwater</option>
-            <option value="cMT-DB-WATER-UTY2_Lab_Sehari_data">Lab</option>
-            <option value="cMT-DB-WATER-UTY2_AtsToilet_Sehari_data">Atas Toilet lt.2</option>
-            <option value="cMT-DB-WATER-UTY2_Atas QC_Sehari_data">Atas Lab QC</option>
-            <option value="cMT-DB-WATER-UTY2_Workshop_Sehari_data">Workshop</option>
-            <option value="cMT-DB-WATER-UTY2_AirMancur_Sehari_data">Air Mancur</option>
-            <option value="cMT-DB-WATER-UTY2_Osmotron_Sehari_data">Osmotron</option>
-            <option value="cMT-DB-WATER-UTY2_Loopo_Sehari_data">Loopo</option>
-            <option value="cMT-DB-WATER-UTY2_Produksi_Sehari_data">Produksi</option>
-            <option value="cMT-DB-WATER-UTY2_Washing_Sehari_data">Washing</option>
-            <option value="cMT-DB-WATER-UTY2_Lantai1_Sehari_data">Lantai 1</option>
+            <option value="cMT-DB-WATER-UTY3_PDAM_Sehari_data">PDAM</option>
+            <option value="cMT-DB-WATER-UTY3_Dom_sehari_data">Domestik</option>
+            <option value="cMT-DB-WATER-UTY3_Softwater_sehari_data">Softwater</option>
+            <option value="cMT-DB-WATER-UTY3_Boiler_sehari_data">Boiler</option>
+            <option value="cMT-DB-WATER-UTY3_Inlet_Sehari_data">Inlet Pretreatment</option>
+            <option value="cMT-DB-WATER-UTY3_Outlet_sehari_data">Outlet Pretreatment</option>
+            <option value="cMT-DB-WATER-UTY3_RO_sehari_data">Reject Osmotronn</option>
+            <option value="cMT-DB-WATER-UTY3_Chiller_sehari_data">Chiller</option>
+            <option value="cMT-DB-WATER-UTY3_Taman_sehari_data">Taman & Pos Jaga</option>
+            <option value="cMT-DB-WATER-UTY3_WWTP_Biologi_1d_data">WWTP Biologi</option>
+            <option value="cMT-DB-WATER-UTY3_WWTP_Kimia_1d_data">WWTP Kimia</option>
+            <option value="cMT-DB-WATER-UTY3_WWTP_Outlet_1d_data">WWTP Outlet</option>
+            <option value="cMT-DB-WATER-UTY3_CIP_Sehari_data">CIP</option>
+            <option value="cMT-DB-WATER-UTY3_Hotwater_Sehari_data">Hotwater</option>
+            <option value="cMT-DB-WATER-UTY3_Lab_Sehari_data">Lab</option>
+            <option value="cMT-DB-WATER-UTY3_AtsToilet_Sehari_data">Atas Toilet lt.2</option>
+            <option value="cMT-DB-WATER-UTY3_Atas QC_Sehari_data">Atas Lab QC</option>
+            <option value="cMT-DB-WATER-UTY3_Workshop_Sehari_data">Workshop</option>
+            <option value="cMT-DB-WATER-UTY3_AirMancur_Sehari_data">Air Mancur</option>
+            <option value="cMT-DB-WATER-UTY3_Osmotron_Sehari_data">Osmotron</option>
+            <option value="cMT-DB-WATER-UTY3_Loopo_Sehari_data">Loopo</option>
+            <option value="cMT-DB-WATER-UTY3_Produksi_Sehari_data">Produksi</option>
+            <option value="cMT-DB-WATER-UTY3_Washing_Sehari_data">Washing</option>
+            <option value="cMT-DB-WATER-UTY3_Lantai1_Sehari_data">Lantai 1</option>
           </Select>
         </div>
         <div className="flex flex-col items-center xl:w-56">
