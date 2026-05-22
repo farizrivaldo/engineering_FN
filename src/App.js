@@ -165,7 +165,7 @@ const [levelData, setLevelData] = useState();
               <Route path="/createnew" element={<CreateNew />} />
               <Route path="/createedite/:id" element={<CreateEdit />} />
               <Route path="/building" element={<AppPareto />} />
-              <Route path="/WH2Dashboard" element={<WH2Dashboard />} />
+              {/* <Route path="/WH2Dashboard" element={<WH2Dashboard />} /> */}
               <Route path="/mail" element={<CheckMail />} />
               <Route path="/editprofile" element={<EditProfile />} />
               <Route path="/production" element={<Production />} />
