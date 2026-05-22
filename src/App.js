@@ -65,7 +65,7 @@ import DayOverrideManager from "./pages/OEE/FetteOverride2";
 import FetteOeeDashboard from "./pages/OEE/OEETest2";
 import MachineDashboard from "./pages/DataMonitor";
 import DataIntegrityDashboard from "./pages/DataIntegrity";
-import WH2Dashboard from "./pages/buildingWH2";
+// import WH2Dashboard from "./pages/Warehouse2/buildingWH2";
 import BatchReportPreview from "./pages/DataExtractor/BatchReportPreview";
 import BatchPage from "./pages/DataExtractor/ParentPage";
 import VibrationDashboard from "./pages/CMVibration";
