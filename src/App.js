@@ -71,10 +71,14 @@ import BatchPage from "./pages/DataExtractor/ParentPage";
 import VibrationDashboard from "./pages/CMVibration";
 import WorkOrderUploader from "./pages/CMMS/WorkOrderUploader";
 import WorkOrderDashboard from "./pages/CMMS/NewTechnicianPage";
-import InventoryTable from "./pages/Sparepart/SparepartDashboard";
+import InventoryTable from "./pages/Sparepart/SparepartInventory";
 import SparepartLogForm from "./pages/Sparepart/SparepartForm";
-import SparepartLogs from "./pages/Sparepart/SparepartLogs";
+import SparepartLogs from "./pages/Sparepart/SparepartInventoryLogs";
 import GranulationReport from "./pages/BatchRecNEW/BatchRecNew"; 
+
+import SparepartNonInventory from "./pages/Sparepart/SparepartNonInventory";
+import SparepartNonInventoryLogs from "./pages/Sparepart/SparepartNonInventoryLogs";
+import SparepartDashboardWrapper from "./pages/Sparepart/SparepartDashboard";
 
 
 function App() {
@@ -205,10 +209,16 @@ const [levelData, setLevelData] = useState();
               <Route path="/CMVibration" element={<VibrationDashboard />} />
               <Route path="/WorkOrderUploader" element={<WorkOrderUploader />} />
               <Route path="/workorderdashboard" element={<WorkOrderDashboard />} />
-              <Route path="/SparepartDashboard" element={<InventoryTable />} />
+              <Route path="/SparepartInventory" element={<InventoryTable />} />
               <Route path="/sparepartform" element={<SparepartLogForm />} />
               <Route path="/sparepartlogs" element={<SparepartLogs />} />
               <Route path="/granulation-batch-record" element={<GranulationReport />} />
+              <Route path="/SparepartInventory" element={<InventoryTable />} />
+              <Route path="/sparepartform" element={<SparepartLogForm />} />
+              <Route path="/sparepartlogs" element={<SparepartLogs />} />
+              <Route path="/SparepartNonInventory" element={<SparepartNonInventory />} />
+              <Route path="/SparepartNonInventoryLogs" element={<SparepartNonInventoryLogs />} />
+              <Route path="/SparepartDashboard" element={<SparepartDashboardWrapper />} />
 
 
               

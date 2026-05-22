@@ -12,6 +12,7 @@ import EngineeringIcon from '@mui/icons-material/Engineering';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import MenuOpenSharpIcon from '@mui/icons-material/MenuOpenSharp';
 import TableViewIcon from '@mui/icons-material/TableView';
+import WarehouseIcon from '@mui/icons-material/Warehouse';
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import '../index.css'
@@ -154,24 +155,27 @@ function Sidebar() {
     }
 if (userGlobal.level == 2) {
       navigation.push(
-      {
-        name: "Fette",
-        icon: <FactoryIcon sx={{ fontSize: 22 }} className="flex-shrink-0" />,
-        path: "/production",
-        subMenu: [
-          { name: "OEE Fette", path: "/FetteOeeDashboard" },
-          { name: "Fette Downtime", path: "/HybridDowntime" },
-          { name: "Fette Logs", path: "/ETLManager" },
-        ],
-      }
-    
-    
-    
-    
-    );
 
-      
+      {
+        name: "Warehouse Dashboard",
+        icon: <WarehouseIcon size={21} className="flex-shrink-0 m-1"/>,
+        path: "/WH2Dashboard",
+      }
+    );
     }
+
+    if (userGlobal.level == 3) {
+      navigation.push(
+      {
+        name: "Warehouse Dashboard",
+        icon: <WarehouseIcon size={21} className="flex-shrink-0 m-1"/>,
+        path: "/WH2Dashboard",
+      }
+      
+    );
+    }
+
+    
 
     if (userGlobal.level == 4) {
       navigation.push(

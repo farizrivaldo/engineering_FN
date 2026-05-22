@@ -62,6 +62,7 @@ const LogInspector = () => {
       { name: 'NR_Vibration_Fette', table: 'NodeRed_Vibration_Fette_L1', db: 'dbTest', expectedRows: 1440 },
       { name: 'NR_WETMILL_L3', table: 'NodeRed_WETMILL_L3', db: 'dbTest', expectedRows: 1440 },
       { name: 'NR_WETMILL_L3_1', table: 'NodeRed_WETMILL_L3_1', db: 'dbTest', expectedRows: 1440 },
+      { name: 'NR_WH1_Monitoring', table: 'NodeRed_WH1_Monitoring', db: 'dbTest', expectedRows: 1440 },
       { name: 'NR_WH2_Monitoring', table: 'NodeRed_WH2_Monitoring', db: 'dbTest', expectedRows: 1440 },
       { name: 'NR_Wetmill_L1', table: 'NodeRed_Wetmill_L1', db: 'dbTest', expectedRows: 1440 },
       { name: 'NR_Wetmill_L1_1', table: 'NodeRed_Wetmill_L1_1', db: 'dbTest', expectedRows: 1440 },
@@ -72,7 +73,12 @@ const LogInspector = () => {
       { name: 'NR_Time_Vacum_L1', table: 'NodeRed_timeproses_VACUM_L1', db: 'dbTest', expectedRows: 1440 },
       { name: 'NR_Time_Vacum_Open', table: 'NodeRed_timeproses_VACUM_OpenSystem', db: 'dbTest', expectedRows: 1440 },
       { name: 'NR_Time_Wetmill_L1', table: 'NodeRed_timeproses_WETMILL_L1', db: 'dbTest', expectedRows: 1440 }
+      
        
+    ],
+    "Misc": [
+      { name: 'CMT-MTC_Motor1.1_data', table: 'CMT-MTC_Motor1.1_data', db: 'db3', expectedRows: 1440 },
+      { name: 'CMT-MTC_Motor1.2_data', table: 'CMT-MTC_Motor1.2_data', db: 'db3', expectedRows: 1440 }
     ]
   };
 
@@ -240,12 +246,23 @@ const LogInspector = () => {
 }, [selectedId, dates.start, dates.end]);
 
   // --- 6. LOGIC ---
-  const stats = useMemo(() => logs.reduce((acc, log) => {
+  const stats = useMemo(() => {
+  return logs.reduce((acc, log) => {
+    // 1. Existing Status Counts
     if (log.status === 'OK') acc.ok++;
     else if (log.status === 'GAP FOUND') acc.gap++;
     else if (log.status === 'NO DATA') acc.noData++;
+
+    // 2. NEW: Accumulate Minutes Loss
+    // If actual is 1400 and expected is 1440, loss is 40.
+    const expected = log.expected_rows || getTableDetails(table, dbName).expectedRows;
+    const actual = log.actual_rows || 0;
+    const loss = Math.max(0, expected - actual); // Ensure we don't count "extra" rows as negative loss
+    
+    acc.totalMinutesLoss += loss;
     return acc;
-  }, { total: logs.length, ok: 0, gap: 0, noData: 0 }), [logs]);
+  }, { total: logs.length, ok: 0, gap: 0, noData: 0, totalMinutesLoss: 0 });
+}, [logs, table, dbName]);
 
   const filteredLogs = useMemo(() => logs.filter(log => filter === 'ALL' || log.status === filter), [logs, filter]);
   const paginatedLogs = useMemo(() => filteredLogs.slice((page - 1) * rowsPerPage, page * rowsPerPage), [filteredLogs, page]);
@@ -329,6 +346,16 @@ const LogInspector = () => {
           ))}
         </div>
 
+        <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 shadow-sm flex flex-col items-center">
+    <span className="text-[10px] font-black text-orange-400 uppercase tracking-tighter mb-1">
+      Minutes Lost
+    </span>
+    <span className="text-2xl font-black text-orange-600">
+      {stats.totalMinutesLoss.toLocaleString()}
+    </span>
+    <span className="text-[9px] text-orange-400 font-bold">Total Accumulated</span>
+  </div>
+
         <div className="flex bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
           {['ALL', 'OK', 'GAP FOUND', 'NO DATA'].map(f => (
             <button
@@ -341,49 +368,8 @@ const LogInspector = () => {
           ))}
         </div>
       </div>
-
-      {/* Main Table Content */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden mb-6">
-        <table className="w-full text-sm text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100">
-              <th className="p-5">Check Date</th>
-              <th className="p-5 text-center">Actual Rows</th>
-              <th className="p-5 text-center">Benchmark</th>
-              <th className="p-5 text-center">Health %</th>
-              <th className="p-5 text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {paginatedLogs.map((log, i) => (
-              <tr key={i} className="hover:bg-slate-50/50 transition-colors group" onClick={() => setInspectedDate(formatDate(log.check_date))}>
-                <td className="p-5 font-bold text-slate-900">{formatDate(log.check_date)}</td>
-                <td className="p-5 text-center font-medium text-slate-500">{log.actual_rows?.toLocaleString() || '0'}</td>
-                <td className="p-5 text-center font-medium text-slate-300">{log.expected_rows || getTableDetails(table, dbName).expectedRows}</td>
-                <td className={`p-5 text-center font-black ${log.integrity_percent < 100 ? 'text-rose-500' : 'text-emerald-500'}`}>
-                  {log.integrity_percent}%
-                </td>
-                <td className="p-5 text-center">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider ${getStatusStyle(log.status)}`}>
-                    {log.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
       
-       {inspectedDate && (
-  <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl mb-8 transition-all animate-in fade-in slide-in-from-top-4 duration-500">
-    <HourlyHeatmap 
-      table={table} 
-      dbName={dbName} 
-      date={inspectedDate} 
-      columnName={getTableDetails(table, dbName).columnName} 
-    />
-  </div>
-)}
+      
       
 
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xl mb-8">
@@ -430,6 +416,49 @@ const LogInspector = () => {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Main Table Content */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden mb-6">
+        <table className="w-full text-sm text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-100">
+              <th className="p-5">Check Date</th>
+              <th className="p-5 text-center">Actual Rows</th>
+              <th className="p-5 text-center">Benchmark</th>
+              <th className="p-5 text-center">Health %</th>
+              <th className="p-5 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {paginatedLogs.map((log, i) => (
+              <tr key={i} className="hover:bg-slate-50/50 transition-colors group" onClick={() => setInspectedDate(formatDate(log.check_date))}>
+                <td className="p-5 font-bold text-slate-900">{formatDate(log.check_date)}</td>
+                <td className="p-5 text-center font-medium text-slate-500">{log.actual_rows?.toLocaleString() || '0'}</td>
+                <td className="p-5 text-center font-medium text-slate-300">{log.expected_rows || getTableDetails(table, dbName).expectedRows}</td>
+                <td className={`p-5 text-center font-black ${log.integrity_percent < 100 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                  {log.integrity_percent}%
+                </td>
+                <td className="p-5 text-center">
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider ${getStatusStyle(log.status)}`}>
+                    {log.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+       {inspectedDate && (
+  <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl mb-8 transition-all animate-in fade-in slide-in-from-top-4 duration-500">
+    <HourlyHeatmap 
+      table={table} 
+      dbName={dbName} 
+      date={inspectedDate} 
+      columnName={getTableDetails(table, dbName).columnName} 
+    />
+  </div>
+)}
 
       {/* Pagination */}
       <div className="flex justify-between items-center py-4 px-2">

@@ -1,11 +1,9 @@
-// src/pages/TechnicianPage.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box, Heading, Button, VStack, Container, useToast, Table, Thead, Tbody,
   Tr, Th, Td, useDisclosure, Modal, ModalOverlay, ModalContent,
   ModalHeader, ModalFooter, ModalBody, ModalCloseButton, FormControl,
-  FormLabel, Input, Textarea, Select, Divider, HStack, Badge
+  FormLabel, Input, Select, Divider, HStack, Badge
 } from '@chakra-ui/react';
 
 const formatDateTimeForInput = (dateTimeStr) => {
@@ -35,9 +33,8 @@ function TechnicianPage() {
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-// --- FILTERS ---
+  // --- FILTERS ---
   const [statusFilter, setStatusFilter] = useState('Open');
-  // Default to Current Month (0-11) and Year
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth()); 
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
 
@@ -84,7 +81,7 @@ function TechnicianPage() {
     }
   };
 
-// --- 1. Compute Available Years dynamically ---
+  // --- 1. Compute Available Years dynamically ---
   const availableYears = useMemo(() => {
     const years = new Set([new Date().getFullYear()]);
     workOrders.forEach(wo => {
@@ -95,22 +92,19 @@ function TechnicianPage() {
     return Array.from(years).sort((a, b) => b - a);
   }, [workOrders]);
 
-  // --- 2. THE FILTER LOGIC (Status + Month + Year) ---
+  // --- 2. FILTER LOGIC ---
   const filteredWorkOrders = workOrders.filter((wo) => {
     // A. Status Filter
     let matchStatus = false;
     if (statusFilter === 'All') {
       matchStatus = true;
     } else if (statusFilter === 'Open') {
-      // "Open" usually means available to work on (Open or Assigned)
       matchStatus = wo.status === 'Open' || wo.status === 'Assigned';
     } else {
       matchStatus = wo.status === statusFilter;
     }
 
     // B. Date Filter
-    // If no date is scheduled, decide if you want to show it. 
-    // Usually PMP jobs have dates. Here we exclude them if filter is active.
     if (!wo.scheduled_date) return false; 
     
     const date = new Date(wo.scheduled_date);
@@ -141,18 +135,26 @@ function TechnicianPage() {
     setOperations([]);
   };
 
-  const handleNoteSave = async (operationId, newNote) => {
-    const updatedOperations = operations.map(op => 
-      op.operation_id === operationId ? { ...op, technician_note: newNote } : op
+  // --- FIXED: Local State Update (Controlled Component) ---
+  // This ensures that typing in one box ONLY updates that specific box in memory
+  const handleNoteChange = (operationId, newText) => {
+    setOperations(prevOps => 
+      prevOps.map(op => 
+        op.operation_id === operationId ? { ...op, technician_note: newText } : op
+      )
     );
-    setOperations(updatedOperations);
+  };
 
+  // --- FIXED: Backend Save (On Blur) ---
+  // This sends the data to the server only when you finish typing (click away)
+  const handleNoteBlur = async (operationId, noteValue) => {
     try {
       await fetch(`http://10.126.15.197:8002/part/work-order-operation/${operationId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ technician_note: newNote }),
+        body: JSON.stringify({ technician_note: noteValue }),
       });
+      // Silent success to avoid toast spam
     } catch (err) {
       toast({ title: 'Note save failed', status: 'error' });
     }
@@ -195,7 +197,7 @@ function TechnicianPage() {
       <VStack spacing={8} align="stretch">
         <Heading as="h2" size="lg">Technician Work Orders</Heading>
 
-        {/* --- 3. FILTER UI (Updated with Month/Year) --- */}
+        {/* --- 3. FILTER UI --- */}
         <Box p={6} borderWidth={1} borderRadius="lg" bg="gray.50" boxShadow="sm">
             <HStack spacing={4} align="end" wrap="wrap">
                 
@@ -312,11 +314,16 @@ function TechnicianPage() {
                         <Tr key={op.operation_id}>
                           <Td>{op.description}</Td>
                           <Td>
+                            {/* FIXED INPUT LOGIC */}
                             <Input
                               size="sm"
                               placeholder="Add note..."
-                              defaultValue={op.technician_note || ''}
-                              onBlur={(e) => handleNoteSave(op.operation_id, e.target.value)}
+                              // 1. Controlled: Value comes directly from this specific row
+                              value={op.technician_note || ''} 
+                              // 2. Local Update: Updates UI instantly
+                              onChange={(e) => handleNoteChange(op.operation_id, e.target.value)}
+                              // 3. Backend Save: Saves when you leave the field
+                              onBlur={(e) => handleNoteBlur(op.operation_id, e.target.value)}
                             />
                           </Td>
                         </Tr>
