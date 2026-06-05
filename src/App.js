@@ -345,7 +345,7 @@ const [levelData, setLevelData] = useState();
               <Route path="/ETLManager" element={<ETLManager />} />
               <Route path="/HybridDowntime" element={<HybridDowntimeManager />} />
               <Route path="/FetteOeeDashboard" element={<FetteOeeDashboard />} />
-              <Route path="/WH2Dashboard" element={<WH2Dashboard />} />
+              {/* <Route path="/WH2Dashboard" element={<WH2Dashboard />} /> */}
 
               
             </Routes>
