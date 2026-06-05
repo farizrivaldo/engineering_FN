@@ -316,9 +316,11 @@ const [levelData, setLevelData] = useState();
               <Route path="/oeeLine" element={<OEEline />} />
               <Route path="/utility" element={<Utility />} />
               <Route path="/Stopwatch" element={<Stopwatch />} />
-              <Route path="/WH2Dashboard" element={<WH2Dashboard />} />
+
+              {/* <Route path="/WH2Dashboard" element={<WH2Dashboard />} />
               <Route path="/WH2AuditLogs" element={<WH2AuditLogs />} />
-              <Route path="/WH2UserManagement" element={<WH2UserManagement />} />
+              <Route path="/WH2UserManagement" element={<WH2UserManagement />} /> */}
+
             </Routes>
           </div>
         </div>
