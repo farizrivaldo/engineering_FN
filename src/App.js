@@ -65,7 +65,7 @@ import DayOverrideManager from "./pages/OEE/FetteOverride2";
 import FetteOeeDashboard from "./pages/OEE/OEETest2";
 import MachineDashboard from "./pages/DataMonitor";
 import DataIntegrityDashboard from "./pages/DataIntegrity";
-import WH2Dashboard from "./pages/Warehouse2/buildingWH2";
+/* import WH2Dashboard from "./pages/Warehouse2/buildingWH2"; */
 import BatchReportPreview from "./pages/DataExtractor/BatchReportPreview";
 import BatchPage from "./pages/DataExtractor/ParentPage";
 import VibrationDashboard from "./pages/CMVibration";
@@ -75,8 +75,8 @@ import InventoryTable from "./pages/Sparepart/SparepartInventory";
 import SparepartLogForm from "./pages/Sparepart/SparepartForm";
 import SparepartLogs from "./pages/Sparepart/SparepartInventoryLogs";
 import GranulationReport from "./pages/BatchRecNEW/BatchRecNew"; 
-import WH2AuditLogs from "./pages/Warehouse2/WH2AuditLogs";
-import WH2UserManagement from "./pages/Warehouse2/WH2UserManagement";
+/* import WH2AuditLogs from "./pages/Warehouse2/WH2AuditLogs"; */
+/* import WH2UserManagement from "./pages/Warehouse2/WH2UserManagement"; */
 
 import SparepartNonInventory from "./pages/Sparepart/SparepartNonInventory";
 import SparepartNonInventoryLogs from "./pages/Sparepart/SparepartNonInventoryLogs";
@@ -215,8 +215,10 @@ const [levelData, setLevelData] = useState();
               <Route path="/sparepartform" element={<SparepartLogForm />} />
               <Route path="/sparepartlogs" element={<SparepartLogs />} />
               <Route path="/granulation-batch-record" element={<GranulationReport />} />
-              <Route path="/WH2AuditLogs" element={<WH2AuditLogs />} />
-              <Route path="/WH2UserManagement" element={<WH2UserManagement />} />
+              
+              {/* <Route path="/WH2AuditLogs" element={<WH2AuditLogs />} /> */} 
+              {/* <Route path="/WH2UserManagement" element={<WH2UserManagement />} /> */}
+
               <Route path="/SparepartInventory" element={<InventoryTable />} />
               <Route path="/sparepartform" element={<SparepartLogForm />} />
               <Route path="/sparepartlogs" element={<SparepartLogs />} />
