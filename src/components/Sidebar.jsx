@@ -13,6 +13,7 @@ import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import MenuOpenSharpIcon from '@mui/icons-material/MenuOpenSharp';
 import TableViewIcon from '@mui/icons-material/TableView';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
+import { ShoppingBag, ShoppingCart, ShoppingCartRounded } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import '../index.css'
@@ -265,11 +266,17 @@ if (userGlobal.level == 2) {
           { name: "RnD Laboratorium Monitoring", path: "/building?tab=RnD" },
           { name: "Warehouse 1 Monitoring", path: "/building?tab=WH1" },
           { name: "Warehouse 2 Monitoring", path: "/WH2Dashboard" },
-          { name: "Vibration", path: "/CMVibration", visible: userGlobal.level > 4 },
-          { name: "Spare Part", path: "/sparepartdashboard", visible: userGlobal.level > 4 },
-          
+          { name: "Vibration", path: "/CMVibration", visible: userGlobal.level > 4 },          
         ],
-      },{
+      },
+      
+      {
+        name: "Spare Part",
+        icon: <ShoppingCartRounded size={21} className="flex-shrink-0 m-1"/>,
+        path: "/sparepartdashboard",
+      },
+      
+      {
         name: "OPE",
         icon: <FaChartPie size={21} className="flex-shrink-0 m-1 gap-y-4"/>,
         path: "/OPE",
@@ -290,19 +297,23 @@ if (userGlobal.level == 2) {
         icon: <AssignmentInd size={21}/>,
         path: "/PWOInput",
         subMenu: [
-          { name: "PMP Uploader", path: "/PMPUploader", visible: userGlobal.level > 4 },
+          /* { name: "PMP Uploader", path: "/PMPUploader", visible: userGlobal.level > 4 },
           { name: "Assign PMP", path: "/assign-jobs", visible: userGlobal.level > 4 },
           { name: "Technician", path: "/TechnicianPage", visible: userGlobal.level <= 5 },
           { name: "Supervisor Approval", path: "/supervisor-approval", visible: userGlobal.level > 4 },
-          { name: "Completed PWO", path: "/CompletedJobs",visible: userGlobal.level > 4 },
+          { name: "Completed PWO", path: "/CompletedJobs",visible: userGlobal.level > 4 }, */
           { name: "Work Order Uploader", path: "/WorkOrderUploader", visible: userGlobal.level > 4 },
           { name: "Work Order Dashboard", path: "/workorderdashboard", visible: userGlobal.level > 4 },
         ],
-      },{
+      },
+
+      /* {
         name: "Work Order",
         icon: <Description size={21} className="flex-shrink-0 m-1"/>,
         path: "/work-orders",
-      },{
+      }, */
+      
+      {
         name: "Database",
         icon: <Storage size={21} className="flex-shrink-0 m-1 gap-y-4"/>,
         path: "/DataMonitor",

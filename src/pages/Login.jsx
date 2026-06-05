@@ -101,12 +101,33 @@ function Login () {
       loginResult?.user?.level ??
       userRedux?.user?.level;
 
+      const detectedDepartment =
+      loginResult?.department ??
+      loginResult?.user?.department ??
+      userRedux?.user?.department;
+
     const isSuccess = !!loginResult;
     if (isSuccess) {
       loginTriggered.current = true;
       const levelNum = Number(detectedLevel);
-      const targetPath = levelNum === 4 ? '/workorderdashboard' : '/dashboard';
+      
+      // 1. Set a default fallback path (e.g., for Level 1 New Users or Level 5 Admins)
+      let targetPath = '/dashboard'; 
+      
+      // 2. Route based on specific levels
+      if (levelNum === 4) {
+          targetPath = '/workorderdashboard';
+      } else if (levelNum === 2 || levelNum === 3) {
+          // Warehouse Operator and Warehouse Manager get sent to WH2
+          targetPath = '/WH2Dashboard'; 
+      }
+
+      if (detectedDepartment === 'Sparepart') {
+          targetPath = '/sparepartdashboard'; // Change this if your route name is different!
+      }
+
       console.log('Login success. Detected level:', detectedLevel, '→ redirect to', targetPath);
+      
       setTimeout(() => {
         navigate(targetPath);
       }, 2000);
