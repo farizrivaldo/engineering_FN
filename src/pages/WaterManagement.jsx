@@ -65,6 +65,15 @@ export default function WaterManagement() {
   const [SumberPDAM1, setSumberPDAM1] = useState([]);
   const [Lantai1m3, setlantai1m3]= useState ([]);
 
+  // New
+  const [waterCostDaily, setWaterCostDaily] = useState([]);
+const [isCostLoading, setIsCostLoading] = useState(false);
+const [costError, setCostError] = useState(null);
+
+const [totalCost, setTotalCost] = useState(0);
+const [maxCost, setMaxCost] = useState(0);
+const [minCost, setMinCost] = useState(0);
+
   const { colorMode } = useColorMode();
   const borderColor = useColorModeValue("rgba(var(--color-border))", "rgba(var(--color-border))");
   const tulisanColor = useColorModeValue("rgba(var(--color-text))", "rgba(var(--color-text))");
@@ -283,6 +292,87 @@ export default function WaterManagement() {
   let sankeyFinish = (e) =>{
       setFinishSankey(e.target.value);
   };
+
+  const fetchWaterCostDaily = async () => {
+    setIsCostLoading(true);
+    setCostError(null);
+
+    try {
+      let response = await axios.get(
+        "http://localhost:8002/part/waterCostSystem", 
+        {
+          params: { area: WaterArea, start: startDate, finish: finishDate },
+        }
+      );
+
+      // 1. Handle Empty State
+      if (!response.data || response.data.length === 0) {
+        setCostError(null); // Clear error so the empty chart still renders
+        setWaterCostDaily([]);
+        setTotalCost(0);
+        setMaxCost(0);
+        setMinCost(0);
+        setIsCostLoading(false);
+        return;
+      }
+      
+      const dataArray = response.data;
+      
+      // 2. Calculate Min, Max, and Total
+      let total = 0;
+      let max = -Infinity;
+      let min = Infinity;
+
+      dataArray.forEach(item => {
+        const dailyCost = Number(item.cost) || 0;
+        total += dailyCost;
+        if (dailyCost > max) max = dailyCost;
+        if (dailyCost < min) min = dailyCost;
+      });
+
+      // 3. Save to State
+      setWaterCostDaily(dataArray);
+      setTotalCost(total);
+      setMaxCost(max === -Infinity ? 0 : max);
+      setMinCost(min === Infinity ? 0 : min);
+      
+      setIsCostLoading(false);
+
+    } catch (error) {
+      console.error(error);
+      setCostError("Failed to fetch cost data");
+      setWaterCostDaily([]);
+      setIsCostLoading(false);
+    }
+};
+
+const costGraphOptions = {
+  animationEnabled: true,
+  theme: "light2", // "light1", "dark1", "dark2"
+  title: {
+    text: "Daily Water Cost",
+  },
+  axisY: {
+    title: "Cost (Rp)",
+    valueFormatString: "#,##0", // Adds thousand separators
+  },
+  axisX: {
+    valueFormatString: "YYYY-MM-DD",
+    labelAngle: -50,
+  },
+  data: [
+    {
+      type: "splineArea", // Matches your existing design
+      color: "#4CAF50", // A different color (green) to distinguish from volume
+      xValueType: "dateTime", // Required if x is a timestamp
+      dataPoints: waterCostDaily.map((day) => ({
+        label: day.label,
+        x: day.x, // Assuming x is a timestamp or index
+        y: day.cost, // Pointing to the new calculated cost
+      })),
+    },
+  ],
+};
 
   useEffect(() => {
     const handleThemeChange = () => {
@@ -667,7 +757,10 @@ export default function WaterManagement() {
           <Button
             className="ml-2"
             colorScheme="blue"
-            onClick={() => fetchWaterDaily()}
+            onClick={() => {
+    fetchWaterDaily();
+    fetchWaterCostDaily();
+  }}
           >
             Submit
           </Button>
@@ -691,6 +784,29 @@ export default function WaterManagement() {
           <CanvasJSChart options={options} />
         )}
       </div>
+      {/* --- GRAPH 2: NEW WATER COST --- */}
+<div className="graph-section" style={{ marginTop: "40px" }}>
+  
+  {/* Cost Statistics Header */}
+  <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "10px", fontSize: "14px" }}>
+    <div style={{ textAlign: "left" }}>
+      <p>Total = Rp {totalCost.toLocaleString('id-ID')}</p>
+      <p>Max = Rp {maxCost.toLocaleString('id-ID')}</p>
+      <p>Min = Rp {minCost.toLocaleString('id-ID')}</p>
+    </div>
+  </div>
+
+  {/* Chart Rendering */}
+  {isCostLoading ? (
+    <p>Loading cost data...</p>
+  ) : costError ? (
+    <p style={{ color: "red" }}>{costError}</p>
+  ) : (
+    // By removing the array length check, CanvasJS will render the empty grid when data is []
+    <CanvasJSChart options={costGraphOptions} />
+  )}
+  
+</div>
       <br />
       <div className="flex flex-col xl:flex-row justify-center my-4 space-y-4 xl:space-y-0 xl:space-x-4">
         <div className="flex flex-col xl:w-56">
