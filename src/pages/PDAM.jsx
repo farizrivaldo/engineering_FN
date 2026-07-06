@@ -384,7 +384,7 @@ const PDAM = forwardRef((props, ref) => {
 {/* -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------         */}
         <div className="text-center mt-8 p-2 shadow-buatcard bg-coba rounded-md relative">
             <h1 className="text-center text-text text-4xl antialiased hover:subpixel-antialiased mb-2">PDAM Chart</h1>
-            <ChartYearly endpoint="http://10.126.15.197:8002/part/GrafanaMVMDPYear" area="cMT-DB-WATER-UTY_Met_PDAM_data" title=" " name="PDAM" colors={Colors2}
+            <ChartYearly endpoint="http://10.126.15.197:8002/part/GrafanaMVMDPYear" area="cMT-DB-WATER-UTY3_Met_PDAM_data" title=" " name="PDAM" colors={Colors2}
                 style={{
                 border: 'none', // Removes border
                 position: 'relative',
