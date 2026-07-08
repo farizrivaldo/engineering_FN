@@ -737,7 +737,7 @@ export default function PowerManagement() {
 
     try {
       let response = await axios.get(
-        "http://10.126.15.197:8002/part/PowerDaily",
+        "http://localhost:8002/part/PowerDaily",
         {
           params: {
             area: powerArea,

@@ -299,7 +299,7 @@ const [minCost, setMinCost] = useState(0);
 
     try {
       let response = await axios.get(
-        "http://localhost:8002/part/waterCostSystem", 
+        "http://10.126.15.197:8002/part/waterCostSystem", 
         {
           params: { area: WaterArea, start: startDate, finish: finishDate },
         }

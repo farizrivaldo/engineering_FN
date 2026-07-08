@@ -9,6 +9,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import   {Progress  } from "@chakra-ui/react";
 import ChartDashboard from "../components/ChartDashboard";
 import ChartYearly from "../components/ChartYearly";
+import axios from 'axios';
+// Depending on how CanvasJS is installed in your project, it usually looks like this:
+import CanvasJSReact from "../canvasjs.react";
+
 
 // export const getMvmdpData = [
 //   { title: 'LVMDP 1 Load Percentage', value: `${((lvmdp1 / getLimit.Limit_Listrik) * 100).toFixed(2)} %` },
@@ -40,6 +44,16 @@ const NVMDP = React.forwardRef(({ getLimit, dataTotalUang }, ref) => {
     const Colors1 = { dark: "#dfa2fc", light: "#c385e1" };
     const Colors2 = { dark: "#b88be8", light: "#c894ff" };
     const Colors3 = { dark: "#c692fc", light: "#bb7bff" };
+
+    const [powerCostDaily, setPowerCostDaily] = useState([]);
+const [isPowerCostLoading, setIsPowerCostLoading] = useState(false);
+const [powerCostError, setPowerCostError] = useState(null);
+const [totalPowerCost, setTotalPowerCost] = useState(0);
+const [maxPowerCost, setMaxPowerCost] = useState(0);
+const [minPowerCost, setMinPowerCost] = useState(0);
+
+    const CanvasJSChart = CanvasJSReact.CanvasJSChart;
+
 
     const [isDarkMode, setIsDarkMode] = useState(
         document.documentElement.getAttribute("data-theme") === "dark"
@@ -87,8 +101,74 @@ const NVMDP = React.forwardRef(({ getLimit, dataTotalUang }, ref) => {
     const grafanaMVMDPYear = isDarkMode 
     ? "https://snapshots.raintank.io/dashboard/snapshot/nKXeg5CtNW9M1GfW8MrLSHJlKtifwHze?orgId=0&kiosk"
     : "https://snapshots.raintank.io/dashboard/snapshot/nKXeg5CtNW9M1GfW8MrLSHJlKtifwHze?orgId=0&kiosk&theme=light";
+
+    const fetch7DayPowerCost = async () => {
+    setIsPowerCostLoading(true);
+    setPowerCostError(null);
+
+    // Calculate the strict 7-day window ending yesterday
+    const today = new Date();
+    const finish = new Date(today);
+    finish.setDate(finish.getDate() - 1);
+    const start = new Date(today);
+    start.setDate(start.getDate() - 7); 
+
+    const finishDateStr = finish.toISOString().split('T')[0];
+    const startDateStr = start.toISOString().split('T')[0];
+
+    try {
+      let response = await axios.get(
+        "http://10.126.15.197:8002/part/PowerCostDaily", 
+        {
+          params: { 
+            area: "cMT-Gedung-UTY_MVMDP_data", 
+            start: startDateStr, 
+            finish: finishDateStr 
+          },
+        }
+      );
+
+      if (!response.data || response.data.length === 0) {
+        setPowerCostError(null); 
+        setPowerCostDaily([]);
+        setTotalPowerCost(0);
+        setMaxPowerCost(0);
+        setMinPowerCost(0);
+        setIsPowerCostLoading(false);
+        return;
+      }
+      
+      const dataArray = response.data;
+      
+      let total = 0;
+      let max = -Infinity;
+      let min = Infinity;
+
+      dataArray.forEach(item => {
+        const dailyCost = Number(item.cost) || 0;
+        total += dailyCost;
+        if (dailyCost > max) max = dailyCost;
+        if (dailyCost < min) min = dailyCost;
+      });
+
+      setPowerCostDaily(dataArray);
+      setTotalPowerCost(total);
+      setMaxPowerCost(max === -Infinity ? 0 : max);
+      setMinPowerCost(min === Infinity ? 0 : min);
+      
+      setIsPowerCostLoading(false);
+
+    } catch (error) {
+      console.error("API Error:", error);
+      setPowerCostError("Failed to fetch 7-day power cost data");
+      setPowerCostDaily([]);
+      setIsPowerCostLoading(false);
+    }
+};
+
   
     useEffect(() => {
+      fetch7DayPowerCost();
       // Buat koneksi WebSocket     
       socketRef.current = new WebSocket("ws://10.126.15.197:1880/ws/test");
   
@@ -188,6 +268,33 @@ const NVMDP = React.forwardRef(({ getLimit, dataTotalUang }, ref) => {
         </text>
       );
     };
+
+    const powerCostGraphOptions = {
+    animationEnabled: true,
+    theme: "light2", 
+    backgroundColor: "transparent", 
+    axisY: {
+        title: "Cost (Rp)",
+        // 1. Adds 'Rp' and thousand separators to the left axis
+        valueFormatString: "Rp #,##0", 
+        gridThickness: 1
+    },
+    axisX: {
+        valueFormatString: "YYYY-MM-DD",
+    },
+    data: [{
+        type: "column", 
+        color: "#2196F3", 
+        xValueType: "dateTime",
+        // 2. Adds 'Rp' and thousand separators to the hover tooltip
+        yValueFormatString: "Rp #,##0", 
+        dataPoints: powerCostDaily.map(day => ({ 
+            label: day.label, 
+            x: new Date(day.label).getTime(), 
+            y: day.cost 
+        })) 
+    }]
+};
   
   return (
     <>
@@ -875,7 +982,8 @@ const NVMDP = React.forwardRef(({ getLimit, dataTotalUang }, ref) => {
       </div>
       <div className="text-center mt-8 p-2 shadow-buatcard bg-coba rounded-md relative">
         <h1 className="text-center text-text text-4xl antialiased hover:subpixel-antialiased mb-2">MVMDP Chart</h1>
-        <ChartYearly endpoint="http://10.126.15.197:8002/part/GrafanaMVMDPYear" area="cMT-Gedung-UTY_MVMDP_data" title=" " name="MVMDP" colors={Colors2}
+        <ChartYearly endpoint="http://10.126.15.197:8002/part/GrafanaMVMDPYear" area="cMT-Gedung-UTY_MVMDP_data" title=" " name="MVMDP" colors={Colors2} yAxisFormat="#,##0.## kWh"
+        tooltipFormat="#,##0.## kWh"
           style={{
           border: 'none', // Removes border
           position: 'relative',
@@ -884,6 +992,7 @@ const NVMDP = React.forwardRef(({ getLimit, dataTotalUang }, ref) => {
           height: '580px'
         }}/>
         <br/>
+        
         {/* <iframe
           src={grafanaMVMDPYear}
           // width="540"
@@ -901,6 +1010,34 @@ const NVMDP = React.forwardRef(({ getLimit, dataTotalUang }, ref) => {
         {/* kalau pake dollar / duit pake kode yg dibawah (yg di komenin) */}
         {/* ${((filteredValue?.Inverter_SP_1to6?.[0] ?? 0) + (filteredValue?.Inverter_SP_7to12?.[0] ?? 0)).toLocaleString("en-US")} */}
       </div>
+      {/* --- NEW: 7-DAY POWER COST CHART CARD --- */}
+    <div className="text-center mt-8 p-2 shadow-buatcard bg-coba rounded-md relative">
+      <h1 className="text-center text-text text-4xl antialiased hover:subpixel-antialiased mb-2">7-Day Power Cost</h1>
+      
+      {/* Stats Header */}
+      <div className="flex justify-end mb-4 pr-8 text-text text-sm">
+        <div className="text-left font-semibold tracking-wide">
+          <p>Total = Rp {totalPowerCost.toLocaleString('id-ID')}</p>
+          <p>Max = Rp {maxPowerCost.toLocaleString('id-ID')}</p>
+          <p>Min = Rp {minPowerCost.toLocaleString('id-ID')}</p>
+        </div>
+      </div>
+
+      {/* The CanvasJS Chart Container */}
+      <div style={{ position: 'relative', width: '100%', height: '580px' }}>
+        {isPowerCostLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-text text-xl">Loading cost data...</p>
+          </div>
+        ) : powerCostError ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-red-500 text-xl">{powerCostError}</p>
+          </div>
+        ) : (
+          <CanvasJSChart options={powerCostGraphOptions} />
+        )}
+      </div>
+    </div>
     </>
   );
 })

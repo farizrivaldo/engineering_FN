@@ -6,6 +6,11 @@ import { PiPlantFill } from "react-icons/pi";
 import { IoLogoElectron } from "react-icons/io5";
 import ChartDashboard from "../components/ChartDashboard";
 import ChartYearly from "../components/ChartYearly";
+import axios from 'axios';
+// Depending on how CanvasJS is installed in your project, it usually looks like this:
+import CanvasJSReact from "../canvasjs.react";
+
+
 
 const PDAM = forwardRef((props, ref) => {
     const [inlet, setInlet] = useState(null);
@@ -24,6 +29,17 @@ const PDAM = forwardRef((props, ref) => {
 
     const Colors1 = { dark: "#81d1fc", light: "#a7defc" };
     const Colors2 = { dark: "#a2c7eb", light: "#b0e6f5" };
+
+    const [waterCostDaily, setWaterCostDaily] = useState([]);
+    const [isCostLoading, setIsCostLoading] = useState(false);
+    const [costError, setCostError] = useState(null);
+
+    const [totalCost, setTotalCost] = useState(0);
+    const [maxCost, setMaxCost] = useState(0);
+    const [minCost, setMinCost] = useState(0);
+
+    const CanvasJSChart = CanvasJSReact.CanvasJSChart;
+
 
     const [isDarkMode, setIsDarkMode] = useState(
         document.documentElement.getAttribute("data-theme") === "dark"
@@ -47,9 +63,75 @@ const PDAM = forwardRef((props, ref) => {
     ? "https://snapshots.raintank.io/dashboard/snapshot/hV5Qr0FJLj4uBZ2EIkhChrfJwibVyrUz?orgId=0&kiosk"
     : "https://snapshots.raintank.io/dashboard/snapshot/hV5Qr0FJLj4uBZ2EIkhChrfJwibVyrUz?orgId=0&kiosk&theme=light";
 
+    const fetch7DayWaterCost = async () => {
+    setIsCostLoading(true);
+    setCostError(null);
+
+    // 1. Calculate the exact 7-day window locally inside the function
+    const today = new Date();
+    const finish = new Date(today);
+    finish.setDate(finish.getDate() - 1);
+    const start = new Date(today);
+    start.setDate(start.getDate() - 7); 
+
+    const finishDateStr = finish.toISOString().split('T')[0];
+    const startDateStr = start.toISOString().split('T')[0];
+
+    try {
+      // 2. Pass the local strings directly to the API
+      let response = await axios.get(
+        "http://10.126.15.197:8002/part/waterCostSystem", 
+        {
+          params: { 
+            area: "cMT-DB-WATER-UTY3_PDAM_Sehari_data", // Hardcoded table name
+            start: startDateStr,                        // Local calculated start date
+            finish: finishDateStr                       // Local calculated finish date
+          },
+        }
+      );
+
+      if (!response.data || response.data.length === 0) {
+        setCostError(null); 
+        setWaterCostDaily([]);
+        setTotalCost(0);
+        setMaxCost(0);
+        setMinCost(0);
+        setIsCostLoading(false);
+        return;
+      }
+      
+      const dataArray = response.data;
+      
+      let total = 0;
+      let max = -Infinity;
+      let min = Infinity;
+
+      dataArray.forEach(item => {
+        const dailyCost = Number(item.cost) || 0;
+        total += dailyCost;
+        if (dailyCost > max) max = dailyCost;
+        if (dailyCost < min) min = dailyCost;
+      });
+
+      setWaterCostDaily(dataArray);
+      setTotalCost(total);
+      setMaxCost(max === -Infinity ? 0 : max);
+      setMinCost(min === Infinity ? 0 : min);
+      
+      setIsCostLoading(false);
+
+    } catch (error) {
+      console.error("API Error:", error);
+      setCostError("Failed to fetch 7-day cost data");
+      setWaterCostDaily([]);
+      setIsCostLoading(false);
+    }
+};
+
     useEffect(() => {
         // Buat koneksi WebSocket
         socketRef.current = new WebSocket("ws://10.126.15.197:1880/ws/test");
+        fetch7DayWaterCost();
     
         socketRef.current.onopen = () => {
         console.log("WebSocket connected");
@@ -99,6 +181,30 @@ const PDAM = forwardRef((props, ref) => {
     
         return () => observer.disconnect();
     }, []);
+
+    const costGraphOptions = {
+    animationEnabled: true,
+    theme: "light2", 
+    backgroundColor: "transparent", // Lets your 'bg-coba' class show through
+    axisY: {
+        title: "Cost (Rp)",
+        valueFormatString: "#,##0",
+        gridThickness: 1
+    },
+    axisX: {
+        valueFormatString: "YYYY-MM-DD",
+    },
+    data: [{
+        type: "column", // Or "splineArea" depending on the vibe you want
+        color: "#4CAF50",
+        xValueType: "dateTime",
+        dataPoints: waterCostDaily.map(day => ({ 
+            label: day.label, 
+            x: new Date(day.x).getTime(), // Ensure this parses cleanly for CanvasJS
+            y: day.cost 
+        })) 
+    }]
+}
       
 
   return (
@@ -384,7 +490,7 @@ const PDAM = forwardRef((props, ref) => {
 {/* -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------         */}
         <div className="text-center mt-8 p-2 shadow-buatcard bg-coba rounded-md relative">
             <h1 className="text-center text-text text-4xl antialiased hover:subpixel-antialiased mb-2">PDAM Chart</h1>
-            <ChartYearly endpoint="http://10.126.15.197:8002/part/GrafanaPDAMYear" area="cMT-DB-WATER-UTY3_Met_PDAM_data" title=" " name="PDAM" colors={Colors2}
+            <ChartYearly endpoint="http://10.126.15.197:8002/part/GrafanaPDAMYear" area="cMT-DB-WATER-UTY3_PDAM_Sehari_data" title=" " name="PDAM" colors={Colors2}
                 style={{
                 border: 'none', // Removes border
                 position: 'relative',
@@ -405,6 +511,34 @@ const PDAM = forwardRef((props, ref) => {
             title="Grafana Chart">
             </iframe> */}
         </div>
+        {/* --- NEW: 7-DAY COST CHART CARD --- */}
+<div className="text-center mt-8 p-2 shadow-buatcard bg-coba rounded-md relative">
+    <h1 className="text-center text-text text-4xl antialiased hover:subpixel-antialiased mb-2">7-Day Water Cost</h1>
+    
+    {/* Stats Header (Aligned to the right using Tailwind) */}
+    <div className="flex justify-end mb-4 pr-8 text-text text-sm">
+        <div className="text-left font-semibold tracking-wide">
+            <p>Total = Rp {totalCost.toLocaleString('id-ID')}</p>
+            <p>Max = Rp {maxCost.toLocaleString('id-ID')}</p>
+            <p>Min = Rp {minCost.toLocaleString('id-ID')}</p>
+        </div>
+    </div>
+
+    {/* The CanvasJS Chart Container */}
+    <div style={{ position: 'relative', width: '100%', height: '580px' }}>
+        {isCostLoading ? (
+            <div className="flex items-center justify-center h-full">
+                <p className="text-text text-xl">Loading cost data...</p>
+            </div>
+        ) : costError ? (
+            <div className="flex items-center justify-center h-full">
+                <p className="text-red-500 text-xl">{costError}</p>
+            </div>
+        ) : (
+            <CanvasJSChart options={costGraphOptions} />
+        )}
+    </div>
+</div>
 
     </>
   );

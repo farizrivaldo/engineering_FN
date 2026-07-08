@@ -5,7 +5,7 @@ import CanvasJSReact from '../canvasjs.react'; // Pastikan Anda sudah menginstal
 var CanvasJS = CanvasJSReact.CanvasJS;
 var CanvasJSChart = CanvasJSReact.CanvasJSChart;
 
-function ChartYearly({ endpoint, area, title, colors, name }) {
+function ChartYearly({ endpoint, area, title, name, colors, style, yAxisFormat, tooltipFormat }) {
   const [graphData, setGraphData] = useState([]);
   const [isDarkMode, setIsDarkMode] = useState(
       document.documentElement.getAttribute("data-theme") === "dark"
@@ -54,6 +54,7 @@ function ChartYearly({ endpoint, area, title, colors, name }) {
       tickLength: 5,
       tickThickness: 2,
       tickColor: isDarkMode ? "#d6d6d6" : "#5e5e5e",
+      valueFormatString: yAxisFormat || "#,##0.##",
     },
     axisX: {
       lineColor: isDarkMode ? "#d6d6d6" : "#474747",
@@ -80,6 +81,9 @@ function ChartYearly({ endpoint, area, title, colors, name }) {
         markerColor: isDarkMode ? colors.dark : colors.light,
         markerSize: 2,
         dataPoints: graphData,
+        yValueFormatString: tooltipFormat || "#,##0.##",
+        toolTipContent: `Time: {label}, Monthly Total: {y} ${tooltipFormat ? tooltipFormat.replace('#,##0.##', '').trim() : ''}`,
+        
       },
     ],
   };
