@@ -110,6 +110,7 @@ function Login () {
     if (isSuccess) {
       loginTriggered.current = true;
       const levelNum = Number(detectedLevel);
+      localStorage.setItem("user_level", levelNum);
       
       // 1. Set a default fallback path (e.g., for Level 1 New Users or Level 5 Admins)
       let targetPath = '/dashboard'; 
@@ -117,9 +118,12 @@ function Login () {
       // 2. Route based on specific levels
       if (levelNum === 4) {
           targetPath = '/workorderdashboard';
-      } else if (levelNum === 2 || levelNum === 3) {
+      } else if (levelNum === 2) {
           // Warehouse Operator and Warehouse Manager get sent to WH2
           targetPath = '/WH2Dashboard'; 
+      } else if (levelNum === 3) {
+          // Production Operator and Production Manager get sent to Granulation Batch Record
+          targetPath = '/granulation-batch-record'; 
       }
 
       if (detectedDepartment === 'Sparepart') {

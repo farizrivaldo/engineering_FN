@@ -1,5 +1,6 @@
 import { useSelector } from "react-redux";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate, useNavigate } from "react-router-dom";
+import { Link } from 'react-router-dom';
 import './index.css'
 import Navbar from "./components/Navbar";
 import Maintenance from "./pages/Maintenance";
@@ -86,23 +87,37 @@ import SparepartDashboardWrapper from "./pages/Sparepart/SparepartDashboard";
 function App() {
   const dispatch = useDispatch();
   const location = useLocation();
-  const userlocalStorage = localStorage.getItem("user_token");
-const userGlobal = 5; // DEV MODE: Remove before production
-const [levelData, setLevelData] = useState();
+  
+  // 1. Grab data synchronously from storage (READING)
+  const userToken = localStorage.getItem("user_token");
+  const storedLevel = localStorage.getItem("user_level"); 
+  
+  // 2. Initialize state IMMEDIATELY
+  const [levelData, setLevelData] = useState(storedLevel ? Number(storedLevel) : null);
 
-  //KEEP LOGIN CHECKER
+  // KEEP LOGIN CHECKER
   const keepLogin = () => {
-    if (userlocalStorage) {
-      dispatch(CheckLogin(userlocalStorage));
+    if (userToken) {
+      dispatch(CheckLogin(userToken));
     }
   };
 
   useEffect(() => {
-    // getArrival()
-    setLevelData(userGlobal);
-    // console.log(levelData);
+    // Keep state updated if storage changes on future renders
+    if (storedLevel) {
+      setLevelData(Number(storedLevel));
+    }
     keepLogin();
-  }, [userGlobal]);
+  }, [storedLevel, userToken]);
+
+  // 3. THE SHIELD: Prevent App from skipping the if/else blocks during the URL transition
+  if (userToken && levelData === null) {
+    return (
+      <div className="bg-background min-h-screen flex items-center justify-center">
+        <h2 className="text-xl font-bold">Verifying Access Level...</h2>
+      </div>
+    );
+  }
 
   if (location.pathname === "/") {
     // Separate layout for landing page, without grid
@@ -139,7 +154,27 @@ const [levelData, setLevelData] = useState();
     );
   }
 
+const Unauthorized = () => {
+  const navigate = useNavigate();
 
+  return (
+    <div className="flex flex-col items-center justify-center h-[80vh] w-full text-center">
+      <h1 className="text-6xl font-bold text-red-500 mb-4">403</h1>
+      <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
+      <p className="text-gray-500 mb-8 max-w-md text-lg">
+        You do not have the required permissions to view this page. If you believe this is a mistake, please contact your administrator.
+      </p>
+      
+      {/* The dynamic "Go Back" button */}
+      <button 
+        onClick={() => navigate(-1)}
+        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium shadow-sm"
+      >
+        Go Back
+      </button>
+    </div>
+  );
+};
 
   if (levelData === 5) {
     return (
@@ -253,9 +288,7 @@ const [levelData, setLevelData] = useState();
             <Header />
           </>
           <div className="overflow-x-auto">
-            <Routes>
-              {/* <Route path="/" element={<Login />} /> */}
-              {/* <Route path="/register" element={<Register />} /> */}
+            {/* <Routes>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/maintenance" element={<Maintenance />} />
               <Route path="/Instrument" element={<Instrument />} />
@@ -278,6 +311,76 @@ const [levelData, setLevelData] = useState();
               <Route path="/TechnicianDashboard" element={<TechnicianDashboard />} />
               <Route path="/workorderdashboard" element={<WorkOrderDashboard />} />
               <Route path="/granulation-batch-record" element={<GranulationReport />} />
+              */}
+              
+
+              <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/maintenance" element={<Maintenance />} />
+              <Route path="/Instrument" element={<Instrument />} />
+              <Route path="/pareto" element={<Pareto />} />
+              <Route path="/createnew" element={<CreateNew />} />
+              <Route path="/createedite/:id" element={<CreateEdit />} />
+              <Route path="/building" element={<AppPareto />} />
+              {/* <Route path="/WH2Dashboard" element={<WH2Dashboard />} /> */}
+              <Route path="/mail" element={<CheckMail />} />
+              <Route path="/editprofile" element={<EditProfile />} />
+              <Route path="/production" element={<Production />} />
+              <Route path="/OPE" element={<App1 />} />
+              <Route path="/avabilityope" element={<AvabilityOPE />} />
+              <Route path="/avabilitmachine" element={<AvabilityMachine />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/oeeLine" element={<OEEline />} />
+              <Route path="/utility" element={<Utility />} />
+              <Route path="/Stopwatch" element={<Stopwatch />} />
+              <Route path="/HistoricalMachine" element={<MachineHistorical />} />
+              <Route path="/BatchRecord" element={<BatchRecord />} />
+              <Route path="/HistoryTabel" element={<HistoryTabel />} />
+              <Route path="/PWOInput" element={<UploadComponent />} />
+              <Route path="/TechnicianPage" element={<TechnicianPage />} />
+              <Route path="/MasterPMP" element={<OperationsManager />} />
+              <Route path="/PMPUploader" element={<PMPUploader />} />
+              <Route path="/assign-jobs" element={<DailyAssignmentPage />} />
+              <Route path="/MachineManager" element={<MachineManager />} />
+              <Route path="/CompletedJobs" element={<CompletedJobsPage />} />
+              <Route path="/ebr-data-exporter" element={<EBRDataExporter />} />
+              <Route path="/work-orders" element={<ServiceRequestForm />} />
+              <Route path="/supervisor-approval" element={<SupervisorApproval />} />
+              <Route path="/TechnicianDashboard" element={<TechnicianDashboard />} />
+              <Route path="/ProfileManager" element={<ProfileManager />} />
+              <Route path="/SteamControl" element={<VortexChart />} />
+              <Route path="/OeeDashboard" element={<OeeDashboard />} />
+              <Route path="/TestImport" element={<TestImport />} />
+              <Route path="/FetteLogs" element={<FetteLogs />} />
+              <Route path="/DowntimeDashboard" element={<DowntimeDashboard />} />
+              <Route path="/ETLManager" element={<ETLManager />} />
+              <Route path="/HybridDowntime" element={<HybridDowntimeManager />} />
+              <Route path="/OverrideAuditView" element={<OverrideAuditView />} />
+              <Route path="/DayOverrideManager" element={<DayOverrideManager />} />
+
+              <Route path="/FetteOeeDashboard" element={<FetteOeeDashboard />} />
+              <Route path="/DataMonitor" element={<MachineDashboard />} />
+              <Route path="/DataIntegrity" element={<DataIntegrityDashboard />} />
+              <Route path="/BatchReportPreview" element={<BatchReportPreview />} />
+              <Route path="/BatchPage" element={<BatchPage />} />
+              <Route path="/CMVibration" element={<VibrationDashboard />} />
+              <Route path="/WorkOrderUploader" element={<WorkOrderUploader />} />
+              <Route path="/workorderdashboard" element={<WorkOrderDashboard />} />
+              <Route path="/SparepartInventory" element={<InventoryTable />} />
+              <Route path="/sparepartform" element={<SparepartLogForm />} />
+              <Route path="/sparepartlogs" element={<SparepartLogs />} />
+              <Route path="/granulation-batch-record" element={<GranulationReport />} />
+              
+              {/* <Route path="/WH2AuditLogs" element={<WH2AuditLogs />} /> */} 
+              {/* <Route path="/WH2UserManagement" element={<WH2UserManagement />} /> */}
+
+              <Route path="/SparepartInventory" element={<InventoryTable />} />
+              <Route path="/sparepartform" element={<SparepartLogForm />} />
+              <Route path="/sparepartlogs" element={<SparepartLogs />} />
+              <Route path="/SparepartNonInventory" element={<SparepartNonInventory />} />
+              <Route path="/SparepartNonInventoryLogs" element={<SparepartNonInventoryLogs />} />
+              <Route path="/SparepartDashboard" element={<SparepartDashboardWrapper />} />
+              <Route path="*" element={<Unauthorized />} />
               
 
             </Routes>
@@ -288,7 +391,7 @@ const [levelData, setLevelData] = useState();
         </>
       </div>
     );
-  } if (levelData === 3) {
+  } if (levelData == 3) {
     return (
       <div className="bg-background min-h-screen min-w-full grid grid-cols-[auto_1fr] ">
         <>
@@ -301,31 +404,18 @@ const [levelData, setLevelData] = useState();
           <div className="overflow-x-auto">
             <Routes>
               {/* <Route path="/" element={<Login />} /> */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/maintenance" element={<Maintenance />} />
-              <Route path="/Instrument" element={<Instrument />} />
-              <Route path="/pareto" element={<Pareto />} />
               <Route path="/createnew" element={<CreateNew />} />
               <Route path="/createedite/:id" element={<CreateEdit />} />
-              <Route path="/mail" element={<CheckMail />} />
               <Route path="/editprofile" element={<EditProfile />} />
-              <Route path="/production" element={<Production />} />
-              <Route path="/OPE" element={<App1 />} />
-              <Route path="/avabilityope" element={<AvabilityOPE />} />
-              <Route path="/avabilitmachine" element={<AvabilityMachine />} />
-              <Route path="/oeeLine" element={<OEEline />} />
-              <Route path="/utility" element={<Utility />} />
-              <Route path="/Stopwatch" element={<Stopwatch />} />
-
-              {/* <Route path="/WH2Dashboard" element={<WH2Dashboard />} />
-              <Route path="/WH2AuditLogs" element={<WH2AuditLogs />} />
-              <Route path="/WH2UserManagement" element={<WH2UserManagement />} /> */}
-
+              <Route path="/granulation-batch-record" element={<GranulationReport />} />
+              <Route path="*" element={<Unauthorized />} />
             </Routes>
           </div>
         </div>
         <>
+         {/* Disabled Chatbot Button, delete comment to enable
           <Chat />
+          */}
         </> 
       </div>
     );
@@ -402,6 +492,7 @@ const [levelData, setLevelData] = useState();
       </div>
     );
   }
+  
 }
 
 export default App;

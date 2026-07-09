@@ -168,9 +168,10 @@ if (userGlobal.level == 2) {
     if (userGlobal.level == 3) {
       navigation.push(
       {
-        name: "Warehouse Dashboard",
-        icon: <WarehouseIcon size={21} className="flex-shrink-0 m-1"/>,
-        path: "/WH2Dashboard",
+        name: "Batch Record",
+        icon: <AssignmentIcon size={21} className="flex-shrink-0 m-[2px] gap-y-1"/>,
+        path: "/granulation-batch-record",
+        
       }
       
     );
@@ -179,9 +180,86 @@ if (userGlobal.level == 2) {
     
 
     if (userGlobal.level == 4) {
-      navigation.push(
-    
+      navigation.push({
+        name: "Dashboard",
+        icon: <DashboardOutlinedIcon sx={{ fontSize: 21 }} className="flex-shrink-0 m-1 "/>,
+        path: "/dashboard",
+      },{
+        name: "Maintenance",
+        icon: <EngineeringIcon />,
+        path: "/maintenance",
+        subMenu: [
+          { name: "Maintenance Breakdown Report", path: "/maintenance?tab=maintenance-breakdown", visible: userGlobal.level < 2 },
+          { name: "Maintenance Report", path: "/maintenance?tab=handover" },
+          { name: "Data Report", path: "/maintenance?tab=data-report" },
+          { name: "Historical Machine", path: "/maintenance?tab=historical" },
+        ],
+      },{
+        name: "Instrument",
+        icon: <LuPill size={21} className="flex-shrink-0 m-1"/>,
+        path: "/Instrument",
+      },{
+        name: "Utility",
+        icon: <FaScrewdriverWrench size={20} />,
+        path: "/utility",
+        subMenu: [
+          { name: "Power Management", path: "/utility?tab=power-management" },
+          { name: "Water Management", path: "/utility?tab=water-management" },
+          { name: "Waste Water Management", path: "/utility?tab=waste-water-management" },
+          { name: "Heating Ventilating & Air Control", path: "/utility?tab=HVAC" },
+          { name: "Steam Control", path: "/utility?tab=steam-control" },
+          { name: "Solar Management", path: "/utility?tab=solar-management" },
+          { name: "Loopo", path: "/utility?tab=loopo" },
+          { name: "Osmotron", path: "/utility?tab=osmotron" },
+          { name: "Alarm List", path: "/utility?tab=alarm-list" },
+          { name: "Motor Vibration", path: "/utility?tab=motor-vibration" },
+        ],
+      },{
+        name: "Production",
+        icon: <FactoryIcon sx={{ fontSize: 22 }} className="flex-shrink-0" />,
+        path: "/production",
+        subMenu: [
+          { name: "Input Data", path: "/production?tab=Input", visible: userGlobal.level < 5 },
+          { name: "OEE CM", path: "/production?tab=Prod" },
+          {
+            name: "Fette",
+            path: "#",
+                subMenu: [
+                  { name: "Live OEE", path: "/OeeDashboard" },
+                  { name: "OEE", path: "/FetteOeeDashboard" },
+                  { name: "Downtime", path: "/HybridDowntime" },
+                  { name: "Logs", path: "/ETLManager" },
+                  { name: "Override", path: "/DayOverrideManager" },
+                  { name: "Audit View", path: "/OverrideAuditView" },
+                ],
+              },
+            ],
+          
+      },{
+        name: "Building",
+        icon: <BsBuildingsFill size={20} />,
+        path: "/building",
+        subMenu: [
+          { name: "Environment Monitoring Process", path: "/building?tab=EMS" },
+          { name: "Building Management System", path: "/building?tab=BAS" },
+          { name: "RnD Laboratorium Monitoring", path: "/building?tab=RnD" },
+          { name: "Warehouse 1 Monitoring", path: "/building?tab=WH1" },
+          { name: "Warehouse 2 Monitoring", path: "/WH2Dashboard" },
+          { name: "Vibration", path: "/CMVibration", visible: userGlobal.level > 4 },          
+        ],
+      },
+      
       {
+        name: "Spare Part",
+        icon: <ShoppingCartRounded size={21} className="flex-shrink-0 m-1"/>,
+        path: "/sparepartdashboard",
+      },
+      
+      {
+        name: "OPE",
+        icon: <FaChartPie size={21} className="flex-shrink-0 m-1 gap-y-4"/>,
+        path: "/OPE",
+      },{
         name: "Batch Record",
         icon: <AssignmentIcon size={21} className="flex-shrink-0 m-[2px] gap-y-1"/>,
         path: "/BatchRecord",
@@ -189,14 +267,47 @@ if (userGlobal.level == 2) {
           { name: "Batch Record - CMT", path: "/BatchRecord" },
           { name: "Batch Record - Node-RED", path: "/granulation-batch-record"},
         ],
+      },{
+        name: "History Tabel",
+        icon: <TableViewIcon size={21} className="flex-shrink-0 m-[2px] gap-y-1"/>,
+        path: "/HistoryTabel",
+      },{
+        name: "PMP",
+        icon: <AssignmentInd size={21}/>,
+        path: "/PWOInput",
+        subMenu: [
+          /* { name: "PMP Uploader", path: "/PMPUploader", visible: userGlobal.level > 4 },
+          { name: "Assign PMP", path: "/assign-jobs", visible: userGlobal.level > 4 },
+          { name: "Technician", path: "/TechnicianPage", visible: userGlobal.level <= 5 },
+          { name: "Supervisor Approval", path: "/supervisor-approval", visible: userGlobal.level > 4 },
+          { name: "Completed PWO", path: "/CompletedJobs",visible: userGlobal.level > 4 }, */
+          { name: "Work Order Uploader", path: "/WorkOrderUploader", visible: userGlobal.level > 4 },
+          { name: "Work Order Dashboard", path: "/workorderdashboard", visible: userGlobal.level > 4 },
+        ],
+      },
+
+      /* {
+        name: "Work Order",
+        icon: <Description size={21} className="flex-shrink-0 m-1"/>,
+        path: "/work-orders",
+      }, */
+      
+      {
+        name: "Database",
+        icon: <Storage size={21} className="flex-shrink-0 m-1 gap-y-4"/>,
+        path: "/DataMonitor",
+         subMenu: [
+          { name: "Database", path: "/DataMonitor", visible: userGlobal.level > 4 },
+          { name: "Tabel Integrity", path: "/DataIntegrity", visible: userGlobal.level > 4 },
+        ],
+      },
+      {
+        name: "Form",
+        icon: <Description size={21} className="flex-shrink-0 m-1"/>,
+        path: "/BatchPage",
       },
     
-    
-    
-    
     );
-
-      
     }
 
     // ... Levels 2, 3, 4 shortened for brevity in this response but kept in your logic ...

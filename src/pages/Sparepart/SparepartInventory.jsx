@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import SparepartLogForm from './SparepartForm'; // Adjust path as needed
 import Papa from 'papaparse';
 import MapLightbox from './LightboxMapping'; // <-- NEW: Import the lightbox component
+import { useSelector } from 'react-redux'; // Assuming you use Redux for user state
 
 const InventoryTable = () => {
     const [parts, setParts] = useState([]);
@@ -19,7 +20,55 @@ const InventoryTable = () => {
     const [showMapModal, setShowMapModal] = useState(false);
     const [isMapOpen, setIsMapOpen] = useState(false);
 
+    // 1. Grab the user's department from your state management
+        const [userDepartment, setUserDepartment] = useState('Unknown');
+    const isSparepartDept = userDepartment === 'Sparepart';
+
+    console.log("Current Department is:", userDepartment, "| Is Authorized?", isSparepartDept);
+
+    // 2. Add state for inline editing
+    const [editingPartId, setEditingPartId] = useState(null);
+    const [editFormData, setEditFormData] = useState({ 
+        Location: '', 
+        Availability: '' 
+    });
+
     useEffect(() => {
+        // Step A: Let's see if the token actually exists under the name 'user_token'
+        const rawToken = localStorage.getItem('user_token'); 
+        console.log("Step A - Raw Token from Storage:", rawToken);
+
+        if (!rawToken) {
+            console.error("TOKEN MISSING: No item named 'user_token' found in localStorage.");
+            // If you use a different name, try changing it to localStorage.getItem('accessToken')
+            return; 
+        }
+
+        try {
+            // Step B: Crack open the payload
+            const base64Url = rawToken.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            const decodedToken = JSON.parse(jsonPayload);
+            
+            // Step C: Look at the exact payload
+            console.log("Step C - Successfully Decoded Token:", decodedToken);
+            
+            // Step D: Set the state. Ensure 'department' is spelled exactly as it appears in Step C!
+            setUserDepartment(decodedToken.department || 'Unknown');
+            console.log("Step D - Department Set To:", decodedToken.department);
+            
+        } catch (error) {
+            console.error("TOKEN CRASH: Failed to decode the token. Is it a valid JWT?", error);
+        }
+    }, []);
+
+
+
+
         const fetchInventory = async () => {
             try {
                 const response = await fetch('http://10.126.15.197:8002/part/getInventoryParts'); 
@@ -50,8 +99,61 @@ const InventoryTable = () => {
                 setIsLoading(false);
             }
         };
+        
+
+    useEffect(() => {
         fetchInventory();
     }, []);
+
+    const handleEditClick = (part) => {
+        setEditingPartId(part.Part_Number);
+        
+        setEditFormData({
+            Location: part.Part_Location || '', 
+            Availability: part.Availability || ''
+        });
+    };
+
+    // Triggered when the user clicks "Save"
+    const handleSaveEdit = async (partNumber) => {
+        try {
+            // 1. Try to use the Redux token first. 
+            // If it's empty, try grabbing it directly from localStorage.
+            // (Make sure 'token' matches whatever you call it in your auth slice/storage!)
+            const rawToken = localStorage.getItem('user_token'); 
+            const activeToken = rawToken || localStorage.getItem('user_token');
+
+            // 3. Stop the request if we still don't have a token
+            if (!activeToken || activeToken === "null") {
+                alert("Session expired or token missing. Please log out and log back in!");
+                return;
+            }
+
+            // 4. Send the request with the guaranteed token
+            const response = await fetch(`http://10.126.15.197:8002/part/InventoryupdatePart/${partNumber}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    // Use activeToken here!
+                    'Authorization': `Bearer ${activeToken}` 
+                },
+                body: JSON.stringify({
+                    Location: editFormData.Location,
+                    Availability: editFormData.Availability
+                })
+            });
+
+            if (!response.ok) throw new Error("Failed to update part");
+            
+            alert("Part updated successfully!");
+            setEditingPartId(null);
+            fetchInventory(); 
+            
+        } catch (error) {
+            console.error("Error updating part:", error);
+            alert("Failed to update part.");
+        }
+    };
 
     const handleFileUpload = (event) => {
         const file = event.target.files[0];
@@ -316,59 +418,110 @@ const InventoryTable = () => {
             ) : (
                 <div className="table-wrapper">
                     <table className="inventory-table">
-                        <thead>
-                            <tr>
-                                <th>Part Number</th>
-                                <th>Description</th>
-                                <th>Location</th>
-                                <th>Type</th>
-                                <th>Availability</th>
-                                <th>Last Updated</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredParts.length === 0 ? (
-                                <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
-                                        No parts match your search criteria.
-                                    </td>
-                                </tr>
-                            ) : (
-                                filteredParts.map((part) => {
-                                    // FIX 2: We calculate isReorder inside the map loop so the HTML knows if it should be red
-                                    const isReorder = part.Availability < part.Reorder_Min;
+                    <thead>
+                        <tr>
+                            <th>Part Number</th>
+                            <th>Description</th>
+                            <th>Location</th>
+                            <th>Type</th>
+                            <th>Availability</th>
+                            <th>Last Updated</th>
+                            
+                            {/* The Actions Header */}
+                            {isSparepartDept && (
+                                <th style={{ textAlign: 'center', width: '120px' }}>Actions</th>
+                            )}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filteredParts.map((part) => {
+                            const isEditing = editingPartId === part.Part_Number;
+                            // Calculate isReorder just like your old code did
+                            const isReorder = part.Availability <= part.Reorder_Min; 
+
+                            return (
+                                <tr key={part.Part_Number} className={isReorder ? 'reorder-row' : ''}>
                                     
-                                    return (
-                                        <tr key={part.Part_Number} className={isReorder ? 'reorder-row' : ''}>
-                                            <td><strong>{part.Part_Number}</strong></td>
-                                            <td>
-                                                {part.Part_Description}
-                                                {part.Description && (
-                                                    <div className="description-subtext">
-                                                        {part.Description}
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td>{part.Part_Location || '-'}</td>
-                                            <td>{part.Type || '-'}</td>
-                                            
-                                            {/* Show Availability and the Minimum threshold */}
-                                            <td>
+                                    {/* 1. Part Number */}
+                                    <td><strong>{part.Part_Number}</strong></td>
+                                    
+                                    {/* 2. Description (Restored to your exact old code) */}
+                                    <td>
+                                        {part.Part_Description}
+                                        {part.Description && (
+                                            <div className="description-subtext">
+                                                {part.Description}
+                                            </div>
+                                        )}
+                                    </td>
+                                    
+                                    {/* 3. Location (Editable vs Static) */}
+                                    <td>
+                                        {isEditing ? (
+                                            <input 
+                                                className="table-input" 
+                                                style={{ width: '100%', padding: '4px' }}
+                                                value={editFormData.Location} 
+                                                onChange={(e) => setEditFormData({...editFormData, Location: e.target.value})}
+                                            />
+                                        ) : (
+                                            part.Part_Location || '-'
+                                        )}
+                                    </td>
+                                    
+                                    {/* 4. Type */}
+                                    <td>{part.Type || '-'}</td>
+
+                                    {/* 5. Availability (Editable vs Static) */}
+                                    <td>
+                                        {isEditing ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <input 
+                                                    type="number"
+                                                    className="table-input" 
+                                                    style={{ width: '70px', padding: '4px' }}
+                                                    value={editFormData.Availability} 
+                                                    onChange={(e) => setEditFormData({...editFormData, Availability: e.target.value})}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {/* Restored to your exact span classes */}
                                                 <span className={isReorder ? 'stock-low' : 'stock-ok'}>
                                                     {part.Availability}
                                                 </span>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                                    Min: {part.Reorder_Min}
+                                                <div className="description-subtext">Min: {part.Reorder_Min}</div>
+                                            </>
+                                        )}
+                                    </td>
+                                    
+                                    {/* 6. Last Updated */}
+                                    <td>{part.Last_Date ? new Date(part.Last_Date).toLocaleString() : '-'}</td>
+                                    
+                                    {/* 7. ACTIONS COLUMN (Only visible to Sparepart Dept) */}
+                                    {isSparepartDept && (
+                                        <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                                            {isEditing ? (
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                                                    <button className="action-btn save-btn" onClick={() => handleSaveEdit(part.Part_Number)}>
+                                                        Save
+                                                    </button>
+                                                    <button className="action-btn cancel-btn" onClick={() => setEditingPartId(null)}>
+                                                        Cancel
+                                                    </button>
                                                 </div>
-                                            </td>
-                                            
-                                            <td>{part.Last_Date}</td>
-                                        </tr>
-                                    ) 
-                                })
-                            )}
-                        </tbody>
-                    </table>
+                                            ) : (
+                                                <button className="action-btn edit-btn" onClick={() => handleEditClick(part)}>
+                                                    Edit
+                                                </button>
+                                            )}
+                                        </td>
+                                    )}
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
                 </div>
             )}
             {/* When isLogFormOpen is true, this renders our popup over the table */}
