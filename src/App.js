@@ -110,15 +110,6 @@ function App() {
     keepLogin();
   }, [storedLevel, userToken]);
 
-  // 3. THE SHIELD: Prevent App from skipping the if/else blocks during the URL transition
-  if (userToken && levelData === null) {
-    return (
-      <div className="bg-background min-h-screen flex items-center justify-center">
-        <h2 className="text-xl font-bold">Verifying Access Level...</h2>
-      </div>
-    );
-  }
-
   if (location.pathname === "/") {
     // Separate layout for landing page, without grid
     return (
@@ -381,8 +372,6 @@ const Unauthorized = () => {
               <Route path="/SparepartNonInventoryLogs" element={<SparepartNonInventoryLogs />} />
               <Route path="/SparepartDashboard" element={<SparepartDashboardWrapper />} />
               <Route path="*" element={<Unauthorized />} />
-              
-
             </Routes>
           </div>
         </div>
