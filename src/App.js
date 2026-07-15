@@ -83,6 +83,8 @@ import SparepartNonInventory from "./pages/Sparepart/SparepartNonInventory";
 import SparepartNonInventoryLogs from "./pages/Sparepart/SparepartNonInventoryLogs";
 import SparepartDashboardWrapper from "./pages/Sparepart/SparepartDashboard";
 
+import PmaDashboard from "./pages/PMAVibrationQCC/PMADashboard";
+
 
 function App() {
   const dispatch = useDispatch();
@@ -251,6 +253,8 @@ const Unauthorized = () => {
               <Route path="/SparepartNonInventory" element={<SparepartNonInventory />} />
               <Route path="/SparepartNonInventoryLogs" element={<SparepartNonInventoryLogs />} />
               <Route path="/SparepartDashboard" element={<SparepartDashboardWrapper />} />
+
+              <Route path="/PMADashboard" element={<PmaDashboard />} />
 
 
               

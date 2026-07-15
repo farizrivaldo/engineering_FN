@@ -351,6 +351,7 @@ if (userGlobal.level == 2) {
         icon: <FactoryIcon sx={{ fontSize: 22 }} className="flex-shrink-0" />,
         path: "/production",
         subMenu: [
+          { name: "PMA Vibration", path: "/pmaDashboard", visible: userGlobal.level < 5 },
           { name: "Input Data", path: "/production?tab=Input", visible: userGlobal.level < 5 },
           { name: "OEE CM", path: "/production?tab=Prod" },
           {
