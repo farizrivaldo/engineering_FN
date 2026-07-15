@@ -9,7 +9,6 @@ export default function Level4({ startDate, endDate, fetchTrigger }) {
 
   useEffect(() => {
     // Safety check: Prevents the API from firing on the initial page load
-    if (fetchTrigger === 0) return;
 
     const fetchDiagnostics = async () => {
       setLoading(true);
