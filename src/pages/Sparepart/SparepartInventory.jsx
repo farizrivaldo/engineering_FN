@@ -5,6 +5,7 @@ import SparepartLogForm from './SparepartForm'; // Adjust path as needed
 import Papa from 'papaparse';
 import MapLightbox from './LightboxMapping'; // <-- NEW: Import the lightbox component
 import { useSelector } from 'react-redux'; // Assuming you use Redux for user state
+import * as XLSX from 'xlsx';
 
 const InventoryTable = () => {
     const [parts, setParts] = useState([]);
@@ -282,6 +283,53 @@ const InventoryTable = () => {
         return matchesSearch && matchesType;
     });
 
+    const handleExportExcel = () => {
+        // 1. Format the data perfectly for Excel
+        const exportData = filteredParts.map(part => {
+            const isLowStock = part.Availability <= part.Reorder_Min;
+            
+            return {
+                "Part Number": part.Part_Number,
+                "Description": part.Part_Description,
+                "Location": part.Part_Location || "-",
+                "Type": part.Type || "-",
+                "Current Stock": part.Availability,
+                "Minimum Stock": part.Reorder_Min,
+                "Status": isLowStock ? "Needs Reorder" : "Stock OK",
+                // Format the date nicely for the spreadsheet
+                "Last Updated": part.Last_Date ? new Date(part.Last_Date).toLocaleString() : "-"
+            };
+        });
+
+        // 2. Convert the clean JSON array into an Excel Worksheet
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+        // Optional: Auto-size the columns to make the Excel file look professional immediately
+        const columnWidths = [
+            { wch: 15 }, // Part Number
+            { wch: 45 }, // Description
+            { wch: 25 }, // Location
+            { wch: 10 }, // Type
+            { wch: 12 }, // Current Stock
+            { wch: 12 }, // Minimum Stock
+            { wch: 15 }, // Status
+            { wch: 20 }, // Last Updated
+        ];
+        worksheet['!cols'] = columnWidths;
+
+        // 3. Create a new Workbook and append the Worksheet to it
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory Parts");
+
+        const now = new Date();
+        const datePart = now.toISOString().split('T')[0]; // Gets "YYYY-MM-DD"
+        const timePart = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // Gets "HH-MM-SS"
+        const fileName = `Inventory_Parts_Export_${datePart}_${timePart}.xlsx`;
+
+        // 5. Trigger the download in the browser with the new dynamic name
+        XLSX.writeFile(workbook, fileName);
+    };
+
    return (
         <div className="inventory-container">
             
@@ -306,7 +354,7 @@ const InventoryTable = () => {
                             boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                         }}
                     >
-                        📄 View Audit Logs
+                        View Audit Logs
                     </button>
                     
                     <button 
@@ -322,7 +370,7 @@ const InventoryTable = () => {
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                         }}
                     >
-                        + Log Sparepart Usage
+                        Log Sparepart Usage
                     </button>
 
                     {/* HIDDEN FILE INPUT */}
@@ -333,6 +381,25 @@ const InventoryTable = () => {
                         style={{ display: 'none' }} 
                         onChange={handleFileUpload} 
                     />
+
+                    <button 
+        className="action-btn" 
+        style={{ 
+            backgroundColor: 'white', 
+            color: '#10b981', // A nice Excel-like green
+            padding: '8px 16px', 
+            border: '1px solid #10b981', 
+            borderRadius: '4px', 
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+        }}
+        onClick={handleExportExcel}
+    >
+        {/* Optional: Add an icon if you use a library like react-icons (e.g., <FaFileExcel />) */}
+        <span>Export to Excel</span>
+    </button>
 
                     {/* NEW UPLOAD BUTTON */}
                     <button 
@@ -348,7 +415,7 @@ const InventoryTable = () => {
                             boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                         }}
                     >
-                        ⬆️ Upload CSV
+                        Upload CSV
                     </button>
                 </div>
             </div>

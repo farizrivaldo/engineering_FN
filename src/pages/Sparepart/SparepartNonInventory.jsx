@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './SparepartDashboard.css'; 
 import { useNavigate } from 'react-router-dom';
-import MapLightbox from './LightboxMapping'; // <-- NEW: Import the lightbox component
+import MapLightbox from './LightboxMapping';
+import * as XLSX from 'xlsx';
+
 
 
 const NonInventoryDashboard = () => {
@@ -178,6 +180,53 @@ const NonInventoryDashboard = () => {
         return matchesSearch && matchesReorder && matchesTab;
     });
 
+    const handleExportNonInventoryExcel = () => {
+        // 1. Format the data specifically for the Non-Inventory columns
+        // Replace 'filteredNonInventoryParts' with whatever your state variable is called!
+        const exportData = filteredParts.map(part => {
+            // Assuming Reorder_Min is what you use for the "Min: 0" display
+            const minStock = part.Reorder_Min || 0; 
+            const isLowStock = part.Quantity <= minStock;
+            
+            return {
+                // Check if your database calls this Part_Name, Item_Name, or just Name!
+                "Part Name": part.Part_Name || part.Name, 
+                "Current Stock": part.Quantity,
+                // "Minimum Stock": minStock,
+                // "Status": isLowStock ? "Needs Reorder" : "Stock OK",
+                "Location": part.Shelf_Location || part.Part_Shelf_Location || "-",
+                "Last Updated": part.Last_Date ? new Date(part.Last_Date).toLocaleString() : "-"
+            };
+        });
+
+        // 2. Convert to Worksheet
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+        // 3. Set custom column widths for this specific layout
+        const columnWidths = [
+            { wch: 50 }, // Part Name (Made this wider since the names look long)
+            { wch: 15 }, // Current Stock
+           //  { wch: 15 }, // Minimum Stock
+           // { wch: 15 }, // Status
+            { wch: 25 }, // Location
+            { wch: 22 }, // Last Updated
+        ];
+        worksheet['!cols'] = columnWidths;
+
+        // 4. Create Workbook
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Non-Inventory");
+
+        // 5. Generate the timestamped file name
+        const now = new Date();
+        const datePart = now.toISOString().split('T')[0];
+        const timePart = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+        const fileName = `Non_Inventory_Export_${datePart}_${timePart}.xlsx`;
+
+        // 6. Trigger Download
+        XLSX.writeFile(workbook, fileName);
+    };
+
     return (
         <div className="inventory-container">
             {/* Header Section */}
@@ -185,7 +234,7 @@ const NonInventoryDashboard = () => {
                 <h2>Non-Inventory Parts Overview</h2>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <button className="action-btn cancel-btn" onClick={() => setIsMapOpen(true)}>
-                        🗺️ Show Mapping
+                        Show Mapping
                     </button>
                     <button 
                         onClick={() => navigate('/sparepartnoninventorylogs')} 
@@ -200,8 +249,25 @@ const NonInventoryDashboard = () => {
                             boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                         }}
                     >
-                        📄 View Audit Logs
+                        View Audit Logs
                     </button>
+                    <button 
+        className="action-btn" 
+        style={{ 
+            backgroundColor: 'white', 
+            color: '#10b981', 
+            padding: '8px 16px', 
+            border: '1px solid #10b981', 
+            borderRadius: '4px', 
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+        }}
+        onClick={handleExportNonInventoryExcel}
+    >
+        <span>Export to Excel</span>
+    </button>
                     <button className="action-btn save-btn" onClick={() => setShowAddForm(!showAddForm)}>
                         {showAddForm ? "Cancel Add" : "+ Add Item"}
                     </button>
