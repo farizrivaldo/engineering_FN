@@ -6,7 +6,15 @@ console.log("PARENT PAGE LOADED AT:", new Date().toLocaleTimeString());
 
 const BatchPage = () => {
   // 1. User Input States
-  const [selectedDate, setSelectedDate] = useState('2026-03-05'); 
+  const getTodayDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [selectedLine, setSelectedLine] = useState('Line 1');
   
   // NEW: State to hold the list of batches and the currently selected one
@@ -43,33 +51,41 @@ const BatchPage = () => {
         }),
       });
 
-      
 
       if (!response.ok) {
         const errData = await response.json();
         throw new Error(errData.message || "Failed to fetch data from database.");
       }
 
-
-      const dbData = await response.json();
+      const responseJson = await response.json();
+      // 🎯 THE FIX: Smartly extract the inner 'data' object if the wrapper exists!
+      const dbData = responseJson.data ? responseJson.data : responseJson; 
+      
       console.log("RAW DATA FROM BACKEND:", dbData);
+      
       // Quick helper functions
-      const formatNum = (val) => val != null ? Number(val).toFixed(2) : '-';
+      const formatNum = (val) => {
+  if (val === null || val === undefined || val === '') return '-';
+  
+  const num = Number(val);
+  return isNaN(num) ? '-' : parseFloat(num.toFixed(2));
+};
       const formatRH = (val) => val != null ? `${Number(val).toFixed(2)}%` : '-';
 
       const pmaMappings = {};
 
-      // Determine exactly which Lot we are targeting based on the Batch Name
       const isLot1Only = selectedBatch.endsWith('-1');
       const isLot2Only = selectedBatch.endsWith('-2');
-      const fillBoth = !isLot1Only && !isLot2Only; // For Line 3 batches that don't specify a lot
+      const fillBoth = !isLot1Only && !isLot2Only; 
 
-      // Helper function to smartly route the data
-      const assignLotData = (dbKey) => {
-          const val = formatNum(dbData[dbKey]);
-          pmaMappings[`${dbKey}1`] = (isLot1Only || fillBoth) ? val : '-'; // Fill Lot 1 if it's -1 OR Line 3
-          pmaMappings[`${dbKey}2`] = (isLot2Only || fillBoth) ? val : '-'; // Fill Lot 2 if it's -2 OR Line 3
-      };
+      // 🛠️ THE FIX: Look for the key ending in '1' since that is what the backend sends
+      const assignLotData = (baseKey) => {
+    const backendKey = `${baseKey}1`;
+    const val = formatNum(dbData[backendKey]); 
+    
+    pmaMappings[`${baseKey}1`] = (isLot1Only || fillBoth) ? val : '-'; 
+    pmaMappings[`${baseKey}2`] = (isLot2Only || fillBoth) ? val : '-'; 
+};
 
       // 1. Generate Input Material 1 & 2
       for (let i = 1; i <= 2; i++) {
@@ -148,8 +164,8 @@ const BatchPage = () => {
       // Combine the user's input with the database results 
       const finalData = {
         ...dbData,
-        ...pmaMappings, // Spread the PMA mappings into the final data object
         ...fbdClonedMappings,
+        ...pmaMappings, 
       
         nomor_batch: selectedBatch,
         tanggal_proses: selectedDate,
