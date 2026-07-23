@@ -34,7 +34,7 @@ const BatchReportPreview = ({ reportData = {} }) => {
         printed_at: timestamp // This fills the {printed_at} tag in Word
       };
 
-      const response = await fetch('http://localhost:8002/part/generateBatchPDF', {
+      const response = await fetch('http://10.126.15.197:8002/part/generateBatchPDF', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
