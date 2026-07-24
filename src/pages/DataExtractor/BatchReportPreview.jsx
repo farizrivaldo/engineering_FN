@@ -573,29 +573,29 @@ const clean = (val) => {
 <ProcessTable 
   title="Discharge I" 
   dataRows={[
-    { label: 'Prod. Discharge valve position (%)', set: reportData.discharge_1_recipe_valve ?? '-', min: clean(reportData.discharge1_valve_min1), max: clean(reportData.discharge1_valve_max1), avg: clean(reportData.discharge1_valve_avg1) },
-    { label: 'Speed (RPM)', set: reportData.discharge_1_recipe_speed ?? '-', min: clean(reportData.discharge1_speed_min1), max: clean(reportData.discharge1_speed_max1), avg: clean(reportData.discharge1_speed_avg1) },
-    { label: 'Waktu (minutes)', set: reportData.discharge_1_recipe_time ?? '-', min: reportData.discharge1_waktu_avg1, max: reportData.discharge1_waktu_avg1, avg: reportData.discharge1_waktu_avg1 }
+    { label: 'Prod. Discharge valve position (%)', set: reportData.discharge_1_recipe_valve ?? '-', min: clean(reportData.finalmix_discharge1_min1), max: clean(reportData.finalmix_discharge1_max1), avg: clean(reportData.finalmix_discharge1_avg1) },
+    { label: 'Speed (RPM)', set: reportData.discharge_1_recipe_speed ?? '-', min: clean(reportData.finalmix_speed1_min1), max: clean(reportData.finalmix_speed1_max1), avg: clean(reportData.finalmix_speed1_avg1) },
+    { label: 'Waktu (minutes)', set: reportData.discharge_1_recipe_time ?? '-', min: reportData.finalmix_waktu1_min1, max: reportData.finalmix_waktu1_max1, avg: reportData.finalmix_waktu1_avg1 }
   ]} 
 />
 
-            {/* Discharge II */}
+{/* Discharge II */}
 <ProcessTable 
   title="Discharge II" 
   dataRows={[
-    { label: 'Prod. Discharge valve position (%)', set: reportData.discharge_2_recipe_valve ?? '-', min: clean(reportData.discharge2_valve_min1), max: clean(reportData.discharge2_valve_max1), avg: clean(reportData.discharge2_valve_avg1) },
-    { label: 'Speed (RPM)', set: reportData.discharge_2_recipe_speed ?? '-', min: clean(reportData.discharge2_speed_min1), max: clean(reportData.discharge2_speed_max1), avg: clean(reportData.discharge2_speed_avg1) },
-    { label: 'Waktu (minutes)', set: reportData.discharge_2_recipe_time ?? '-', min: reportData.discharge2_waktu_avg1, max: reportData.discharge2_waktu_avg1, avg: reportData.discharge2_waktu_avg1 }
+    { label: 'Prod. Discharge valve position (%)', set: reportData.discharge_2_recipe_valve ?? '-', min: clean(reportData.finalmix_discharge2_min1), max: clean(reportData.finalmix_discharge2_max1), avg: clean(reportData.finalmix_discharge2_avg1) },
+    { label: 'Speed (RPM)', set: reportData.discharge_2_recipe_speed ?? '-', min: clean(reportData.finalmix_speed2_min1), max: clean(reportData.finalmix_speed2_max1), avg: clean(reportData.finalmix_speed2_avg1) },
+    { label: 'Waktu (minutes)', set: reportData.discharge_2_recipe_time ?? '-', min: reportData.finalmix_waktu2_min1, max: reportData.finalmix_waktu2_max1, avg: reportData.finalmix_waktu2_avg1 }
   ]} 
 />
 
-            {/* Discharge III */}
+{/* Discharge III */}
 <ProcessTable 
   title="Discharge III" 
   dataRows={[
-    { label: 'Prod. Discharge valve position (%)', set: reportData.discharge_3_recipe_valve ?? '-', min: clean(reportData.discharge3_valve_min1), max: clean(reportData.discharge3_valve_max1), avg: clean(reportData.discharge3_valve_avg1) },
-    { label: 'Speed (RPM)', set: reportData.discharge_3_recipe_speed ?? '-', min: clean(reportData.discharge3_speed_min1), max: clean(reportData.discharge3_speed_max1), avg: clean(reportData.discharge3_speed_avg1) },
-    { label: 'Waktu (minutes)', set: reportData.discharge_3_recipe_time ?? '-', min: reportData.discharge3_waktu_avg1, max: reportData.discharge3_waktu_avg1, avg: reportData.discharge3_waktu_avg1 }
+    { label: 'Prod. Discharge valve position (%)', set: reportData.discharge_3_recipe_valve ?? '-', min: clean(reportData.finalmix_discharge3_min1), max: clean(reportData.finalmix_discharge3_max1), avg: clean(reportData.finalmix_discharge3_avg1) },
+    { label: 'Speed (RPM)', set: reportData.discharge_3_recipe_speed ?? '-', min: clean(reportData.finalmix_speed3_min1), max: clean(reportData.finalmix_speed3_max1), avg: clean(reportData.finalmix_speed3_avg1) },
+    { label: 'Waktu (minutes)', set: reportData.discharge_3_recipe_time ?? '-', min: reportData.finalmix_waktu3_min1, max: reportData.finalmix_waktu3_max1, avg: reportData.finalmix_waktu3_avg1 }
   ]} 
 />
 
